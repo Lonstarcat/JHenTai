@@ -603,6 +603,13 @@ class pt_BR {
       'existingGroup': 'Existing Group',
       'groupName': 'Nome do grupo',
       'drag2sort': 'Drag to Sort',
+      'reorderDownloads': 'Reordenar downloads',
+      'finishSorting': 'Concluir ordenação',
+      'sortGroups': 'Reordenar grupos',
+      'sortGroupItems': 'Reordenar: @group',
+      'sortGroupsHint': 'Arraste a alça para reordenar os grupos. Toque em um grupo para reordenar seus itens.',
+      'downloadItemCount': '@count itens',
+      'backToGroups': 'Voltar aos grupos',
       'switch2GridMode': 'Switch to Grid Mode',
       'switch2ListMode': 'Switch to List Mode',
       'multiSelect': 'Multi-Select',
@@ -627,6 +634,7 @@ class pt_BR {
       /// download search page
       'simpleSearch': 'Simple',
       'regexSearch': 'Regex',
+      'invalidRegex': 'Expressão regular inválida',
 
       /// search dialog
       'searchConfig': 'Opções de pesquisa',

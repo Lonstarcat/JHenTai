@@ -602,6 +602,13 @@ class en_US {
       'existingGroup': 'Existing Group',
       'groupName': 'Group Name',
       'drag2sort': 'Drag to Sort',
+      'reorderDownloads': 'Reorder downloads',
+      'finishSorting': 'Finish sorting',
+      'sortGroups': 'Reorder groups',
+      'sortGroupItems': 'Reorder: @group',
+      'sortGroupsHint': 'Drag the handle to reorder groups. Tap a group to reorder its items.',
+      'downloadItemCount': '@count items',
+      'backToGroups': 'Back to groups',
       'switch2GridMode': 'Switch to Grid Mode',
       'switch2ListMode': 'Switch to List Mode',
       'multiSelect': 'Multi-Select',
@@ -626,6 +633,7 @@ class en_US {
       /// download search page
       'simpleSearch': 'Simple',
       'regexSearch': 'Regex',
+      'invalidRegex': 'Invalid regular expression',
 
       /// search dialog
       'searchConfig': 'Search Config',

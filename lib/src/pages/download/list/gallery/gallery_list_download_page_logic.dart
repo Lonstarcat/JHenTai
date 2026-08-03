@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,8 +7,10 @@ import 'package:jhentai/src/enum/config_enum.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/pages/download/mixin/gallery/gallery_download_page_logic_mixin.dart';
 import 'package:jhentai/src/setting/performance_setting.dart';
+import 'package:jhentai/src/utils/toast_util.dart';
 
 import '../../../../database/database.dart';
+import '../../../../database/dao/gallery_group_dao.dart';
 import '../../../../mixin/scroll_to_top_logic_mixin.dart';
 import '../../../../mixin/scroll_to_top_state_mixin.dart';
 import '../../../../mixin/update_global_gallery_status_logic_mixin.dart';
@@ -49,6 +52,97 @@ class GalleryListDownloadPageLogic extends GetxController
     super.onClose();
 
     maxGalleryNum4AnimationListener.dispose();
+  }
+
+  List<GalleryDownloadedData> get sortedGallerys {
+    List<GalleryDownloadedData> sorted = [...downloadService.gallerys];
+
+    Map<String, int> groupOrder = {};
+    for (int i = 0; i < downloadService.allGroups.length; i++) {
+      groupOrder[downloadService.allGroups[i]] = i;
+    }
+
+    sorted.sort((a, b) {
+      String aGroup = downloadService.galleryDownloadInfos[a.gid]!.group;
+      String bGroup = downloadService.galleryDownloadInfos[b.gid]!.group;
+
+      int groupCmp = (groupOrder[aGroup] ?? 9999).compareTo(groupOrder[bGroup] ?? 9999);
+      if (groupCmp != 0) return groupCmp;
+
+      switch (state.sortBy) {
+        case SortBy.title:
+          return a.title.compareTo(b.title);
+        case SortBy.publishTime:
+          return b.publishTime.compareTo(a.publishTime);
+        case SortBy.insertTime:
+          return b.insertTime.compareTo(a.insertTime);
+      }
+    });
+
+    return sorted;
+  }
+
+  void toggleEditMode() {
+    if (!state.inEditMode) {
+      exitSelectMode();
+      state.currentGroup = null;
+      toast('sortGroupsHint'.tr);
+    } else {
+      state.currentGroup = null;
+    }
+    state.inEditMode = !state.inEditMode;
+    updateSafely([bodyId]);
+  }
+
+  void enterGroup(String group) {
+    state.currentGroup = group;
+    updateSafely([bodyId]);
+  }
+
+  void backGroup() {
+    state.currentGroup = null;
+    updateSafely([bodyId]);
+  }
+
+  Future<void> saveGalleryOrderAfterReordered(int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex) return;
+
+    // Flutter adds 1 to newIndex when dragging downward
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    List<GalleryDownloadedData> gallerys;
+    if (state.currentGroup != null) {
+      gallerys = List.from(downloadService.gallerysWithGroup(state.currentGroup!));
+    } else {
+      gallerys = List.from(downloadService.gallerys);
+    }
+
+    GalleryDownloadedData moved = gallerys.removeAt(oldIndex);
+    gallerys.insert(newIndex, moved);
+
+    for (int i = 0; i < gallerys.length; i++) {
+      downloadService.galleryDownloadInfos[gallerys[i].gid]!.sortOrder = i;
+    }
+
+    await downloadService.updateGalleryOrder(gallerys);
+    updateSafely([bodyId]);
+  }
+
+  Future<void> saveGroupOrderAfterReordered(int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex) return;
+
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    downloadService.allGroups.insert(newIndex, downloadService.allGroups.removeAt(oldIndex));
+
+    for (int i = 0; i < downloadService.allGroups.length; i++) {
+      await GalleryGroupDao.updateGalleryGroupOrder(downloadService.allGroups[i], i);
+    }
+    updateSafely([bodyId]);
   }
 
   Future<void> toggleDisplayGroups(String groupName) async {

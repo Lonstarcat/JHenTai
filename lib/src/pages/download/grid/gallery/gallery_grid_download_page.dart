@@ -21,6 +21,7 @@ import '../../../../config/ui_config.dart';
 import '../../../../model/gallery_image.dart';
 import '../../../../service/gallery_download_service.dart';
 import '../../download_base_page.dart';
+import '../../widget/download_page_more_menu.dart';
 import '../mixin/grid_download_page_mixin.dart';
 import 'gallery_grid_download_page_logic.dart';
 
@@ -53,73 +54,19 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
         global: false,
         init: logic,
         id: logic.editButtonId,
-        builder: (_) => IconButton(
-          icon: const Icon(Icons.sort),
-          selectedIcon: const Icon(Icons.save),
-          onPressed: logic.toggleEditMode,
-          isSelected: state.inEditMode,
+        builder: (_) => DownloadPageMoreMenu(
+          inEditMode: state.inEditMode,
+          switchViewIcon: Icons.view_list,
+          switchViewLabel: 'switch2ListMode'.tr,
+          onSwitchView: () => DownloadPageBodyTypeChangeNotification(
+            bodyType: DownloadPageBodyType.list,
+          ).dispatch(context),
+          onToggleSorting: logic.toggleEditMode,
+          onMultiSelect: logic.enterSelectMode,
+          onResumeAll: logic.handleResumeAllTasks,
+          onPauseAll: logic.handlePauseAllTasks,
+          onSearch: () => toRoute(Routes.downloadSearch),
         ),
-      ),
-      PopupMenuButton(
-        itemBuilder: (context) {
-          return [
-            PopupMenuItem(
-              value: 0,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [const Icon(Icons.view_list), const SizedBox(width: 12), Text('switch2ListMode'.tr)],
-              ),
-            ),
-            PopupMenuItem(
-              value: 1,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [const Icon(Icons.done_all), const SizedBox(width: 12), Text('multiSelect'.tr)],
-              ),
-            ),
-            PopupMenuItem(
-              value: 2,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [const Icon(Icons.play_arrow), const SizedBox(width: 12), Text('resumeAllTasks'.tr)],
-              ),
-            ),
-            PopupMenuItem(
-              value: 3,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [const Icon(Icons.pause), const SizedBox(width: 12), Text('pauseAllTasks'.tr)],
-              ),
-            ),
-            PopupMenuItem(
-              value: 4,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [const Icon(Icons.search), const SizedBox(width: 12), Text('search'.tr)],
-              ),
-            ),
-          ];
-        },
-        onSelected: (value) {
-          if (value == 0) {
-            DownloadPageBodyTypeChangeNotification(bodyType: DownloadPageBodyType.list).dispatch(context);
-          }
-          if (value == 1) {
-            if (state.inEditMode) {
-              return;
-            }
-            logic.enterSelectMode();
-          }
-          if (value == 2) {
-            logic.handleResumeAllTasks();
-          }
-          if (value == 3) {
-            logic.handlePauseAllTasks();
-          }
-          if (value == 4) {
-            toRoute(Routes.downloadSearch);
-          }
-        },
       ),
     ];
   }

@@ -10,6 +10,20 @@ import '../../mixin/archive/archive_download_page_state_mixin.dart';
 class ArchiveListDownloadPageState with Scroll2TopStateMixin, MultiSelectDownloadPageStateMixin, ArchiveDownloadPageStateMixin {
   Set<String> displayGroups = {};
   Completer<void> displayGroupsCompleter = Completer<void>();
+  SortBy sortBy = SortBy.insertTime;
+  bool inEditMode = false;
+  String? currentGroup;
+
+  bool get isAtRoot => currentGroup == null;
 
   final GroupedListController<String, ArchiveDownloadedData> groupedListController = GroupedListController<String, ArchiveDownloadedData>();
+}
+
+enum SortBy {
+  insertTime('Insert Time'),
+  title('Title'),
+  publishTime('Publish Time');
+
+  final String label;
+  const SortBy(this.label);
 }

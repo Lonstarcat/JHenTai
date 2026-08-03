@@ -602,6 +602,13 @@ class zh_TW {
       'existingGroup': '現有分組',
       'groupName': '分組名稱',
       'drag2sort': '拖曳以排序',
+      'reorderDownloads': '調整下載順序',
+      'finishSorting': '完成排序',
+      'sortGroups': '調整分組順序',
+      'sortGroupItems': '調整順序：@group',
+      'sortGroupsHint': '拖曳右側控點調整分組順序，點擊分組可調整組內項目',
+      'downloadItemCount': '@count 個項目',
+      'backToGroups': '返回分組列表',
       'switch2GridMode': '切換至網格模式',
       'switch2ListMode': '切換至列表模式',
       'multiSelect': '多選模式',
@@ -626,6 +633,7 @@ class zh_TW {
       /// download search page
       'simpleSearch': '簡單',
       'regexSearch': '正則',
+      'invalidRegex': '無效的正則表達式',
 
       /// search dialog
       'searchConfig': '搜尋條件',

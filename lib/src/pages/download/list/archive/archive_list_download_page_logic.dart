@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:get/get.dart';
 import 'package:jhentai/src/enum/config_enum.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/mixin/update_global_gallery_status_logic_mixin.dart';
+import 'package:jhentai/src/utils/toast_util.dart';
 import '../../../../database/database.dart';
+import '../../../../database/dao/archive_group_dao.dart';
 import '../../../../mixin/scroll_to_top_logic_mixin.dart';
 import '../../../../mixin/scroll_to_top_state_mixin.dart';
 import '../../../../service/archive_download_service.dart';
@@ -49,6 +52,96 @@ class ArchiveListDownloadPageLogic extends GetxController
     super.onClose();
 
     maxGalleryNum4AnimationListener.dispose();
+  }
+
+  List<ArchiveDownloadedData> get sortedArchives {
+    List<ArchiveDownloadedData> sorted = [...archiveDownloadService.archives];
+
+    Map<String, int> groupOrder = {};
+    for (int i = 0; i < archiveDownloadService.allGroups.length; i++) {
+      groupOrder[archiveDownloadService.allGroups[i]] = i;
+    }
+
+    sorted.sort((a, b) {
+      String aGroup = archiveDownloadService.archiveDownloadInfos[a.gid]!.group;
+      String bGroup = archiveDownloadService.archiveDownloadInfos[b.gid]!.group;
+
+      int groupCmp = (groupOrder[aGroup] ?? 9999).compareTo(groupOrder[bGroup] ?? 9999);
+      if (groupCmp != 0) return groupCmp;
+
+      switch (state.sortBy) {
+        case SortBy.title:
+          return a.title.compareTo(b.title);
+        case SortBy.publishTime:
+          return b.publishTime.compareTo(a.publishTime);
+        case SortBy.insertTime:
+          return b.insertTime.compareTo(a.insertTime);
+      }
+    });
+
+    return sorted;
+  }
+
+  void toggleEditMode() {
+    if (!state.inEditMode) {
+      exitSelectMode();
+      state.currentGroup = null;
+      toast('sortGroupsHint'.tr);
+    } else {
+      state.currentGroup = null;
+    }
+    state.inEditMode = !state.inEditMode;
+    updateSafely([bodyId]);
+  }
+
+  void enterGroup(String group) {
+    state.currentGroup = group;
+    updateSafely([bodyId]);
+  }
+
+  void backGroup() {
+    state.currentGroup = null;
+    updateSafely([bodyId]);
+  }
+
+  Future<void> saveArchiveOrderAfterReordered(int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex) return;
+
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    List<ArchiveDownloadedData> archives;
+    if (state.currentGroup != null) {
+      archives = List.from(archiveDownloadService.archivesWithGroup(state.currentGroup!));
+    } else {
+      archives = List.from(archiveDownloadService.archives);
+    }
+
+    ArchiveDownloadedData moved = archives.removeAt(oldIndex);
+    archives.insert(newIndex, moved);
+
+    for (int i = 0; i < archives.length; i++) {
+      archiveDownloadService.archiveDownloadInfos[archives[i].gid]!.sortOrder = i;
+    }
+
+    await archiveDownloadService.batchUpdateArchiveInDatabase(archives);
+    updateSafely([bodyId]);
+  }
+
+  Future<void> saveGroupOrderAfterReordered(int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex) return;
+
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    archiveDownloadService.allGroups.insert(newIndex, archiveDownloadService.allGroups.removeAt(oldIndex));
+
+    for (int i = 0; i < archiveDownloadService.allGroups.length; i++) {
+      await ArchiveGroupDao.updateArchiveGroupOrder(archiveDownloadService.allGroups[i], i);
+    }
+    updateSafely([bodyId]);
   }
 
   Future<void> toggleDisplayGroups(String groupName) async {

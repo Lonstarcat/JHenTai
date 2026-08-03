@@ -602,6 +602,13 @@ class ko_KR {
       'existingGroup': 'Existing Group',
       'groupName': '그룹 이름',
       'drag2sort': '드래그로 정렬',
+      'reorderDownloads': '다운로드 순서 변경',
+      'finishSorting': '정렬 완료',
+      'sortGroups': '그룹 순서 변경',
+      'sortGroupItems': '순서 변경: @group',
+      'sortGroupsHint': '핸들을 드래그하여 그룹 순서를 변경하고, 그룹을 탭하여 내부 항목 순서를 변경하세요.',
+      'downloadItemCount': '항목 @count개',
+      'backToGroups': '그룹 목록으로',
       'switch2GridMode': '그리드 모드로 전환',
       'switch2ListMode': '리스트 모드로 전환',
       'multiSelect': 'Multi-Select',
@@ -626,6 +633,7 @@ class ko_KR {
       /// download search page
       'simpleSearch': 'Simple',
       'regexSearch': 'Regex',
+      'invalidRegex': '잘못된 정규 표현식',
 
       /// search dialog
       'searchConfig': '검색 설정',

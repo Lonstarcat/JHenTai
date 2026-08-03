@@ -602,6 +602,13 @@ class zh_CN {
       'existingGroup': '现有分组',
       'groupName': '分组名称',
       'drag2sort': '拖拽以排序',
+      'reorderDownloads': '调整下载顺序',
+      'finishSorting': '完成排序',
+      'sortGroups': '调整分组顺序',
+      'sortGroupItems': '调整顺序：@group',
+      'sortGroupsHint': '拖动右侧手柄调整分组顺序，点击分组可调整组内条目',
+      'downloadItemCount': '@count 个条目',
+      'backToGroups': '返回分组列表',
       'switch2GridMode': '切换至网格模式',
       'switch2ListMode': '切换至列表模式',
       'multiSelect': '多选模式',
@@ -626,6 +633,7 @@ class zh_CN {
       /// download search page
       'simpleSearch': '简单',
       'regexSearch': '正则',
+      'invalidRegex': '无效的正则表达式',
 
       /// search dialog
       'searchConfig': '搜索配置',

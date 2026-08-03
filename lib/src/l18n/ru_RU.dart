@@ -608,6 +608,13 @@ class ru_RU {
       'existingGroup': 'Существующая группа',
       'groupName': 'Название группы',
       'drag2sort': 'Перетащить для сортировки',
+      'reorderDownloads': 'Изменить порядок загрузок',
+      'finishSorting': 'Завершить сортировку',
+      'sortGroups': 'Изменить порядок групп',
+      'sortGroupItems': 'Изменить порядок: @group',
+      'sortGroupsHint': 'Перетаскивайте маркер, чтобы изменить порядок групп. Нажмите группу, чтобы изменить порядок элементов.',
+      'downloadItemCount': 'Элементов: @count',
+      'backToGroups': 'Назад к группам',
       'switch2GridMode': 'Переключить в режим сетки',
       'switch2ListMode': 'Переключить в режим списка',
       'multiSelect': 'Множественный выбор',
@@ -635,6 +642,7 @@ class ru_RU {
       /// download search page
       'simpleSearch': 'Простой',
       'regexSearch': 'Regex',
+      'invalidRegex': 'Недопустимое регулярное выражение',
 
       /// search dialog
       'searchConfig': 'Настройка поиска',

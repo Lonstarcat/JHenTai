@@ -53,11 +53,46 @@ class DownloadSearchPage extends StatelessWidget {
         decoration: InputDecoration(
           isDense: true,
           contentPadding: EdgeInsets.zero,
+          errorText: state.searchErrorKey?.tr,
           prefixIcon: FutureBuilder(
             future: state.searchTypeCompleter.future,
-            builder: (_, __) => !state.searchTypeCompleter.isCompleted
+            builder: (context, __) => !state.searchTypeCompleter.isCompleted
                 ? const SizedBox()
-                : TextButton(child: Text(state.searchType.desc.tr), onPressed: logic.toggleSearchType),
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
+                        child: Text(state.searchType.desc.tr, style: const TextStyle(fontSize: 13)),
+                        onPressed: logic.toggleSearchType,
+                      ),
+                      const SizedBox(width: 2),
+                      GestureDetector(
+                        onTap: logic.toggleCaseSensitive,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: state.caseSensitive
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.outline,
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            state.caseSensitive ? 'Aa' : 'aa',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: state.caseSensitive
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
           prefixIconConstraints: const BoxConstraints(minWidth: 52),
           suffixIcon: MouseRegion(

@@ -5,6 +5,8 @@ import 'package:jhentai/src/database/database.dart';
 class DownloadSearchState {
   DownloadSearchConfigTypeEnum searchType = DownloadSearchConfigTypeEnum.simple;
   Completer<void> searchTypeCompleter = Completer();
+  bool caseSensitive = true;
+  String? searchErrorKey;
 
   List<GallerySearchVO> gallerys = [];
   List<ArchiveSearchVO> archives = [];
@@ -21,7 +23,10 @@ enum DownloadSearchConfigTypeEnum {
   const DownloadSearchConfigTypeEnum(this.code, this.desc);
 
   static DownloadSearchConfigTypeEnum fromCode(int code) {
-    return DownloadSearchConfigTypeEnum.values.firstWhere((e) => e.code == code);
+    return DownloadSearchConfigTypeEnum.values.firstWhere(
+      (e) => e.code == code,
+      orElse: () => DownloadSearchConfigTypeEnum.simple,
+    );
   }
 }
 
