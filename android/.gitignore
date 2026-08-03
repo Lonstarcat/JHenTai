@@ -11,5 +11,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+**/*.p12
 /app/google-services.json
 /firebase_app_id_file.json
