@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 
 enum _DownloadPageMenuAction {
   switchView,
-  reorder,
   multiSelect,
   resumeAll,
   pauseAll,
@@ -13,22 +12,18 @@ enum _DownloadPageMenuAction {
 class DownloadPageMoreMenu extends StatelessWidget {
   const DownloadPageMoreMenu({
     super.key,
-    required this.inEditMode,
     required this.switchViewIcon,
     required this.switchViewLabel,
     required this.onSwitchView,
-    required this.onToggleSorting,
     required this.onMultiSelect,
     required this.onResumeAll,
     required this.onPauseAll,
     required this.onSearch,
   });
 
-  final bool inEditMode;
   final IconData switchViewIcon;
   final String switchViewLabel;
   final VoidCallback onSwitchView;
-  final VoidCallback onToggleSorting;
   final VoidCallback onMultiSelect;
   final VoidCallback onResumeAll;
   final VoidCallback onPauseAll;
@@ -36,25 +31,12 @@ class DownloadPageMoreMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (inEditMode) {
-      return IconButton(
-        icon: const Icon(Icons.save),
-        onPressed: onToggleSorting,
-        tooltip: 'finishSorting'.tr,
-      );
-    }
-
     return PopupMenuButton<_DownloadPageMenuAction>(
       itemBuilder: (context) => [
         _item(
           action: _DownloadPageMenuAction.switchView,
           icon: switchViewIcon,
           label: switchViewLabel,
-        ),
-        _item(
-          action: _DownloadPageMenuAction.reorder,
-          icon: Icons.sort,
-          label: 'reorderDownloads'.tr,
         ),
         _item(
           action: _DownloadPageMenuAction.multiSelect,
@@ -81,9 +63,6 @@ class DownloadPageMoreMenu extends StatelessWidget {
         switch (action) {
           case _DownloadPageMenuAction.switchView:
             onSwitchView();
-            break;
-          case _DownloadPageMenuAction.reorder:
-            onToggleSorting();
             break;
           case _DownloadPageMenuAction.multiSelect:
             onMultiSelect();
@@ -117,6 +96,60 @@ class DownloadPageMoreMenu extends StatelessWidget {
           Text(label),
         ],
       ),
+    );
+  }
+}
+
+class DownloadReorderModeButton extends StatelessWidget {
+  const DownloadReorderModeButton({
+    super.key,
+    required this.inReorderMode,
+    required this.onPressed,
+  });
+
+  final bool inReorderMode;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(inReorderMode ? Icons.close : Icons.sort),
+      onPressed: onPressed,
+      tooltip: (inReorderMode ? 'exitReorderMode' : 'enterReorderMode').tr,
+    );
+  }
+}
+
+class LocalDownloadPageActions extends StatelessWidget {
+  const LocalDownloadPageActions({
+    super.key,
+    required this.switchViewIcon,
+    required this.switchViewLabel,
+    required this.onRefresh,
+    required this.onSwitchView,
+  });
+
+  final IconData switchViewIcon;
+  final String switchViewLabel;
+  final VoidCallback onRefresh;
+  final VoidCallback onSwitchView;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          tooltip: 'refresh'.tr,
+          onPressed: onRefresh,
+        ),
+        IconButton(
+          icon: Icon(switchViewIcon),
+          tooltip: switchViewLabel,
+          onPressed: onSwitchView,
+        ),
+      ],
     );
   }
 }

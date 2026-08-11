@@ -20,6 +20,7 @@ jobs:
   android-arm64:
     name: Android arm64 Release
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -37,12 +38,27 @@ jobs:
           cache: true
 
       - name: Restore Android signing
+        shell: bash
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
         run: |
+          set -euo pipefail
+          umask 077
+          test -n "$KEYSTORE_BASE64" || { echo "ANDROID_KEYSTORE_BASE64 is not configured" >&2; exit 1; }
+          test -n "$KEY_PROPERTIES" || { echo "ANDROID_KEY_PROPERTIES is not configured" >&2; exit 1; }
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.p12
           printf '%s' "$KEY_PROPERTIES" > android/key.properties
+          test -s android/app/upload-keystore.p12
+          grep -q '^storePassword=' android/key.properties
+          grep -q '^keyPassword=' android/key.properties
+          grep -q '^keyAlias=' android/key.properties
+          if grep -q '^storeFile=' android/key.properties; then
+            sed -i.bak 's#^storeFile=.*#storeFile=upload-keystore.p12#' android/key.properties
+            rm android/key.properties.bak
+          else
+            printf '\nstoreFile=upload-keystore.p12\n' >> android/key.properties
+          fi
 
       - run: flutter pub get
 
@@ -59,11 +75,13 @@ jobs:
         with:
           name: JHenTai-Android-arm64-release
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          if-no-files-found: error
           retention-days: 7
 
   macos:
     name: macOS Release
     runs-on: macos-latest
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -83,4 +101,5 @@ jobs:
         with:
           name: JHenTai-macOS-release
           path: "*.dmg"
+          if-no-files-found: error
           retention-days: 7

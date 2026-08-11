@@ -48,8 +48,11 @@ mixin GridBasePage on StatelessWidget implements Scroll2TopPageMixin {
       centerTitle: true,
       leading: styleSetting.isInV2Layout
           ? IconButton(
-              icon: isRouteAtTop(Routes.download) ? const Icon(Icons.arrow_back) : Icon(Icons.menu, size: 20),
+              icon: isRouteAtTop(Routes.download)
+                  ? const Icon(Icons.arrow_back)
+                  : const Icon(Icons.menu, size: 20),
               onPressed: () {
+                logic.exitEditMode();
                 if (isRouteAtTop(Routes.download)) {
                   backRoute(currentRoute: Routes.download);
                 } else {
@@ -87,7 +90,10 @@ mixin GridBasePage on StatelessWidget implements Scroll2TopPageMixin {
                   return SizedBox(
                     width: 150,
                     height: 200,
-                    child: Center(child: DefaultTextStyle(style: DefaultTextStyle.of(context).style, child: list[index].child)),
+                    child: Center(
+                        child: DefaultTextStyle(
+                            style: DefaultTextStyle.of(context).style,
+                            child: list[index].child)),
                   );
                 },
                 dragPlaceHolder: (_, __) {
@@ -95,44 +101,64 @@ mixin GridBasePage on StatelessWidget implements Scroll2TopPageMixin {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: UIConfig.downloadPageGridViewCardDragBorderColor(context), width: 1.2),
+                        border: Border.all(
+                            color: UIConfig
+                                .downloadPageGridViewCardDragBorderColor(
+                                    context),
+                            width: 1.2),
                       ),
                     ),
                   );
                 },
                 dragCompletion: (_, int beforeIndex, int afterIndex) async {
                   if (state.isAtRoot) {
-                    await logic.saveGroupOrderAfterDrag(beforeIndex, afterIndex);
+                    await logic.saveGroupOrderAfterDrag(
+                        beforeIndex, afterIndex);
                   } else {
-                    await logic.saveGalleryOrderAfterDrag(beforeIndex - 1, afterIndex - 1);
+                    await logic.saveGalleryOrderAfterDrag(
+                        beforeIndex - 1, afterIndex - 1);
                   }
                 },
                 gridDelegate: state.isAtRoot
-                    ? styleSetting.crossAxisCountInGridDownloadPageForGroup.value == null
+                    ? styleSetting.crossAxisCountInGridDownloadPageForGroup
+                                .value ==
+                            null
                         ? const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: UIConfig.downloadPageGridViewCardWidth,
+                            maxCrossAxisExtent:
+                                UIConfig.downloadPageGridViewCardWidth,
                             mainAxisSpacing: 24,
                             crossAxisSpacing: 12,
-                            childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
+                            childAspectRatio:
+                                UIConfig.downloadPageGridViewCardAspectRatio,
                           )
                         : SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: styleSetting.crossAxisCountInGridDownloadPageForGroup.value!,
+                            crossAxisCount: styleSetting
+                                .crossAxisCountInGridDownloadPageForGroup
+                                .value!,
                             mainAxisSpacing: 24,
                             crossAxisSpacing: 12,
-                            childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
+                            childAspectRatio:
+                                UIConfig.downloadPageGridViewCardAspectRatio,
                           )
-                    : styleSetting.crossAxisCountInGridDownloadPageForGallery.value == null
+                    : styleSetting.crossAxisCountInGridDownloadPageForGallery
+                                .value ==
+                            null
                         ? const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: UIConfig.downloadPageGridViewCardWidth,
+                            maxCrossAxisExtent:
+                                UIConfig.downloadPageGridViewCardWidth,
                             mainAxisSpacing: 24,
                             crossAxisSpacing: 12,
-                            childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
+                            childAspectRatio:
+                                UIConfig.downloadPageGridViewCardAspectRatio,
                           )
                         : SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: styleSetting.crossAxisCountInGridDownloadPageForGallery.value!,
+                            crossAxisCount: styleSetting
+                                .crossAxisCountInGridDownloadPageForGallery
+                                .value!,
                             mainAxisSpacing: 24,
                             crossAxisSpacing: 12,
-                            childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
+                            childAspectRatio:
+                                UIConfig.downloadPageGridViewCardAspectRatio,
                           ),
               ),
             ),
@@ -176,7 +202,8 @@ mixin GridBasePage on StatelessWidget implements Scroll2TopPageMixin {
               global: false,
               init: logic,
               id: '${logic.galleryId}::${gallery.gid}',
-              builder: (_) => galleryBuilder(context, gallery, state.inEditMode),
+              builder: (_) =>
+                  galleryBuilder(context, gallery, state.inEditMode),
             ),
             isDraggable: state.inEditMode,
           ),
@@ -186,9 +213,11 @@ mixin GridBasePage on StatelessWidget implements Scroll2TopPageMixin {
     return [returnWidget, ...galleryWidgets];
   }
 
-  GridGroup groupBuilder(BuildContext context, String groupName, bool inEditMode);
+  GridGroup groupBuilder(
+      BuildContext context, String groupName, bool inEditMode);
 
-  GridGallery galleryBuilder(BuildContext context, covariant Object gallery, bool inEditMode);
+  GridGallery galleryBuilder(
+      BuildContext context, covariant Object gallery, bool inEditMode);
 
   Widget buildGroupInnerImage(GalleryImage image) {
     return EHImage.autoLayout(
@@ -258,8 +287,12 @@ class GridGallery extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTapWidget,
-      onLongPressStart: onLongPress == null ? null : (details) => onLongPress!(details.globalPosition),
-      onSecondaryTapDown: onSecondTap == null ? null : (details) => onSecondTap!(details.globalPosition),
+      onLongPressStart: onLongPress == null
+          ? null
+          : (details) => onLongPress!(details.globalPosition),
+      onSecondaryTapDown: onSecondTap == null
+          ? null
+          : (details) => onSecondTap!(details.globalPosition),
       onTertiaryTapDown: (_) => onTertiaryTap?.call(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -271,7 +304,9 @@ class GridGallery extends StatelessWidget {
           ),
           GestureDetector(
             onTap: onTapTitle,
-            child: Center(child: Text(title.breakWord, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            child: Center(
+                child: Text(title.breakWord,
+                    maxLines: 1, overflow: TextOverflow.ellipsis)),
           ),
         ],
       ),
@@ -294,13 +329,15 @@ class GridGallery extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: UIConfig.onBackGroundColor(context)),
               ),
-              child: const Icon(Icons.smart_toy_outlined, size: UIConfig.downloadPageBotIconSize),
+              child: const Icon(Icons.smart_toy_outlined,
+                  size: UIConfig.downloadPageBotIconSize),
             ),
           if (gid != null && superResolutionType != null)
             GetBuilder<SuperResolutionService>(
               id: '${SuperResolutionService.superResolutionId}::$gid',
               builder: (_) {
-                SuperResolutionInfo? superResolutionInfo = superResolutionService.get(gid!, superResolutionType!);
+                SuperResolutionInfo? superResolutionInfo =
+                    superResolutionService.get(gid!, superResolutionType!);
                 return superResolutionInfo == null
                     ? const SizedBox()
                     : Container(
@@ -308,20 +345,32 @@ class GridGallery extends StatelessWidget {
                         margin: const EdgeInsets.only(right: 4),
                         decoration: BoxDecoration(
                           color: UIConfig.backGroundColor(context),
-                          borderRadius: superResolutionInfo.status == SuperResolutionStatus.success ? null : BorderRadius.circular(4),
-                          border: Border.all(color: UIConfig.onBackGroundColor(context)),
-                          shape: superResolutionInfo.status == SuperResolutionStatus.success ? BoxShape.circle : BoxShape.rectangle,
+                          borderRadius: superResolutionInfo.status ==
+                                  SuperResolutionStatus.success
+                              ? null
+                              : BorderRadius.circular(4),
+                          border: Border.all(
+                              color: UIConfig.onBackGroundColor(context)),
+                          shape: superResolutionInfo.status ==
+                                  SuperResolutionStatus.success
+                              ? BoxShape.circle
+                              : BoxShape.rectangle,
                         ),
                         child: Text(
-                          superResolutionInfo.status == SuperResolutionStatus.paused
+                          superResolutionInfo.status ==
+                                  SuperResolutionStatus.paused
                               ? 'AI'
-                              : superResolutionInfo.status == SuperResolutionStatus.success
+                              : superResolutionInfo.status ==
+                                      SuperResolutionStatus.success
                                   ? 'AI'
                                   : 'AI(${superResolutionInfo.imageStatuses.fold<int>(0, (previousValue, element) => previousValue + (element == SuperResolutionStatus.success ? 1 : 0))}/${superResolutionInfo.imageStatuses.length})',
                           style: TextStyle(
                             fontSize: 9,
                             color: UIConfig.onBackGroundColor(context),
-                            decoration: superResolutionInfo.status == SuperResolutionStatus.paused ? TextDecoration.lineThrough : null,
+                            decoration: superResolutionInfo.status ==
+                                    SuperResolutionStatus.paused
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
                         ),
                       );
@@ -335,7 +384,9 @@ class GridGallery extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: UIConfig.onBackGroundColor(context)),
               ),
-              child: Text('original'.tr, style: TextStyle(fontSize: 9, color: UIConfig.onBackGroundColor(context))),
+              child: Text('original'.tr,
+                  style: TextStyle(
+                      fontSize: 9, color: UIConfig.onBackGroundColor(context))),
             ),
         ],
       ),
@@ -369,15 +420,23 @@ class GridGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      onSecondaryTapDown: onSecondTap == null ? null : (details) => onSecondTap!(details.globalPosition),
-      onLongPressStart: onLongPress == null ? null : (details) => onLongPress!(details.globalPosition),
+      onSecondaryTapDown: onSecondTap == null
+          ? null
+          : (details) => onSecondTap!(details.globalPosition),
+      onLongPressStart: onLongPress == null
+          ? null
+          : (details) => onLongPress!(details.globalPosition),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Expanded(
             child: Container(
-              decoration: BoxDecoration(color: UIConfig.downloadPageGridViewGroupBackGroundColor(context), borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.all(UIConfig.downloadPageGridViewGroupPadding),
+              decoration: BoxDecoration(
+                  color: UIConfig.downloadPageGridViewGroupBackGroundColor(
+                      context),
+                  borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.all(
+                  UIConfig.downloadPageGridViewGroupPadding),
               child: widgets.isEmpty
                   ? Center(child: Icon(emptyIcon ?? Icons.folder, size: 32))
                   : Column(
@@ -386,16 +445,23 @@ class GridGroup extends StatelessWidget {
                           child: Row(
                             children: [
                               Expanded(child: _buildInnerImage(0)),
-                              Expanded(child: _buildInnerImage(1).marginOnly(left: UIConfig.downloadPageGridViewGroupPadding)),
+                              Expanded(
+                                  child: _buildInnerImage(1).marginOnly(
+                                      left: UIConfig
+                                          .downloadPageGridViewGroupPadding)),
                             ],
                           ),
                         ),
-                        const SizedBox(height: UIConfig.downloadPageGridViewGroupPadding),
+                        const SizedBox(
+                            height: UIConfig.downloadPageGridViewGroupPadding),
                         Expanded(
                           child: Row(
                             children: [
                               Expanded(child: _buildInnerImage(2)),
-                              Expanded(child: _buildInnerImage(3).marginOnly(left: UIConfig.downloadPageGridViewGroupPadding)),
+                              Expanded(
+                                  child: _buildInnerImage(3).marginOnly(
+                                      left: UIConfig
+                                          .downloadPageGridViewGroupPadding)),
                             ],
                           ),
                         ),
@@ -403,7 +469,10 @@ class GridGroup extends StatelessWidget {
                     ),
             ),
           ),
-          Text('$groupName${contentSize == null ? '' : '(' + contentSize.toString() + ')'}', maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(
+              '$groupName${contentSize == null ? '' : '(' + contentSize.toString() + ')'}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
         ],
       ),
     );

@@ -1,7 +1,96 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../config/ui_config.dart';
+
+class DownloadReorderEntry<T> {
+  const DownloadReorderEntry.group(this.groupName) : item = null;
+
+  const DownloadReorderEntry.item(this.groupName, this.item);
+
+  final String groupName;
+  final T? item;
+
+  bool get isGroup => item == null;
+}
+
+List<DownloadReorderEntry<T>> buildDownloadReorderEntries<T>({
+  required Iterable<String> groups,
+  required bool Function(String group) isGroupOpen,
+  required Iterable<T> Function(String group) itemsForGroup,
+}) {
+  return [
+    for (final String group in groups) ...[
+      DownloadReorderEntry<T>.group(group),
+      if (isGroupOpen(group))
+        for (final T item in itemsForGroup(group))
+          DownloadReorderEntry<T>.item(group, item),
+    ],
+  ];
+}
+
+List<DownloadReorderEntry<T>> reorderDownloadEntries<T>(
+  List<DownloadReorderEntry<T>> entries,
+  int oldIndex,
+  int newIndex,
+) {
+  final List<DownloadReorderEntry<T>> reordered = List.of(entries);
+  reordered.insert(newIndex, reordered.removeAt(oldIndex));
+  return reordered;
+}
+
+int compareDownloadManualOrder({
+  required int firstOrder,
+  required int secondOrder,
+  required int fallbackComparison,
+}) {
+  final int orderComparison = firstOrder.compareTo(secondOrder);
+  return orderComparison != 0 ? orderComparison : fallbackComparison;
+}
+
+void restoreDownloadListScrollOffset(
+  ScrollController controller,
+  double? offset,
+) {
+  if (offset == null) {
+    return;
+  }
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!controller.hasClients) {
+      return;
+    }
+    final ScrollPosition position = controller.position;
+    controller.jumpTo(offset.clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    ));
+  });
+}
+
+class _PlatformReorderHandle extends StatelessWidget {
+  const _PlatformReorderHandle({
+    required this.index,
+    required this.child,
+  });
+
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      return _DownloadReorderDragStartListener(
+        index: index,
+        delay: DownloadReorderItem.dragDelay,
+        child: child,
+      );
+    }
+    return ReorderableDragStartListener(index: index, child: child);
+  }
+}
 
 class DownloadReorderHint extends StatelessWidget {
   const DownloadReorderHint({super.key});
@@ -42,19 +131,21 @@ class DownloadReorderGroupTile extends StatelessWidget {
     required this.index,
     required this.groupName,
     required this.itemCount,
+    required this.isOpen,
     required this.onTap,
   });
 
   final int index;
   final String groupName;
   final int itemCount;
+  final bool isOpen;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      padding: const EdgeInsets.all(5),
       child: Material(
         color: UIConfig.groupListColor(context),
         elevation: Get.isDarkMode ? 0 : 1,
@@ -63,52 +154,39 @@ class DownloadReorderGroupTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: SizedBox(
-            height: 68,
+            height: UIConfig.groupListHeight,
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  margin: const EdgeInsets.only(left: 12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                SizedBox(
+                  width: UIConfig.downloadPageGroupHeaderWidth,
+                  child: Center(
+                    child: Icon(
+                      isOpen ? Icons.folder_open : Icons.folder_outlined,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                  child: Icon(Icons.folder_outlined,
-                      color: colorScheme.onPrimaryContainer),
                 ),
-                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        groupName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'downloadItemCount'
-                            .trParams({'count': itemCount.toString()}),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
-                    ],
+                  child: Text(
+                    groupName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
-                Icon(Icons.chevron_right,
-                    size: 20, color: colorScheme.onSurfaceVariant),
-                ReorderableDragStartListener(
+                const SizedBox(width: 8),
+                Text(
+                  'downloadItemCount'.trParams({'count': itemCount.toString()}),
+                  maxLines: 1,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+                _PlatformReorderHandle(
                   index: index,
                   child: MouseRegion(
                     cursor: SystemMouseCursors.grab,
@@ -116,7 +194,7 @@ class DownloadReorderGroupTile extends StatelessWidget {
                       message: 'drag2sort'.tr,
                       child: SizedBox(
                         width: 48,
-                        height: 68,
+                        height: UIConfig.groupListHeight,
                         child: Icon(Icons.drag_indicator,
                             color: colorScheme.onSurfaceVariant),
                       ),
@@ -177,35 +255,45 @@ class DownloadReorderBackTile extends StatelessWidget {
   }
 }
 
-class DownloadReorderItemHandle extends StatelessWidget {
-  const DownloadReorderItemHandle({super.key, required this.index});
+class DownloadReorderItem extends StatelessWidget {
+  const DownloadReorderItem({
+    super.key,
+    required this.index,
+    required this.child,
+  });
 
   final int index;
+  final Widget child;
+
+  static const Duration dragDelay = Duration(milliseconds: 200);
 
   @override
   Widget build(BuildContext context) {
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: ReorderableDragStartListener(
-        index: index,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.grab,
-          child: Tooltip(
-            message: 'drag2sort'.tr,
-            child: Container(
-              width: 36,
-              height: 56,
-              decoration: BoxDecoration(
-                color: colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.drag_indicator,
-                  color: colorScheme.onSecondaryContainer),
-            ),
-          ),
-        ),
+    return _DownloadReorderDragStartListener(
+      index: index,
+      delay: dragDelay,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.grab,
+        child: child,
       ),
+    );
+  }
+}
+
+class _DownloadReorderDragStartListener extends ReorderableDragStartListener {
+  const _DownloadReorderDragStartListener({
+    required super.index,
+    required super.child,
+    required this.delay,
+  });
+
+  final Duration delay;
+
+  @override
+  MultiDragGestureRecognizer createRecognizer() {
+    return DelayedMultiDragGestureRecognizer(
+      delay: delay,
+      debugOwner: this,
     );
   }
 }

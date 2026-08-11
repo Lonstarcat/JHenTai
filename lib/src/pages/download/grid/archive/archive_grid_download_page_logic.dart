@@ -15,6 +15,7 @@ import '../../../../routes/routes.dart';
 import '../../../../utils/route_util.dart';
 import '../../../../utils/toast_util.dart';
 import '../../mixin/archive/archive_download_page_logic_mixin.dart';
+import '../../download_reorder_mode.dart';
 import '../../mixin/basic/multi_select/multi_select_download_page_logic_mixin.dart';
 import '../mixin/grid_download_page_logic_mixin.dart';
 import '../mixin/grid_download_page_service_mixin.dart';
@@ -56,42 +57,55 @@ class ArchiveGridDownloadPageLogic extends GetxController
     if (!confirmed) {
       return;
     }
-    await archiveDownloadService.deleteArchive(archive.gid).then((_) => super.handleRemoveItem(archive));
+    await archiveDownloadService
+        .deleteArchive(archive.gid)
+        .then((_) => super.handleRemoveItem(archive));
     updateGlobalGalleryStatus();
   }
 
   void goToDetailPage(ArchiveDownloadedData archive) {
     toRoute(
       Routes.details,
-      arguments: DetailsPageArgument(galleryUrl: GalleryUrl.parse(archive.galleryUrl)),
+      arguments:
+          DetailsPageArgument(galleryUrl: GalleryUrl.parse(archive.galleryUrl)),
     );
   }
 
   @override
   void toggleEditMode() {
+    if (gridBasePageState.inEditMode) {
+      exitEditMode();
+      return;
+    }
     if (!gridBasePageState.inEditMode) {
       exitSelectMode();
       toast('drag2sort'.tr);
     }
-    gridBasePageState.inEditMode = !gridBasePageState.inEditMode;
+    gridBasePageState.inEditMode = true;
+    registerDownloadReorderMode(this);
     update([bodyId, editButtonId]);
   }
 
   @override
   void selectAllItem() {
     multiSelectDownloadPageState.selectedGids.clear();
-    multiSelectDownloadPageState.selectedGids.addAll(state.currentGalleryObjects.map((archive) => archive.gid));
-    updateSafely(multiSelectDownloadPageState.selectedGids.map((gid) => '$itemCardId::$gid').toList());
+    multiSelectDownloadPageState.selectedGids
+        .addAll(state.currentGalleryObjects.map((archive) => archive.gid));
+    updateSafely(multiSelectDownloadPageState.selectedGids
+        .map((gid) => '$itemCardId::$gid')
+        .toList());
   }
 
   @override
-  Future<void> saveGalleryOrderAfterDrag(int beforeIndex, int afterIndex) async {
+  Future<void> saveGalleryOrderAfterDrag(
+      int beforeIndex, int afterIndex) async {
     List<ArchiveDownloadedData> archives = state.currentGalleryObjects.cast();
 
     /// default order is 0, we must assign current order to the archive first
     for (int i = 0; i < archives.length; i++) {
       ArchiveDownloadedData archive = archives[i];
-      ArchiveDownloadInfo archiveDownloadInfo = archiveDownloadService.archiveDownloadInfos[archive.gid]!;
+      ArchiveDownloadInfo archiveDownloadInfo =
+          archiveDownloadService.archiveDownloadInfos[archive.gid]!;
       archiveDownloadInfo.sortOrder = i;
     }
 
@@ -99,7 +113,8 @@ class ArchiveGridDownloadPageLogic extends GetxController
     int tail = max(beforeIndex, afterIndex);
 
     for (int index = head; index <= tail; index++) {
-      ArchiveDownloadInfo archiveDownloadInfo = archiveDownloadService.archiveDownloadInfos[archives[index].gid]!;
+      ArchiveDownloadInfo archiveDownloadInfo =
+          archiveDownloadService.archiveDownloadInfos[archives[index].gid]!;
 
       if (index == beforeIndex) {
         archiveDownloadInfo.sortOrder = afterIndex;
@@ -119,7 +134,8 @@ class ArchiveGridDownloadPageLogic extends GetxController
   }
 
   @override
-  Future<void> changeParseSource(int gid, ArchiveParseSource parseSource) async {
+  Future<void> changeParseSource(
+      int gid, ArchiveParseSource parseSource) async {
     await super.changeParseSource(gid, parseSource);
     updateSafely(['${super.galleryId}::$gid']);
   }

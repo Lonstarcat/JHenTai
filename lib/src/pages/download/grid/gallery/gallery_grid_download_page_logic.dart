@@ -17,6 +17,7 @@ import '../../../../utils/route_util.dart';
 import '../../../../utils/toast_util.dart';
 import '../../../../widget/eh_alert_dialog.dart';
 import '../../mixin/basic/multi_select/multi_select_download_page_state_mixin.dart';
+import '../../download_reorder_mode.dart';
 import '../../mixin/gallery/gallery_download_page_logic_mixin.dart';
 import '../mixin/grid_download_page_logic_mixin.dart';
 import '../mixin/grid_download_page_service_mixin.dart';
@@ -53,8 +54,12 @@ class GalleryGridDownloadPageLogic extends GetxController
   }
 
   @override
-  void handleRemoveItem(GalleryDownloadedData gallery, bool deleteImages, BuildContext context) async {
-    bool confirmed = await confirmDestructiveAction(title: deleteImages ? 'deleteTaskAndImages'.tr + '?' : 'deleteTask'.tr + '?');
+  void handleRemoveItem(GalleryDownloadedData gallery, bool deleteImages,
+      BuildContext context) async {
+    bool confirmed = await confirmDestructiveAction(
+        title: deleteImages
+            ? 'deleteTaskAndImages'.tr + '?'
+            : 'deleteTask'.tr + '?');
     if (!confirmed) {
       return;
     }
@@ -74,41 +79,54 @@ class GalleryGridDownloadPageLogic extends GetxController
       }
     }
 
-    downloadService.deleteGallery(gallery, deleteImages: deleteImages).then((_) => super.handleRemoveItem(gallery, deleteImages, context));
+    downloadService
+        .deleteGallery(gallery, deleteImages: deleteImages)
+        .then((_) => super.handleRemoveItem(gallery, deleteImages, context));
   }
 
   void goToDetailPage(GalleryDownloadedData gallery) {
     toRoute(
       Routes.details,
-      arguments: DetailsPageArgument(galleryUrl: GalleryUrl.parse(gallery.galleryUrl)),
+      arguments:
+          DetailsPageArgument(galleryUrl: GalleryUrl.parse(gallery.galleryUrl)),
     );
   }
 
   @override
   void toggleEditMode() {
+    if (gridBasePageState.inEditMode) {
+      exitEditMode();
+      return;
+    }
     if (!gridBasePageState.inEditMode) {
       exitSelectMode();
       toast('drag2sort'.tr);
     }
-    gridBasePageState.inEditMode = !gridBasePageState.inEditMode;
+    gridBasePageState.inEditMode = true;
+    registerDownloadReorderMode(this);
     update([bodyId, editButtonId]);
   }
 
   @override
   void selectAllItem() {
     multiSelectDownloadPageState.selectedGids.clear();
-    multiSelectDownloadPageState.selectedGids.addAll(state.currentGalleryObjects.map((archive) => archive.gid));
-    updateSafely(multiSelectDownloadPageState.selectedGids.map((gid) => '$itemCardId::$gid').toList());
+    multiSelectDownloadPageState.selectedGids
+        .addAll(state.currentGalleryObjects.map((archive) => archive.gid));
+    updateSafely(multiSelectDownloadPageState.selectedGids
+        .map((gid) => '$itemCardId::$gid')
+        .toList());
   }
 
   @override
-  Future<void> saveGalleryOrderAfterDrag(int beforeIndex, int afterIndex) async {
+  Future<void> saveGalleryOrderAfterDrag(
+      int beforeIndex, int afterIndex) async {
     List<GalleryDownloadedData> gallerys = state.currentGalleryObjects.cast();
 
     /// default order is 0, we must assign current order to the archive first
     for (int i = 0; i < gallerys.length; i++) {
       GalleryDownloadedData gallery = gallerys[i];
-      GalleryDownloadInfo galleryDownloadInfo = downloadService.galleryDownloadInfos[gallery.gid]!;
+      GalleryDownloadInfo galleryDownloadInfo =
+          downloadService.galleryDownloadInfos[gallery.gid]!;
       galleryDownloadInfo.sortOrder = i;
     }
 
@@ -116,7 +134,8 @@ class GalleryGridDownloadPageLogic extends GetxController
     int tail = max(beforeIndex, afterIndex);
 
     for (int index = head; index <= tail; index++) {
-      GalleryDownloadInfo galleryDownloadInfo = downloadService.galleryDownloadInfos[gallerys[index].gid]!;
+      GalleryDownloadInfo galleryDownloadInfo =
+          downloadService.galleryDownloadInfos[gallerys[index].gid]!;
 
       if (index == beforeIndex) {
         galleryDownloadInfo.sortOrder = afterIndex;

@@ -3,12 +3,14 @@ import 'package:get/get.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/extension/list_extension.dart';
 import 'package:jhentai/src/pages/layout/mobile_v2/mobile_layout_page_v2_state.dart';
+import 'package:jhentai/src/pages/download/download_reorder_mode.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 
 import '../../../mixin/double_tap_to_refresh_logic_mixin.dart';
 import '../../../setting/preference_setting.dart';
 
-class MobileLayoutPageV2Logic extends GetxController with DoubleTapToRefreshLogicMixin {
+class MobileLayoutPageV2Logic extends GetxController
+    with DoubleTapToRefreshLogicMixin {
   final String bodyId = 'bodyId';
   final String tabBarId = 'tabBarId';
   final String bottomNavigationBarId = 'bottomNavigationBarId';
@@ -43,6 +45,7 @@ class MobileLayoutPageV2Logic extends GetxController with DoubleTapToRefreshLogi
   }
 
   void handleTapTabBarButton(int index) {
+    exitAllDownloadReorderModes();
     if (state.icons[index].enterNewRoute) {
       MobileLayoutPageV2State.scaffoldKey.currentState?.closeDrawer();
       toRoute(state.icons[index].routeName);
@@ -67,7 +70,8 @@ class MobileLayoutPageV2Logic extends GetxController with DoubleTapToRefreshLogi
   }
 
   void handleTapTabBarButtonByRouteName(String routeName) {
-    int? index = state.icons.firstIndexWhereOrNull((icon) => icon.routeName == routeName);
+    int? index = state.icons
+        .firstIndexWhereOrNull((icon) => icon.routeName == routeName);
     if (index == null) {
       return;
     }
@@ -77,13 +81,17 @@ class MobileLayoutPageV2Logic extends GetxController with DoubleTapToRefreshLogi
 
   void handleTapNavigationBarButton(int index) {
     if (index != state.selectedNavigationIndex) {
+      exitAllDownloadReorderModes();
+    }
+    if (index != state.selectedNavigationIndex) {
       state.selectedNavigationIndex = index;
       updateSafely([bodyId, bottomNavigationBarId]);
       return;
     }
 
     if (index == 0) {
-      ScrollController? scrollController = state.icons[state.selectedDrawerTabIndex].scrollController?.call();
+      ScrollController? scrollController =
+          state.icons[state.selectedDrawerTabIndex].scrollController?.call();
       handleTap2Scroll2Top(scrollController);
     }
   }

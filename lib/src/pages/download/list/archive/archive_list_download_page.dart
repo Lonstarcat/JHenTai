@@ -64,49 +64,48 @@ class ArchiveListDownloadPage extends StatelessWidget
   AppBar buildAppBar(BuildContext context) {
     return AppBar(
       centerTitle: true,
-      leading: state.inEditMode && !state.isAtRoot
+      leading: styleSetting.isInV2Layout
           ? IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: logic.backGroup,
+              icon: isRouteAtTop(Routes.download)
+                  ? const Icon(Icons.arrow_back)
+                  : const Icon(Icons.menu, size: 20),
+              onPressed: () {
+                logic.exitEditMode();
+                if (isRouteAtTop(Routes.download)) {
+                  backRoute(currentRoute: Routes.download);
+                } else {
+                  TapMenuButtonNotification().dispatch(context);
+                }
+              },
             )
-          : styleSetting.isInV2Layout
-              ? IconButton(
-                  icon: isRouteAtTop(Routes.download)
-                      ? const Icon(Icons.arrow_back)
-                      : const Icon(Icons.menu, size: 20),
-                  onPressed: () {
-                    if (isRouteAtTop(Routes.download)) {
-                      backRoute(currentRoute: Routes.download);
-                    } else {
-                      TapMenuButtonNotification().dispatch(context);
-                    }
-                  },
-                )
-              : null,
+          : null,
       titleSpacing: 0,
-      title: state.inEditMode
-          ? Text(
-              state.isAtRoot ? 'sortGroups'.tr : 'sortGroupItems'.trParams({'group': state.currentGroup!}),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            )
-          : const DownloadPageSegmentControl(galleryType: DownloadPageGalleryType.archive),
+      title: const DownloadPageSegmentControl(
+          galleryType: DownloadPageGalleryType.archive),
       actions: [
         GetBuilder<ArchiveListDownloadPageLogic>(
           id: logic.bodyId,
-          builder: (_) => DownloadPageMoreMenu(
-            inEditMode: state.inEditMode,
-            switchViewIcon: Icons.grid_view,
-            switchViewLabel: 'switch2GridMode'.tr,
-            onSwitchView: () => DownloadPageBodyTypeChangeNotification(
-              bodyType: DownloadPageBodyType.grid,
-            ).dispatch(context),
-            onToggleSorting: logic.toggleEditMode,
-            onMultiSelect: logic.enterSelectMode,
-            onResumeAll: archiveDownloadService.resumeAllDownloadArchive,
-            onPauseAll: archiveDownloadService.pauseAllDownloadArchive,
-            onSearch: () => toRoute(Routes.downloadSearch),
+          builder: (_) => DownloadReorderModeButton(
+            inReorderMode: state.inEditMode,
+            onPressed: logic.toggleEditMode,
           ),
+        ),
+        DownloadPageMoreMenu(
+          switchViewIcon: Icons.grid_view,
+          switchViewLabel: 'switch2GridMode'.tr,
+          onSwitchView: () => DownloadPageBodyTypeChangeNotification(
+            bodyType: DownloadPageBodyType.grid,
+          ).dispatch(context),
+          onMultiSelect: () {
+            logic.exitEditMode();
+            logic.enterSelectMode();
+          },
+          onResumeAll: archiveDownloadService.resumeAllDownloadArchive,
+          onPauseAll: archiveDownloadService.pauseAllDownloadArchive,
+          onSearch: () {
+            logic.exitEditMode();
+            toRoute(Routes.downloadSearch);
+          },
         ),
       ],
     );
@@ -157,55 +156,39 @@ class ArchiveListDownloadPage extends StatelessWidget
   }
 
   Widget _buildReorderableList(BuildContext context) {
-    if (state.isAtRoot) {
-      List<String> groups = archiveDownloadService.allGroups;
-      return Column(
-        children: [
-          const DownloadReorderHint(),
-          Expanded(
-            child: ReorderableListView.builder(
-              padding: const EdgeInsets.only(bottom: 12),
-              itemCount: groups.length,
-              onReorder: logic.saveGroupOrderAfterReordered,
-              itemBuilder: (context, index) {
-                String group = groups[index];
-                return DownloadReorderGroupTile(
-                  key: ValueKey('group_$group'),
-                  index: index,
-                  groupName: group,
-                  itemCount: archiveDownloadService.archivesWithGroup(group).length,
-                  onTap: () => logic.enterGroup(group),
-                );
-              },
-            ),
-          ),
-        ],
-      );
-    }
+    final List<DownloadReorderEntry<ArchiveDownloadedData>> entries =
+        logic.reorderEntries;
+    return ReorderableListView.builder(
+      scrollController: state.scrollController,
+      buildDefaultDragHandles: false,
+      itemCount: entries.length,
+      onReorderItem: (oldIndex, newIndex) =>
+          logic.saveOrderAfterReordered(entries, oldIndex, newIndex),
+      itemBuilder: (context, index) {
+        final DownloadReorderEntry<ArchiveDownloadedData> entry =
+            entries[index];
+        if (entry.isGroup) {
+          return DownloadReorderGroupTile(
+            key: ValueKey('group_${entry.groupName}'),
+            index: index,
+            groupName: entry.groupName,
+            itemCount: archiveDownloadService
+                .archivesWithGroup(entry.groupName)
+                .length,
+            isOpen: state.displayGroups.contains(entry.groupName),
+            onTap: () => logic.toggleDisplayGroups(entry.groupName),
+          );
+        }
 
-    List<ArchiveDownloadedData> archives =
-        archiveDownloadService.archivesWithGroup(state.currentGroup!);
-    return Column(
-      children: [
-        DownloadReorderBackTile(onTap: logic.backGroup),
-        Expanded(
-          child: ReorderableListView.builder(
-            padding: const EdgeInsets.only(top: 4, bottom: 12),
-            itemCount: archives.length,
-            onReorder: logic.saveArchiveOrderAfterReordered,
-            itemBuilder: (context, index) {
-              ArchiveDownloadedData archive = archives[index];
-              return Row(
-                key: ValueKey('drag_${archive.gid}'),
-                children: [
-                  DownloadReorderItemHandle(index: index),
-                  Expanded(child: _buildCard(context, archive).marginAll(5)),
-                ],
-              );
-            },
+        final ArchiveDownloadedData archive = entry.item!;
+        return DownloadReorderItem(
+          key: ValueKey('drag_${archive.gid}'),
+          index: index,
+          child: AbsorbPointer(
+            child: _buildCard(context, archive).marginAll(5),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 

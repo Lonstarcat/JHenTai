@@ -25,15 +25,23 @@ import '../../widget/download_page_more_menu.dart';
 import '../mixin/grid_download_page_mixin.dart';
 import 'gallery_grid_download_page_logic.dart';
 
-class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, MultiSelectDownloadPageMixin, GalleryDownloadPageMixin, GridBasePage {
+class GalleryGridDownloadPage extends StatelessWidget
+    with
+        Scroll2TopPageMixin,
+        MultiSelectDownloadPageMixin,
+        GalleryDownloadPageMixin,
+        GridBasePage {
   GalleryGridDownloadPage({Key? key}) : super(key: key);
 
   @override
   final DownloadPageGalleryType galleryType = DownloadPageGalleryType.download;
   @override
-  final GalleryGridDownloadPageLogic logic = Get.put<GalleryGridDownloadPageLogic>(GalleryGridDownloadPageLogic(), permanent: true);
+  final GalleryGridDownloadPageLogic logic =
+      Get.put<GalleryGridDownloadPageLogic>(GalleryGridDownloadPageLogic(),
+          permanent: true);
   @override
-  final GalleryGridDownloadPageState state = Get.find<GalleryGridDownloadPageLogic>().state;
+  final GalleryGridDownloadPageState state =
+      Get.find<GalleryGridDownloadPageLogic>().state;
 
   @override
   GalleryDownloadPageLogicMixin get galleryDownloadPageLogic => logic;
@@ -54,19 +62,27 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
         global: false,
         init: logic,
         id: logic.editButtonId,
-        builder: (_) => DownloadPageMoreMenu(
-          inEditMode: state.inEditMode,
-          switchViewIcon: Icons.view_list,
-          switchViewLabel: 'switch2ListMode'.tr,
-          onSwitchView: () => DownloadPageBodyTypeChangeNotification(
-            bodyType: DownloadPageBodyType.list,
-          ).dispatch(context),
-          onToggleSorting: logic.toggleEditMode,
-          onMultiSelect: logic.enterSelectMode,
-          onResumeAll: logic.handleResumeAllTasks,
-          onPauseAll: logic.handlePauseAllTasks,
-          onSearch: () => toRoute(Routes.downloadSearch),
+        builder: (_) => DownloadReorderModeButton(
+          inReorderMode: state.inEditMode,
+          onPressed: logic.toggleEditMode,
         ),
+      ),
+      DownloadPageMoreMenu(
+        switchViewIcon: Icons.view_list,
+        switchViewLabel: 'switch2ListMode'.tr,
+        onSwitchView: () => DownloadPageBodyTypeChangeNotification(
+          bodyType: DownloadPageBodyType.list,
+        ).dispatch(context),
+        onMultiSelect: () {
+          logic.exitEditMode();
+          logic.enterSelectMode();
+        },
+        onResumeAll: logic.handleResumeAllTasks,
+        onPauseAll: logic.handlePauseAllTasks,
+        onSearch: () {
+          logic.exitEditMode();
+          toRoute(Routes.downloadSearch);
+        },
       ),
     ];
   }
@@ -77,8 +93,10 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
   }
 
   @override
-  GridGroup groupBuilder(BuildContext context, String groupName, bool inEditMode) {
-    List<GalleryDownloadedData> gallerys = state.galleryObjectsWithGroup(groupName);
+  GridGroup groupBuilder(
+      BuildContext context, String groupName, bool inEditMode) {
+    List<GalleryDownloadedData> gallerys =
+        state.galleryObjectsWithGroup(groupName);
     return GridGroup(
       groupName: groupName,
       contentSize: gallerys.length,
@@ -90,17 +108,23 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
               builder: (_) => GetBuilder<GalleryDownloadService>(
                 id: '${logic.downloadService.downloadImageUrlId}::${gallery.gid}::0',
                 builder: (_) {
-                  GalleryImage? image = logic.downloadService.galleryDownloadInfos[gallery.gid]?.images[0];
+                  GalleryImage? image = logic.downloadService
+                      .galleryDownloadInfos[gallery.gid]?.images[0];
 
                   if (image == null) {
                     return Center(
-                      child: LoadingAnimationWidget.horizontalRotatingDots(color: UIConfig.downloadPageLoadingIndicatorColor(context), size: 16),
+                      child: LoadingAnimationWidget.horizontalRotatingDots(
+                          color: UIConfig.downloadPageLoadingIndicatorColor(
+                              context),
+                          size: 16),
                     );
                   }
 
                   Widget cover = buildGroupInnerImage(image);
 
-                  if (logic.downloadService.galleryDownloadInfos[gallery.gid]?.downloadProgress.downloadStatus == DownloadStatus.downloaded) {
+                  if (logic.downloadService.galleryDownloadInfos[gallery.gid]
+                          ?.downloadProgress.downloadStatus ==
+                      DownloadStatus.downloaded) {
                     return cover;
                   }
 
@@ -111,7 +135,8 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
                       blurColor: UIConfig.downloadPageGridCoverBlurColor,
                       colorOpacity: 0.6,
                       child: cover,
-                      overlay: const Icon(Icons.download, color: UIConfig.downloadPageGridCoverOverlayColor),
+                      overlay: const Icon(Icons.download,
+                          color: UIConfig.downloadPageGridCoverOverlayColor),
                     ),
                   );
                 },
@@ -120,13 +145,16 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
           )
           .toList(),
       onTap: inEditMode ? null : () => logic.enterGroup(groupName),
-      onLongPress: inEditMode ? null : (_) => logic.handleLongPressGroup(groupName),
-      onSecondTap: inEditMode ? null : (_) => logic.handleLongPressGroup(groupName),
+      onLongPress:
+          inEditMode ? null : (_) => logic.handleLongPressGroup(groupName),
+      onSecondTap:
+          inEditMode ? null : (_) => logic.handleLongPressGroup(groupName),
     );
   }
 
   @override
-  GridGallery galleryBuilder(BuildContext context, GalleryDownloadedData gallery, bool inEditMode) {
+  GridGallery galleryBuilder(
+      BuildContext context, GalleryDownloadedData gallery, bool inEditMode) {
     return GridGallery(
       title: gallery.title,
       widget: GetBuilder<GalleryGridDownloadPageLogic>(
@@ -134,7 +162,9 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
         builder: (_) => GetBuilder<GalleryDownloadService>(
           id: '${logic.downloadService.galleryDownloadSuccessId}::${gallery.gid}',
           builder: (_) {
-            if (logic.downloadService.galleryDownloadInfos[gallery.gid]?.downloadProgress.downloadStatus == DownloadStatus.downloaded) {
+            if (logic.downloadService.galleryDownloadInfos[gallery.gid]
+                    ?.downloadProgress.downloadStatus ==
+                DownloadStatus.downloaded) {
               if (state.selectedGids.contains(gallery.gid)) {
                 return Stack(
                   children: [_buildCover(gallery), _buildSelectedIcon()],
@@ -144,8 +174,10 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
               }
             }
 
-            GalleryDownloadProgress downloadProgress = logic.downloadService.galleryDownloadInfos[gallery.gid]!.downloadProgress;
-            GalleryDownloadSpeedComputer speedComputer = logic.downloadService.galleryDownloadInfos[gallery.gid]!.speedComputer;
+            GalleryDownloadProgress downloadProgress = logic.downloadService
+                .galleryDownloadInfos[gallery.gid]!.downloadProgress;
+            GalleryDownloadSpeedComputer speedComputer = logic.downloadService
+                .galleryDownloadInfos[gallery.gid]!.speedComputer;
 
             return Stack(
               children: [
@@ -161,7 +193,8 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
                 _buildCircularProgressIndicator(gallery, downloadProgress),
                 _buildDownloadProgress(gallery, downloadProgress),
                 _buildActionButton(gallery, downloadProgress, speedComputer),
-                if (state.selectedGids.contains(gallery.gid)) _buildSelectedIcon(),
+                if (state.selectedGids.contains(gallery.gid))
+                  _buildSelectedIcon(),
               ],
             );
           },
@@ -173,17 +206,27 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
       superResolutionType: SuperResolutionType.gallery,
       onTapWidget: inEditMode ? null : () => logic.handleTapItem(gallery),
       onTapTitle: inEditMode ? null : () => logic.handleTapTitle(gallery),
-      onLongPress: inEditMode ? null : (position) => logic.handleLongPressOrSecondaryTapItem(gallery, context, position: position),
-      onSecondTap: inEditMode ? null : (position) => logic.handleLongPressOrSecondaryTapItem(gallery, context, position: position),
+      onLongPress: inEditMode
+          ? null
+          : (position) => logic.handleLongPressOrSecondaryTapItem(
+              gallery, context,
+              position: position),
+      onSecondTap: inEditMode
+          ? null
+          : (position) => logic.handleLongPressOrSecondaryTapItem(
+              gallery, context,
+              position: position),
       onTertiaryTap: inEditMode ? null : () => logic.handleTapTitle(gallery),
     );
   }
 
-  GetBuilder<GalleryDownloadService> _buildCover(GalleryDownloadedData gallery) {
+  GetBuilder<GalleryDownloadService> _buildCover(
+      GalleryDownloadedData gallery) {
     return GetBuilder<GalleryDownloadService>(
       id: '${logic.downloadService.downloadImageUrlId}::${gallery.gid}::0',
       builder: (_) {
-        GalleryImage? image = logic.downloadService.galleryDownloadInfos[gallery.gid]?.images[0];
+        GalleryImage? image =
+            logic.downloadService.galleryDownloadInfos[gallery.gid]?.images[0];
 
         if (image?.downloadStatus == DownloadStatus.downloaded) {
           return buildGalleryImage(image!);
@@ -199,15 +242,18 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: UIConfig.downloadPageGridViewSelectIconColor),
+          border:
+              Border.all(color: UIConfig.downloadPageGridViewSelectIconColor),
           color: UIConfig.downloadPageGridViewSelectIconBackGroundColor,
         ),
-        child: const Icon(Icons.check, color: UIConfig.downloadPageGridViewSelectIconColor),
+        child: const Icon(Icons.check,
+            color: UIConfig.downloadPageGridViewSelectIconColor),
       ),
     );
   }
 
-  Center _buildCircularProgressIndicator(GalleryDownloadedData gallery, GalleryDownloadProgress downloadProgress) {
+  Center _buildCircularProgressIndicator(
+      GalleryDownloadedData gallery, GalleryDownloadProgress downloadProgress) {
     return Center(
       child: GetBuilder<GalleryDownloadService>(
         id: '${logic.downloadService.galleryDownloadProgressId}::${gallery.gid}',
@@ -226,19 +272,25 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
     );
   }
 
-  Center _buildDownloadProgress(GalleryDownloadedData gallery, GalleryDownloadProgress downloadProgress) {
+  Center _buildDownloadProgress(
+      GalleryDownloadedData gallery, GalleryDownloadProgress downloadProgress) {
     return Center(
       child: GetBuilder<GalleryDownloadService>(
         id: '${logic.downloadService.galleryDownloadProgressId}::${gallery.gid}',
         builder: (_) => Text(
           '${downloadProgress.curCount} / ${downloadProgress.totalCount}',
-          style: const TextStyle(fontSize: UIConfig.downloadPageGridViewInfoTextSize, color: UIConfig.downloadPageGridTextColor),
+          style: const TextStyle(
+              fontSize: UIConfig.downloadPageGridViewInfoTextSize,
+              color: UIConfig.downloadPageGridTextColor),
         ),
       ).marginOnly(top: 60),
     );
   }
 
-  GestureDetector _buildActionButton(GalleryDownloadedData gallery, GalleryDownloadProgress downloadProgress, GalleryDownloadSpeedComputer speedComputer) {
+  GestureDetector _buildActionButton(
+      GalleryDownloadedData gallery,
+      GalleryDownloadProgress downloadProgress,
+      GalleryDownloadSpeedComputer speedComputer) {
     return GestureDetector(
       onTap: () {
         downloadProgress.downloadStatus == DownloadStatus.paused
@@ -248,21 +300,24 @@ class GalleryGridDownloadPage extends StatelessWidget with Scroll2TopPageMixin, 
       child: Center(
         child: GetBuilder<GalleryDownloadService>(
           id: '${logic.downloadService.galleryDownloadProgressId}::${gallery.gid}',
-          builder: (_) => downloadProgress.downloadStatus == DownloadStatus.downloading
-              ? GetBuilder<GalleryDownloadService>(
-                  id: '${logic.downloadService.galleryDownloadSpeedComputerId}::${gallery.gid}',
-                  builder: (_) => Text(
-                    speedComputer.speed,
-                    style: const TextStyle(
-                      fontSize: UIConfig.downloadPageGridViewSpeedTextSize,
+          builder: (_) =>
+              downloadProgress.downloadStatus == DownloadStatus.downloading
+                  ? GetBuilder<GalleryDownloadService>(
+                      id: '${logic.downloadService.galleryDownloadSpeedComputerId}::${gallery.gid}',
+                      builder: (_) => Text(
+                        speedComputer.speed,
+                        style: const TextStyle(
+                          fontSize: UIConfig.downloadPageGridViewSpeedTextSize,
+                          color: UIConfig.downloadPageGridTextColor,
+                        ),
+                      ),
+                    )
+                  : Icon(
+                      downloadProgress.downloadStatus == DownloadStatus.paused
+                          ? Icons.play_arrow
+                          : Icons.done,
                       color: UIConfig.downloadPageGridTextColor,
                     ),
-                  ),
-                )
-              : Icon(
-                  downloadProgress.downloadStatus == DownloadStatus.paused ? Icons.play_arrow : Icons.done,
-                  color: UIConfig.downloadPageGridTextColor,
-                ),
         ),
       ),
     );

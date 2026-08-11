@@ -7,19 +7,23 @@ import '../../../../mixin/scroll_to_top_state_mixin.dart';
 import '../../../../widget/grouped_list.dart';
 import '../../mixin/archive/archive_download_page_state_mixin.dart';
 
-class ArchiveListDownloadPageState with Scroll2TopStateMixin, MultiSelectDownloadPageStateMixin, ArchiveDownloadPageStateMixin {
+class ArchiveListDownloadPageState
+    with
+        Scroll2TopStateMixin,
+        MultiSelectDownloadPageStateMixin,
+        ArchiveDownloadPageStateMixin {
   Set<String> displayGroups = {};
   Completer<void> displayGroupsCompleter = Completer<void>();
-  SortBy sortBy = SortBy.insertTime;
+  SortBy sortBy = SortBy.manual;
   bool inEditMode = false;
-  String? currentGroup;
 
-  bool get isAtRoot => currentGroup == null;
-
-  final GroupedListController<String, ArchiveDownloadedData> groupedListController = GroupedListController<String, ArchiveDownloadedData>();
+  final GroupedListController<String, ArchiveDownloadedData>
+      groupedListController =
+      GroupedListController<String, ArchiveDownloadedData>();
 }
 
 enum SortBy {
+  manual('Manual'),
   insertTime('Insert Time'),
   title('Title'),
   publishTime('Publish Time');

@@ -70,49 +70,48 @@ class GalleryListDownloadPage extends StatelessWidget
   AppBar buildAppBar(BuildContext context) {
     return AppBar(
       centerTitle: true,
-      leading: state.inEditMode && !state.isAtRoot
+      leading: styleSetting.isInV2Layout
           ? IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: logic.backGroup,
+              icon: isRouteAtTop(Routes.download)
+                  ? const Icon(Icons.arrow_back)
+                  : const Icon(Icons.menu, size: 20),
+              onPressed: () {
+                logic.exitEditMode();
+                if (isRouteAtTop(Routes.download)) {
+                  backRoute(currentRoute: Routes.download);
+                } else {
+                  TapMenuButtonNotification().dispatch(context);
+                }
+              },
             )
-          : styleSetting.isInV2Layout
-              ? IconButton(
-                  icon: isRouteAtTop(Routes.download)
-                      ? const Icon(Icons.arrow_back)
-                      : const Icon(Icons.menu, size: 20),
-                  onPressed: () {
-                    if (isRouteAtTop(Routes.download)) {
-                      backRoute(currentRoute: Routes.download);
-                    } else {
-                      TapMenuButtonNotification().dispatch(context);
-                    }
-                  },
-                )
-              : null,
+          : null,
       titleSpacing: 0,
-      title: state.inEditMode
-          ? Text(
-              state.isAtRoot ? 'sortGroups'.tr : 'sortGroupItems'.trParams({'group': state.currentGroup!}),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            )
-          : const DownloadPageSegmentControl(galleryType: DownloadPageGalleryType.download),
+      title: const DownloadPageSegmentControl(
+          galleryType: DownloadPageGalleryType.download),
       actions: [
         GetBuilder<GalleryListDownloadPageLogic>(
           id: logic.bodyId,
-          builder: (_) => DownloadPageMoreMenu(
-            inEditMode: state.inEditMode,
-            switchViewIcon: Icons.grid_view,
-            switchViewLabel: 'switch2GridMode'.tr,
-            onSwitchView: () => DownloadPageBodyTypeChangeNotification(
-              bodyType: DownloadPageBodyType.grid,
-            ).dispatch(context),
-            onToggleSorting: logic.toggleEditMode,
-            onMultiSelect: logic.enterSelectMode,
-            onResumeAll: logic.downloadService.resumeAllDownloadGallery,
-            onPauseAll: logic.downloadService.pauseAllDownloadGallery,
-            onSearch: () => toRoute(Routes.downloadSearch),
+          builder: (_) => DownloadReorderModeButton(
+            inReorderMode: state.inEditMode,
+            onPressed: logic.toggleEditMode,
           ),
+        ),
+        DownloadPageMoreMenu(
+          switchViewIcon: Icons.grid_view,
+          switchViewLabel: 'switch2GridMode'.tr,
+          onSwitchView: () => DownloadPageBodyTypeChangeNotification(
+            bodyType: DownloadPageBodyType.grid,
+          ).dispatch(context),
+          onMultiSelect: () {
+            logic.exitEditMode();
+            logic.enterSelectMode();
+          },
+          onResumeAll: logic.downloadService.resumeAllDownloadGallery,
+          onPauseAll: logic.downloadService.pauseAllDownloadGallery,
+          onSearch: () {
+            logic.exitEditMode();
+            toRoute(Routes.downloadSearch);
+          },
         ),
       ],
     );
@@ -164,55 +163,38 @@ class GalleryListDownloadPage extends StatelessWidget
   }
 
   Widget _buildReorderableList(BuildContext context) {
-    if (state.isAtRoot) {
-      List<String> groups = logic.downloadService.allGroups;
-      return Column(
-        children: [
-          const DownloadReorderHint(),
-          Expanded(
-            child: ReorderableListView.builder(
-              padding: const EdgeInsets.only(bottom: 12),
-              itemCount: groups.length,
-              onReorder: logic.saveGroupOrderAfterReordered,
-              itemBuilder: (context, index) {
-                String group = groups[index];
-                return DownloadReorderGroupTile(
-                  key: ValueKey('group_$group'),
-                  index: index,
-                  groupName: group,
-                  itemCount: logic.downloadService.gallerysWithGroup(group).length,
-                  onTap: () => logic.enterGroup(group),
-                );
-              },
-            ),
-          ),
-        ],
-      );
-    }
+    final List<DownloadReorderEntry<GalleryDownloadedData>> entries =
+        logic.reorderEntries;
+    return ReorderableListView.builder(
+      scrollController: state.scrollController,
+      buildDefaultDragHandles: false,
+      itemCount: entries.length,
+      onReorderItem: (oldIndex, newIndex) =>
+          logic.saveOrderAfterReordered(entries, oldIndex, newIndex),
+      itemBuilder: (context, index) {
+        final DownloadReorderEntry<GalleryDownloadedData> entry =
+            entries[index];
+        if (entry.isGroup) {
+          return DownloadReorderGroupTile(
+            key: ValueKey('group_${entry.groupName}'),
+            index: index,
+            groupName: entry.groupName,
+            itemCount:
+                logic.downloadService.gallerysWithGroup(entry.groupName).length,
+            isOpen: state.displayGroups.contains(entry.groupName),
+            onTap: () => logic.toggleDisplayGroups(entry.groupName),
+          );
+        }
 
-    List<GalleryDownloadedData> gallerys =
-        logic.downloadService.gallerysWithGroup(state.currentGroup!);
-    return Column(
-      children: [
-        DownloadReorderBackTile(onTap: logic.backGroup),
-        Expanded(
-          child: ReorderableListView.builder(
-            padding: const EdgeInsets.only(top: 4, bottom: 12),
-            itemCount: gallerys.length,
-            onReorder: logic.saveGalleryOrderAfterReordered,
-            itemBuilder: (context, index) {
-              GalleryDownloadedData gallery = gallerys[index];
-              return Row(
-                key: ValueKey('drag_${gallery.gid}'),
-                children: [
-                  DownloadReorderItemHandle(index: index),
-                  Expanded(child: _buildCard(context, gallery).marginAll(5)),
-                ],
-              );
-            },
+        final GalleryDownloadedData gallery = entry.item!;
+        return DownloadReorderItem(
+          key: ValueKey('drag_${gallery.gid}'),
+          index: index,
+          child: AbsorbPointer(
+            child: _buildCard(context, gallery).marginAll(5),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
