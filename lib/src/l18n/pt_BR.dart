@@ -672,7 +672,7 @@ class pt_BR {
       'sortGroups': 'Reordenar grupos',
       'sortGroupItems': 'Reordenar: @group',
       'sortGroupsHint':
-          'Arraste a alça do grupo para reordená-lo. Expanda o grupo e segure um item por 200 ms para movê-lo.',
+          'Arraste a alça à direita para reordenar os grupos. Pressione e segure uma galeria para reordená-la.',
       'downloadItemCount': '@count itens',
       'backToGroups': 'Voltar aos grupos',
       'switch2GridMode': 'Switch to Grid Mode',

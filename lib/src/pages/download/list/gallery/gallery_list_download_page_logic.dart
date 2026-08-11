@@ -102,14 +102,11 @@ class GalleryListDownloadPageLogic extends GetxController
     return sorted;
   }
 
-  List<DownloadReorderEntry<GalleryDownloadedData>> get reorderEntries {
-    final List<GalleryDownloadedData> displayedGallerys = sortedGallerys;
-    return buildDownloadReorderEntries(
-      groups: downloadService.allGroups,
-      isGroupOpen: state.displayGroups.contains,
-      itemsForGroup: (group) => displayedGallerys.where((gallery) =>
-          downloadService.galleryDownloadInfos[gallery.gid]!.group == group),
-    );
+  List<GalleryDownloadedData> reorderGallerysInGroup(String group) {
+    return sortedGallerys
+        .where((gallery) =>
+            downloadService.galleryDownloadInfos[gallery.gid]!.group == group)
+        .toList();
   }
 
   void toggleEditMode() {
@@ -122,6 +119,7 @@ class GalleryListDownloadPageLogic extends GetxController
         : null;
     exitSelectMode();
     toast('sortGroupsHint'.tr);
+    state.reorderExpansionSession.start(state.displayGroups);
     state.inEditMode = true;
     registerDownloadReorderMode(this);
     updateSafely([bodyId]);
@@ -136,14 +134,23 @@ class GalleryListDownloadPageLogic extends GetxController
     final double? scrollOffset = state.scrollController.hasClients
         ? state.scrollController.offset
         : null;
+    state.reorderExpansionSession.restore(state.displayGroups);
     state.inEditMode = false;
     unregisterDownloadReorderMode(this);
     updateSafely([bodyId]);
     restoreDownloadListScrollOffset(state.scrollController, scrollOffset);
   }
 
-  Future<void> saveOrderAfterReordered(
-    List<DownloadReorderEntry<GalleryDownloadedData>> entries,
+  void handleGroupReorderStart() {
+    if (state.displayGroups.isEmpty) {
+      return;
+    }
+    state.reorderExpansionSession.collapseAll(state.displayGroups);
+    updateSafely([bodyId]);
+  }
+
+  Future<void> saveGroupOrderAfterReordered(
+    List<String> groups,
     int oldIndex,
     int newIndex,
   ) async {
@@ -151,35 +158,38 @@ class GalleryListDownloadPageLogic extends GetxController
       return;
     }
 
-    final DownloadReorderEntry<GalleryDownloadedData> moved = entries[oldIndex];
-    final List<DownloadReorderEntry<GalleryDownloadedData>> reordered =
-        reorderDownloadEntries(entries, oldIndex, newIndex);
-
-    if (moved.isGroup) {
-      final List<String> groups = reordered
-          .where((entry) => entry.isGroup)
-          .map((entry) => entry.groupName)
-          .toList();
-      downloadService.allGroups
-        ..clear()
-        ..addAll(groups);
-      updateSafely([bodyId]);
-      for (int i = 0; i < groups.length; i++) {
-        await GalleryGroupDao.updateGalleryGroupOrder(groups[i], i);
-      }
-    } else {
-      final List<GalleryDownloadedData> gallerys = reordered
-          .where(
-              (entry) => !entry.isGroup && entry.groupName == moved.groupName)
-          .map((entry) => entry.item!)
-          .toList();
-      for (int i = 0; i < gallerys.length; i++) {
-        downloadService.galleryDownloadInfos[gallerys[i].gid]!.sortOrder = i;
-      }
-      state.sortBy = SortBy.manual;
-      updateSafely([bodyId]);
-      await downloadService.updateGalleryOrder(gallerys);
+    final List<String> reordered =
+        reorderDownloadList(groups, oldIndex, newIndex);
+    downloadService.allGroups
+      ..clear()
+      ..addAll(reordered);
+    updateSafely([bodyId]);
+    for (int i = 0; i < reordered.length; i++) {
+      await GalleryGroupDao.updateGalleryGroupOrder(reordered[i], i);
     }
+  }
+
+  Future<void> saveGalleryOrderAfterReordered(
+    String group,
+    List<GalleryDownloadedData> gallerys,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    if (oldIndex == newIndex ||
+        gallerys.any((gallery) =>
+            downloadService.galleryDownloadInfos[gallery.gid]!.group !=
+            group)) {
+      return;
+    }
+
+    final List<GalleryDownloadedData> reordered =
+        reorderDownloadList(gallerys, oldIndex, newIndex);
+    for (int i = 0; i < reordered.length; i++) {
+      downloadService.galleryDownloadInfos[reordered[i].gid]!.sortOrder = i;
+    }
+    state.sortBy = SortBy.manual;
+    updateSafely([bodyId]);
+    await downloadService.updateGalleryOrder(reordered);
   }
 
   Future<void> toggleDisplayGroups(String groupName) async {
@@ -191,12 +201,12 @@ class GalleryListDownloadPageLogic extends GetxController
       state.displayGroups.add(groupName);
     }
 
-    await localConfigService.write(
-        configKey: ConfigEnum.displayGalleryGroups,
-        value: jsonEncode(state.displayGroups.toList()));
     if (state.inEditMode) {
       updateSafely([bodyId]);
     } else {
+      await localConfigService.write(
+          configKey: ConfigEnum.displayGalleryGroups,
+          value: jsonEncode(state.displayGroups.toList()));
       state.groupedListController.toggleGroup(groupName);
     }
   }

@@ -616,7 +616,7 @@ class zh_CN {
       'exitReorderMode': '退出调序模式',
       'sortGroups': '调整分组顺序',
       'sortGroupItems': '调整顺序：@group',
-      'sortGroupsHint': '拖动分组右侧手柄调整分组顺序；展开分组后，长按漫画 200 毫秒可调整组内顺序',
+      'sortGroupsHint': '拖动分组右侧手柄调整分组顺序，长按漫画以调整漫画顺序',
       'downloadItemCount': '@count 个条目',
       'backToGroups': '返回分组列表',
       'switch2GridMode': '切换至网格模式',

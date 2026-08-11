@@ -642,7 +642,7 @@ class ko_KR {
       'sortGroups': '그룹 순서 변경',
       'sortGroupItems': '순서 변경: @group',
       'sortGroupsHint':
-          '그룹 오른쪽 핸들로 그룹 순서를 변경하세요. 그룹을 펼친 뒤 만화를 200ms 동안 길게 눌러 내부 순서를 변경할 수 있습니다.',
+          '그룹 오른쪽 핸들로 그룹 순서를 변경하세요. 만화를 길게 눌러 순서를 변경하세요.',
       'downloadItemCount': '항목 @count개',
       'backToGroups': '그룹 목록으로',
       'switch2GridMode': '그리드 모드로 전환',

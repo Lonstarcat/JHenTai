@@ -104,15 +104,12 @@ class ArchiveListDownloadPageLogic extends GetxController
     return sorted;
   }
 
-  List<DownloadReorderEntry<ArchiveDownloadedData>> get reorderEntries {
-    final List<ArchiveDownloadedData> displayedArchives = sortedArchives;
-    return buildDownloadReorderEntries(
-      groups: archiveDownloadService.allGroups,
-      isGroupOpen: state.displayGroups.contains,
-      itemsForGroup: (group) => displayedArchives.where((archive) =>
-          archiveDownloadService.archiveDownloadInfos[archive.gid]!.group ==
-          group),
-    );
+  List<ArchiveDownloadedData> reorderArchivesInGroup(String group) {
+    return sortedArchives
+        .where((archive) =>
+            archiveDownloadService.archiveDownloadInfos[archive.gid]!.group ==
+            group)
+        .toList();
   }
 
   void toggleEditMode() {
@@ -125,6 +122,7 @@ class ArchiveListDownloadPageLogic extends GetxController
         : null;
     exitSelectMode();
     toast('sortGroupsHint'.tr);
+    state.reorderExpansionSession.start(state.displayGroups);
     state.inEditMode = true;
     registerDownloadReorderMode(this);
     updateSafely([bodyId]);
@@ -139,14 +137,23 @@ class ArchiveListDownloadPageLogic extends GetxController
     final double? scrollOffset = state.scrollController.hasClients
         ? state.scrollController.offset
         : null;
+    state.reorderExpansionSession.restore(state.displayGroups);
     state.inEditMode = false;
     unregisterDownloadReorderMode(this);
     updateSafely([bodyId]);
     restoreDownloadListScrollOffset(state.scrollController, scrollOffset);
   }
 
-  Future<void> saveOrderAfterReordered(
-    List<DownloadReorderEntry<ArchiveDownloadedData>> entries,
+  void handleGroupReorderStart() {
+    if (state.displayGroups.isEmpty) {
+      return;
+    }
+    state.reorderExpansionSession.collapseAll(state.displayGroups);
+    updateSafely([bodyId]);
+  }
+
+  Future<void> saveGroupOrderAfterReordered(
+    List<String> groups,
     int oldIndex,
     int newIndex,
   ) async {
@@ -154,36 +161,39 @@ class ArchiveListDownloadPageLogic extends GetxController
       return;
     }
 
-    final DownloadReorderEntry<ArchiveDownloadedData> moved = entries[oldIndex];
-    final List<DownloadReorderEntry<ArchiveDownloadedData>> reordered =
-        reorderDownloadEntries(entries, oldIndex, newIndex);
-
-    if (moved.isGroup) {
-      final List<String> groups = reordered
-          .where((entry) => entry.isGroup)
-          .map((entry) => entry.groupName)
-          .toList();
-      archiveDownloadService.allGroups
-        ..clear()
-        ..addAll(groups);
-      updateSafely([bodyId]);
-      for (int i = 0; i < groups.length; i++) {
-        await ArchiveGroupDao.updateArchiveGroupOrder(groups[i], i);
-      }
-    } else {
-      final List<ArchiveDownloadedData> archives = reordered
-          .where(
-              (entry) => !entry.isGroup && entry.groupName == moved.groupName)
-          .map((entry) => entry.item!)
-          .toList();
-      for (int i = 0; i < archives.length; i++) {
-        archiveDownloadService
-            .archiveDownloadInfos[archives[i].gid]!.sortOrder = i;
-      }
-      state.sortBy = SortBy.manual;
-      updateSafely([bodyId]);
-      await archiveDownloadService.batchUpdateArchiveInDatabase(archives);
+    final List<String> reordered =
+        reorderDownloadList(groups, oldIndex, newIndex);
+    archiveDownloadService.allGroups
+      ..clear()
+      ..addAll(reordered);
+    updateSafely([bodyId]);
+    for (int i = 0; i < reordered.length; i++) {
+      await ArchiveGroupDao.updateArchiveGroupOrder(reordered[i], i);
     }
+  }
+
+  Future<void> saveArchiveOrderAfterReordered(
+    String group,
+    List<ArchiveDownloadedData> archives,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    if (oldIndex == newIndex ||
+        archives.any((archive) =>
+            archiveDownloadService.archiveDownloadInfos[archive.gid]!.group !=
+            group)) {
+      return;
+    }
+
+    final List<ArchiveDownloadedData> reordered =
+        reorderDownloadList(archives, oldIndex, newIndex);
+    for (int i = 0; i < reordered.length; i++) {
+      archiveDownloadService.archiveDownloadInfos[reordered[i].gid]!.sortOrder =
+          i;
+    }
+    state.sortBy = SortBy.manual;
+    updateSafely([bodyId]);
+    await archiveDownloadService.batchUpdateArchiveInDatabase(reordered);
   }
 
   Future<void> toggleDisplayGroups(String groupName) async {
@@ -195,13 +205,12 @@ class ArchiveListDownloadPageLogic extends GetxController
       state.displayGroups.add(groupName);
     }
 
-    await localConfigService.write(
-        configKey: ConfigEnum.displayArchiveGroups,
-        value: jsonEncode(state.displayGroups.toList()));
-
     if (state.inEditMode) {
       updateSafely([bodyId]);
     } else {
+      await localConfigService.write(
+          configKey: ConfigEnum.displayArchiveGroups,
+          value: jsonEncode(state.displayGroups.toList()));
       state.groupedListController.toggleGroup(groupName);
     }
   }

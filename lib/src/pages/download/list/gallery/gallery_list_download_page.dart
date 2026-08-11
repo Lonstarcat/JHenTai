@@ -163,34 +163,30 @@ class GalleryListDownloadPage extends StatelessWidget
   }
 
   Widget _buildReorderableList(BuildContext context) {
-    final List<DownloadReorderEntry<GalleryDownloadedData>> entries =
-        logic.reorderEntries;
+    final List<String> groups = List.of(logic.downloadService.allGroups);
     return ReorderableListView.builder(
       scrollController: state.scrollController,
       buildDefaultDragHandles: false,
-      itemCount: entries.length,
+      itemCount: groups.length,
+      onReorderStart: (_) => logic.handleGroupReorderStart(),
       onReorderItem: (oldIndex, newIndex) =>
-          logic.saveOrderAfterReordered(entries, oldIndex, newIndex),
+          logic.saveGroupOrderAfterReordered(groups, oldIndex, newIndex),
       itemBuilder: (context, index) {
-        final DownloadReorderEntry<GalleryDownloadedData> entry =
-            entries[index];
-        if (entry.isGroup) {
-          return DownloadReorderGroupTile(
-            key: ValueKey('group_${entry.groupName}'),
-            index: index,
-            groupName: entry.groupName,
-            itemCount:
-                logic.downloadService.gallerysWithGroup(entry.groupName).length,
-            isOpen: state.displayGroups.contains(entry.groupName),
-            onTap: () => logic.toggleDisplayGroups(entry.groupName),
-          );
-        }
-
-        final GalleryDownloadedData gallery = entry.item!;
-        return DownloadReorderItem(
-          key: ValueKey('drag_${gallery.gid}'),
-          index: index,
-          child: AbsorbPointer(
+        final String group = groups[index];
+        final List<GalleryDownloadedData> gallerys =
+            logic.reorderGallerysInGroup(group);
+        return DownloadReorderGroupSection<GalleryDownloadedData>(
+          key: ValueKey('group_$group'),
+          groupIndex: index,
+          groupName: group,
+          isOpen: state.displayGroups.contains(group),
+          items: gallerys,
+          itemKey: (gallery) => ValueKey('drag_${gallery.gid}'),
+          onToggle: () => logic.toggleDisplayGroups(group),
+          onReorderItems: (oldIndex, newIndex) =>
+              logic.saveGalleryOrderAfterReordered(
+                  group, gallerys, oldIndex, newIndex),
+          itemBuilder: (context, gallery) => AbsorbPointer(
             child: _buildCard(context, gallery).marginAll(5),
           ),
         );

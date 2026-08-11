@@ -156,35 +156,30 @@ class ArchiveListDownloadPage extends StatelessWidget
   }
 
   Widget _buildReorderableList(BuildContext context) {
-    final List<DownloadReorderEntry<ArchiveDownloadedData>> entries =
-        logic.reorderEntries;
+    final List<String> groups = List.of(archiveDownloadService.allGroups);
     return ReorderableListView.builder(
       scrollController: state.scrollController,
       buildDefaultDragHandles: false,
-      itemCount: entries.length,
+      itemCount: groups.length,
+      onReorderStart: (_) => logic.handleGroupReorderStart(),
       onReorderItem: (oldIndex, newIndex) =>
-          logic.saveOrderAfterReordered(entries, oldIndex, newIndex),
+          logic.saveGroupOrderAfterReordered(groups, oldIndex, newIndex),
       itemBuilder: (context, index) {
-        final DownloadReorderEntry<ArchiveDownloadedData> entry =
-            entries[index];
-        if (entry.isGroup) {
-          return DownloadReorderGroupTile(
-            key: ValueKey('group_${entry.groupName}'),
-            index: index,
-            groupName: entry.groupName,
-            itemCount: archiveDownloadService
-                .archivesWithGroup(entry.groupName)
-                .length,
-            isOpen: state.displayGroups.contains(entry.groupName),
-            onTap: () => logic.toggleDisplayGroups(entry.groupName),
-          );
-        }
-
-        final ArchiveDownloadedData archive = entry.item!;
-        return DownloadReorderItem(
-          key: ValueKey('drag_${archive.gid}'),
-          index: index,
-          child: AbsorbPointer(
+        final String group = groups[index];
+        final List<ArchiveDownloadedData> archives =
+            logic.reorderArchivesInGroup(group);
+        return DownloadReorderGroupSection<ArchiveDownloadedData>(
+          key: ValueKey('group_$group'),
+          groupIndex: index,
+          groupName: group,
+          isOpen: state.displayGroups.contains(group),
+          items: archives,
+          itemKey: (archive) => ValueKey('drag_${archive.gid}'),
+          onToggle: () => logic.toggleDisplayGroups(group),
+          onReorderItems: (oldIndex, newIndex) =>
+              logic.saveArchiveOrderAfterReordered(
+                  group, archives, oldIndex, newIndex),
+          itemBuilder: (context, archive) => AbsorbPointer(
             child: _buildCard(context, archive).marginAll(5),
           ),
         );

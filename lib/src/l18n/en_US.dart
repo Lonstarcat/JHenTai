@@ -654,7 +654,7 @@ class en_US {
       'sortGroups': 'Reorder groups',
       'sortGroupItems': 'Reorder: @group',
       'sortGroupsHint':
-          'Drag a group handle to reorder groups. Expand a group, then hold an item for 200ms to reorder it.',
+          'Drag the handle on the right to reorder groups. Press and hold a gallery to reorder it.',
       'downloadItemCount': '@count items',
       'backToGroups': 'Back to groups',
       'switch2GridMode': 'Switch to Grid Mode',

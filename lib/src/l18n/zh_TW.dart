@@ -616,7 +616,7 @@ class zh_TW {
       'exitReorderMode': '退出調序模式',
       'sortGroups': '調整分組順序',
       'sortGroupItems': '調整順序：@group',
-      'sortGroupsHint': '拖曳分組右側控點調整分組順序；展開分組後，長按漫畫 200 毫秒可調整組內順序',
+      'sortGroupsHint': '拖曳分組右側控點調整分組順序，長按漫畫以調整漫畫順序',
       'downloadItemCount': '@count 個項目',
       'backToGroups': '返回分組列表',
       'switch2GridMode': '切換至網格模式',

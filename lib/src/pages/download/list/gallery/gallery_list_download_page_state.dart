@@ -6,6 +6,7 @@ import 'package:jhentai/src/pages/download/mixin/gallery/gallery_download_page_s
 import '../../../../database/database.dart';
 import '../../../../widget/grouped_list.dart';
 import '../../mixin/basic/multi_select/multi_select_download_page_state_mixin.dart';
+import '../widget/download_reorder_widgets.dart';
 
 class GalleryListDownloadPageState
     with
@@ -16,6 +17,8 @@ class GalleryListDownloadPageState
   Completer<void> displayGroupsCompleter = Completer<void>();
   SortBy sortBy = SortBy.manual;
   bool inEditMode = false;
+  final DownloadReorderExpansionSession reorderExpansionSession =
+      DownloadReorderExpansionSession();
 
   final GroupedListController<String, GalleryDownloadedData>
       groupedListController =

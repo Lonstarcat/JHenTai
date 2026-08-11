@@ -5,40 +5,39 @@ import 'package:get/get.dart';
 
 import '../../../../config/ui_config.dart';
 
-class DownloadReorderEntry<T> {
-  const DownloadReorderEntry.group(this.groupName) : item = null;
-
-  const DownloadReorderEntry.item(this.groupName, this.item);
-
-  final String groupName;
-  final T? item;
-
-  bool get isGroup => item == null;
-}
-
-List<DownloadReorderEntry<T>> buildDownloadReorderEntries<T>({
-  required Iterable<String> groups,
-  required bool Function(String group) isGroupOpen,
-  required Iterable<T> Function(String group) itemsForGroup,
-}) {
-  return [
-    for (final String group in groups) ...[
-      DownloadReorderEntry<T>.group(group),
-      if (isGroupOpen(group))
-        for (final T item in itemsForGroup(group))
-          DownloadReorderEntry<T>.item(group, item),
-    ],
-  ];
-}
-
-List<DownloadReorderEntry<T>> reorderDownloadEntries<T>(
-  List<DownloadReorderEntry<T>> entries,
+List<T> reorderDownloadList<T>(
+  List<T> entries,
   int oldIndex,
   int newIndex,
 ) {
-  final List<DownloadReorderEntry<T>> reordered = List.of(entries);
+  final List<T> reordered = List.of(entries);
   reordered.insert(newIndex, reordered.removeAt(oldIndex));
   return reordered;
+}
+
+class DownloadReorderExpansionSession {
+  Set<String>? _expandedGroupsBeforeReorder;
+
+  void start(Set<String> expandedGroups) {
+    _expandedGroupsBeforeReorder ??= Set.of(expandedGroups);
+  }
+
+  void collapseAll(Set<String> expandedGroups) {
+    if (_expandedGroupsBeforeReorder != null) {
+      expandedGroups.clear();
+    }
+  }
+
+  void restore(Set<String> expandedGroups) {
+    final Set<String>? originalGroups = _expandedGroupsBeforeReorder;
+    if (originalGroups == null) {
+      return;
+    }
+    expandedGroups
+      ..clear()
+      ..addAll(originalGroups);
+    _expandedGroupsBeforeReorder = null;
+  }
 }
 
 int compareDownloadManualOrder({
@@ -69,8 +68,8 @@ void restoreDownloadListScrollOffset(
   });
 }
 
-class _PlatformReorderHandle extends StatelessWidget {
-  const _PlatformReorderHandle({
+class _GroupReorderHandle extends StatelessWidget {
+  const _GroupReorderHandle({
     required this.index,
     required this.child,
   });
@@ -80,14 +79,6 @@ class _PlatformReorderHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS) {
-      return _DownloadReorderDragStartListener(
-        index: index,
-        delay: DownloadReorderItem.dragDelay,
-        child: child,
-      );
-    }
     return ReorderableDragStartListener(index: index, child: child);
   }
 }
@@ -186,7 +177,7 @@ class DownloadReorderGroupTile extends StatelessWidget {
                       .bodySmall
                       ?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
-                _PlatformReorderHandle(
+                _GroupReorderHandle(
                   index: index,
                   child: MouseRegion(
                     cursor: SystemMouseCursors.grab,
@@ -204,6 +195,130 @@ class DownloadReorderGroupTile extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class DownloadReorderGroupSection<T> extends StatelessWidget {
+  const DownloadReorderGroupSection({
+    super.key,
+    required this.groupIndex,
+    required this.groupName,
+    required this.isOpen,
+    required this.items,
+    required this.itemKey,
+    required this.onToggle,
+    required this.onReorderItems,
+    required this.itemBuilder,
+  });
+
+  final int groupIndex;
+  final String groupName;
+  final bool isOpen;
+  final List<T> items;
+  final Key Function(T item) itemKey;
+  final VoidCallback onToggle;
+  final void Function(int oldIndex, int newIndex) onReorderItems;
+  final Widget Function(BuildContext context, T item) itemBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DownloadReorderGroupTile(
+          index: groupIndex,
+          groupName: groupName,
+          itemCount: items.length,
+          isOpen: isOpen,
+          onTap: onToggle,
+        ),
+        if (isOpen && items.isNotEmpty)
+          DownloadReorderItemList<T>(
+            items: items,
+            itemKey: itemKey,
+            onReorderItems: onReorderItems,
+            itemBuilder: itemBuilder,
+          ),
+      ],
+    );
+  }
+}
+
+class DownloadReorderItemList<T> extends StatefulWidget {
+  const DownloadReorderItemList({
+    super.key,
+    required this.items,
+    required this.itemKey,
+    required this.onReorderItems,
+    required this.itemBuilder,
+  });
+
+  final List<T> items;
+  final Key Function(T item) itemKey;
+  final void Function(int oldIndex, int newIndex) onReorderItems;
+  final Widget Function(BuildContext context, T item) itemBuilder;
+
+  @override
+  State<DownloadReorderItemList<T>> createState() =>
+      _DownloadReorderItemListState<T>();
+}
+
+class _DownloadReorderItemListState<T>
+    extends State<DownloadReorderItemList<T>> {
+  final GlobalKey _boundaryKey = GlobalKey();
+  bool _pointerOutsideGroup = false;
+
+  void _handlePointerMove(PointerMoveEvent event) {
+    final BuildContext? boundaryContext = _boundaryKey.currentContext;
+    final RenderBox? renderBox =
+        boundaryContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) {
+      return;
+    }
+    final Rect groupBounds =
+        renderBox.localToGlobal(Offset.zero) & renderBox.size;
+    _pointerOutsideGroup = !groupBounds.contains(event.position);
+  }
+
+  void _handleReorder(int oldIndex, int newIndex) {
+    if (!_pointerOutsideGroup) {
+      widget.onReorderItems(oldIndex, newIndex);
+    }
+  }
+
+  void _resetPointerBoundaryAfterDrag(int _) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pointerOutsideGroup = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (_) => _pointerOutsideGroup = false,
+      onPointerMove: _handlePointerMove,
+      child: KeyedSubtree(
+        key: _boundaryKey,
+        child: ReorderableListView.builder(
+          shrinkWrap: true,
+          primary: false,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          buildDefaultDragHandles: false,
+          itemCount: widget.items.length,
+          onReorderItem: _handleReorder,
+          onReorderEnd: _resetPointerBoundaryAfterDrag,
+          itemBuilder: (context, index) {
+            final T item = widget.items[index];
+            return DownloadReorderItem(
+              key: widget.itemKey(item),
+              index: index,
+              child: widget.itemBuilder(context, item),
+            );
+          },
         ),
       ),
     );
@@ -265,17 +380,27 @@ class DownloadReorderItem extends StatelessWidget {
   final int index;
   final Widget child;
 
-  static const Duration dragDelay = Duration(milliseconds: 200);
+  static const Duration dragDelay = Duration(seconds: 2);
 
   @override
   Widget build(BuildContext context) {
-    return _DownloadReorderDragStartListener(
+    final Widget draggableChild = MouseRegion(
+      cursor: SystemMouseCursors.grab,
+      child: child,
+    );
+
+    if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      return _DownloadReorderDragStartListener(
+        index: index,
+        delay: dragDelay,
+        child: draggableChild,
+      );
+    }
+
+    return ReorderableDragStartListener(
       index: index,
-      delay: dragDelay,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.grab,
-        child: child,
-      ),
+      child: draggableChild,
     );
   }
 }

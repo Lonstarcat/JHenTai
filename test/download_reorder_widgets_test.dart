@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/l18n/locale_text.dart';
@@ -21,29 +22,30 @@ void main() {
     expect(second.exitCount, 1);
   });
 
-  test('reorder entries retain expanded groups and hide collapsed items', () {
-    final entries = buildDownloadReorderEntries<String>(
-      groups: const ['open', 'closed'],
-      isGroupOpen: (group) => group == 'open',
-      itemsForGroup: (group) => ['$group-1', '$group-2'],
-    );
+  test('group drag collapse is temporary and exit restores expanded groups',
+      () {
+    final DownloadReorderExpansionSession session =
+        DownloadReorderExpansionSession();
+    final Set<String> expandedGroups = {'A', 'B'};
 
-    expect(
-      entries.map((entry) => entry.item ?? 'group:${entry.groupName}'),
-      ['group:open', 'open-1', 'open-2', 'group:closed'],
-    );
+    session.start(expandedGroups);
+    expandedGroups.add('temporarily-opened');
+    session.collapseAll(expandedGroups);
+    expect(expandedGroups, isEmpty);
+
+    session.restore(expandedGroups);
+    expect(expandedGroups, {'A', 'B'});
   });
 
-  test('reorder entries use the adjusted destination index', () {
-    const entries = [
-      DownloadReorderEntry<String>.group('group'),
-      DownloadReorderEntry<String>.item('group', 'A'),
-      DownloadReorderEntry<String>.item('group', 'B'),
-      DownloadReorderEntry<String>.item('group', 'C'),
-    ];
+  test('reordering a group-local list does not mutate other groups', () {
+    const List<String> firstGroup = ['A', 'B', 'C'];
+    const List<String> secondGroup = ['D', 'E'];
 
-    final reordered = reorderDownloadEntries(entries, 1, 3);
-    expect(reordered.map((entry) => entry.item), [null, 'B', 'C', 'A']);
+    final List<String> reordered = reorderDownloadList(firstGroup, 0, 2);
+
+    expect(reordered, ['B', 'C', 'A']);
+    expect(firstGroup, ['A', 'B', 'C']);
+    expect(secondGroup, ['D', 'E']);
   });
 
   test('manual order uses sortOrder and falls back for equal values', () {
@@ -65,17 +67,61 @@ void main() {
     );
   });
 
+  testWidgets('whole item starts dragging after 2 seconds on Android',
+      (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    bool dragStarted = false;
+    int? reorderedFrom;
+    int? reorderedTo;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ReorderableListView.builder(
+            buildDefaultDragHandles: false,
+            itemCount: 2,
+            onReorderItem: (from, to) {
+              reorderedFrom = from;
+              reorderedTo = to;
+            },
+            onReorderStart: (_) => dragStarted = true,
+            itemBuilder: (_, index) => DownloadReorderItem(
+              key: ValueKey('item_$index'),
+              index: index,
+              child: const SizedBox(height: 100, width: 200),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final TestGesture gesture = await tester
+        .startGesture(tester.getCenter(find.byKey(const ValueKey('item_0'))));
+    await tester.pump(const Duration(milliseconds: 1999));
+    expect(dragStarted, isFalse);
+    await tester.pump(const Duration(milliseconds: 2));
+    expect(dragStarted, isTrue);
+    expect(find.byIcon(Icons.drag_indicator), findsNothing);
+    await gesture.moveBy(const Offset(0, 50));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(reorderedFrom, 0);
+    expect(reorderedTo, 1);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   for (final TargetPlatform platform in [
-    TargetPlatform.android,
     TargetPlatform.macOS,
+    TargetPlatform.windows,
+    TargetPlatform.linux,
   ]) {
-    testWidgets('whole item starts dragging after 200ms on $platform',
+    testWidgets('whole item starts dragging immediately on $platform',
         (tester) async {
       debugDefaultTargetPlatformOverride = platform;
       addTearDown(() => debugDefaultTargetPlatformOverride = null);
       bool dragStarted = false;
-      int? reorderedFrom;
-      int? reorderedTo;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -83,13 +129,10 @@ void main() {
             body: ReorderableListView.builder(
               buildDefaultDragHandles: false,
               itemCount: 2,
-              onReorderItem: (from, to) {
-                reorderedFrom = from;
-                reorderedTo = to;
-              },
+              onReorderItem: (_, __) {},
               onReorderStart: (_) => dragStarted = true,
               itemBuilder: (_, index) => DownloadReorderItem(
-                key: ValueKey('item_$index'),
+                key: ValueKey('desktop_item_$index'),
                 index: index,
                 child: const SizedBox(height: 100, width: 200),
               ),
@@ -98,22 +141,262 @@ void main() {
         ),
       );
 
-      final TestGesture gesture = await tester
-          .startGesture(tester.getCenter(find.byKey(const ValueKey('item_0'))));
-      await tester.pump(const Duration(milliseconds: 199));
-      expect(dragStarted, isFalse);
-      await tester.pump(const Duration(milliseconds: 2));
-      expect(dragStarted, isTrue);
-      expect(find.byIcon(Icons.drag_indicator), findsNothing);
-      await gesture.moveBy(const Offset(0, 50));
+      final TestGesture gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const ValueKey('desktop_item_0'))),
+        kind: PointerDeviceKind.mouse,
+      );
+      await gesture.moveBy(const Offset(0, 10));
       await tester.pump();
+      expect(dragStarted, isTrue);
       await gesture.up();
       await tester.pumpAndSettle();
-      expect(reorderedFrom, 0);
-      expect(reorderedTo, 1);
       debugDefaultTargetPlatformOverride = null;
     });
   }
+
+  testWidgets(
+      'dragging an item outside its group keeps every other group fixed and cancels the drop',
+      (tester) async {
+    int reorderCount = 0;
+    final List<String> firstGroup = ['A1', 'A2'];
+    final List<String> secondGroup = ['B1', 'B2'];
+
+    Widget buildGroup(String name, List<String> items) {
+      return DownloadReorderGroupSection<String>(
+        groupIndex: name == 'A' ? 0 : 1,
+        groupName: name,
+        isOpen: true,
+        items: items,
+        itemKey: (item) => ValueKey('drag_$item'),
+        onToggle: () {},
+        onReorderItems: (_, __) => reorderCount += 1,
+        itemBuilder: (_, item) => SizedBox(
+          key: ValueKey('card_$item'),
+          height: 70,
+          child: Text(item),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                buildGroup('A', firstGroup),
+                buildGroup('B', secondGroup),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final Offset originalB1 =
+        tester.getCenter(find.byKey(const ValueKey('card_B1')));
+    final Offset originalB2 =
+        tester.getCenter(find.byKey(const ValueKey('card_B2')));
+    final Offset originalA1 =
+        tester.getCenter(find.byKey(const ValueKey('card_A1')));
+    final Offset originalGroupA = tester.getCenter(find.text('A'));
+    final Offset originalGroupB = tester.getCenter(find.text('B'));
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('card_A1'))),
+    );
+    await tester.pump(const Duration(seconds: 2));
+    await gesture.moveTo(originalB2);
+    await tester.pump();
+
+    expect(
+      tester.getCenter(find.byKey(const ValueKey('card_A1'))).dy,
+      greaterThan(originalGroupB.dy),
+    );
+    expect(tester.getCenter(find.byKey(const ValueKey('card_B1'))), originalB1);
+    expect(tester.getCenter(find.byKey(const ValueKey('card_B2'))), originalB2);
+    expect(tester.getCenter(find.text('A')), originalGroupA);
+    expect(tester.getCenter(find.text('B')), originalGroupB);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(reorderCount, 0);
+    expect(
+      tester.getCenter(find.byKey(const ValueKey('card_A1'))),
+      originalA1,
+    );
+    expect(firstGroup, ['A1', 'A2']);
+    expect(secondGroup, ['B1', 'B2']);
+  });
+
+  testWidgets('dragging inside one group reorders only that group',
+      (tester) async {
+    int? reorderedFrom;
+    int? reorderedTo;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DownloadReorderItemList<String>(
+            items: const ['A', 'B', 'C'],
+            itemKey: (item) => ValueKey('drag_$item'),
+            onReorderItems: (from, to) {
+              reorderedFrom = from;
+              reorderedTo = to;
+            },
+            itemBuilder: (_, item) => SizedBox(
+              key: ValueKey('card_$item'),
+              height: 70,
+              child: Text(item),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('card_A'))),
+    );
+    await tester.pump(const Duration(seconds: 2));
+    await gesture.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('card_C'))),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(reorderedFrom, 0);
+    expect(reorderedTo, 1);
+  });
+
+  testWidgets('an item can reorder inside the outer group reorder list',
+      (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    int groupReorderCount = 0;
+    int? itemReorderedFrom;
+    int? itemReorderedTo;
+    const List<String> groups = ['A', 'B'];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ReorderableListView.builder(
+            buildDefaultDragHandles: false,
+            itemCount: groups.length,
+            onReorderItem: (_, __) => groupReorderCount += 1,
+            itemBuilder: (_, groupIndex) {
+              final String group = groups[groupIndex];
+              return DownloadReorderGroupSection<String>(
+                key: ValueKey('group_$group'),
+                groupIndex: groupIndex,
+                groupName: group,
+                isOpen: true,
+                items: ['$group-1', '$group-2', '$group-3'],
+                itemKey: (item) => ValueKey('drag_$item'),
+                onToggle: () {},
+                onReorderItems: (from, to) {
+                  itemReorderedFrom = from;
+                  itemReorderedTo = to;
+                },
+                itemBuilder: (_, item) => AbsorbPointer(
+                  child: SizedBox(
+                    key: ValueKey('card_$item'),
+                    height: 70,
+                    child: Text(item),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('card_A-1'))),
+    );
+    await tester.pump();
+    await gesture.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('card_A-3'))),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(groupReorderCount, 0);
+    expect(itemReorderedFrom, 0);
+    expect(itemReorderedTo, 1);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('group drag collapses all groups and exit restores the snapshot',
+      (tester) async {
+    final DownloadReorderExpansionSession session =
+        DownloadReorderExpansionSession();
+    final Set<String> expandedGroups = {'A', 'B'};
+    session.start(expandedGroups);
+    late StateSetter setState;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, updateState) {
+            setState = updateState;
+            final List<String> groups = ['A', 'B'];
+            return Scaffold(
+              body: Column(
+                children: [
+                  Expanded(
+                    child: ReorderableListView.builder(
+                      buildDefaultDragHandles: false,
+                      itemCount: groups.length,
+                      onReorderStart: (_) => setState(
+                        () => session.collapseAll(expandedGroups),
+                      ),
+                      onReorderItem: (_, __) {},
+                      itemBuilder: (_, index) {
+                        final String group = groups[index];
+                        return DownloadReorderGroupSection<String>(
+                          key: ValueKey('group_$group'),
+                          groupIndex: index,
+                          groupName: group,
+                          isOpen: expandedGroups.contains(group),
+                          items: ['$group-item'],
+                          itemKey: ValueKey<String>.new,
+                          onToggle: () {},
+                          onReorderItems: (_, __) {},
+                          itemBuilder: (_, item) =>
+                              SizedBox(height: 60, child: Text(item)),
+                        );
+                      },
+                    ),
+                  ),
+                  TextButton(
+                    key: const ValueKey('exit_reorder'),
+                    onPressed: () => setState(
+                      () => session.restore(expandedGroups),
+                    ),
+                    child: const Text('Exit'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.drag(
+      find.byIcon(Icons.drag_indicator).first,
+      const Offset(0, 80),
+    );
+    await tester.pumpAndSettle();
+    expect(expandedGroups, isEmpty);
+
+    await tester.tap(find.byKey(const ValueKey('exit_reorder')));
+    await tester.pump();
+    expect(expandedGroups, {'A', 'B'});
+  });
 
   testWidgets('switching to reorder mode restores the visible scroll offset',
       (tester) async {
@@ -184,7 +467,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('Android group displays one custom delayed drag handle',
+  testWidgets('Android group displays one immediate drag handle',
       (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -260,6 +543,23 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('Chinese reorder hint omits the long-press duration',
+      (tester) async {
+    addTearDown(Get.reset);
+    await tester.pumpWidget(
+      GetMaterialApp(
+        translations: LocaleText(),
+        locale: const Locale('zh', 'CN'),
+        home: const Scaffold(body: DownloadReorderHint()),
+      ),
+    );
+
+    expect(
+      find.text('拖动分组右侧手柄调整分组顺序，长按漫画以调整漫画顺序'),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('reorder mode has a dedicated button beside the more menu',
       (tester) async {
