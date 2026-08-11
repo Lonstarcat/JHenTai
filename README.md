@@ -183,6 +183,20 @@ mush thanks to these projects and people🙇‍
 -   [x] vote for Tag, watch and hidden tags
 -   [x] comment, vote for comment
 -   [x] Fingerprint unlock
+-   [x] Advanced gallery search, support tag operators (`+` AND, `|` OR, `-` NOT) and case-insensitive search
+---
+
+## Search Syntax
+
+| Feature | Syntax | Description |
+|---------|--------|-------------|
+| **AND** | `+tomboy +stocking` | Prefix tags with `+` to require all of them. |
+| **OR** | `tomboy\|stocking` | Use `\|` to match any of the listed tags. |
+| **NOT** | `tomboy -pantyhose` | Prefix a tag with `-` to exclude it. |
+| **Combined Query** | `+A +B\|C -D` | Combine multiple conditions using spaces. |
+| **Case-Insensitive** | Click **Aa** → **aa** | Toggle case-insensitive search. Results refresh automatically. |
+
+---
 
 ## Translation
 

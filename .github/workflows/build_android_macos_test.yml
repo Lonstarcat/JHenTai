@@ -60,6 +60,30 @@ jobs:
             printf '\nstoreFile=upload-keystore.p12\n' >> android/key.properties
           fi
 
+      - name: Verify Android signing
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s android/app/upload-keystore.p12
+          test -s android/key.properties
+
+          STORE_PASSWORD="$(
+            sed -n 's/^storePassword=//p' android/key.properties \
+              | tr -d '\r'
+          )"
+
+          test -n "$STORE_PASSWORD"
+
+          keytool -list \
+            -keystore android/app/upload-keystore.p12 \
+            -storetype PKCS12 \
+            -storepass "$STORE_PASSWORD" \
+            -alias upload \
+            > /dev/null
+
+          echo "Android signing configuration verified"
+
       - run: flutter pub get
 
       - name: Build arm64 Release APK
