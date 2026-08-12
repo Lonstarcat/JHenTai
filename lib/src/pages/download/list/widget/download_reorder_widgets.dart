@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -71,15 +70,20 @@ void restoreDownloadListScrollOffset(
 class _GroupReorderHandle extends StatelessWidget {
   const _GroupReorderHandle({
     required this.index,
+    required this.onPointerDown,
     required this.child,
   });
 
   final int index;
+  final VoidCallback onPointerDown;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return ReorderableDragStartListener(index: index, child: child);
+    return Listener(
+      onPointerDown: (_) => onPointerDown(),
+      child: ReorderableDragStartListener(index: index, child: child),
+    );
   }
 }
 
@@ -124,6 +128,7 @@ class DownloadReorderGroupTile extends StatelessWidget {
     required this.itemCount,
     required this.isOpen,
     required this.onTap,
+    this.onHandlePointerDown,
   });
 
   final int index;
@@ -131,6 +136,7 @@ class DownloadReorderGroupTile extends StatelessWidget {
   final int itemCount;
   final bool isOpen;
   final VoidCallback onTap;
+  final VoidCallback? onHandlePointerDown;
 
   @override
   Widget build(BuildContext context) {
@@ -179,6 +185,7 @@ class DownloadReorderGroupTile extends StatelessWidget {
                 ),
                 _GroupReorderHandle(
                   index: index,
+                  onPointerDown: onHandlePointerDown ?? () {},
                   child: MouseRegion(
                     cursor: SystemMouseCursors.grab,
                     child: Tooltip(
@@ -210,6 +217,7 @@ class DownloadReorderGroupSection<T> extends StatelessWidget {
     required this.items,
     required this.itemKey,
     required this.onToggle,
+    this.onGroupHandlePointerDown,
     required this.onReorderItems,
     required this.itemBuilder,
   });
@@ -220,6 +228,7 @@ class DownloadReorderGroupSection<T> extends StatelessWidget {
   final List<T> items;
   final Key Function(T item) itemKey;
   final VoidCallback onToggle;
+  final VoidCallback? onGroupHandlePointerDown;
   final void Function(int oldIndex, int newIndex) onReorderItems;
   final Widget Function(BuildContext context, T item) itemBuilder;
 
@@ -234,6 +243,7 @@ class DownloadReorderGroupSection<T> extends StatelessWidget {
           itemCount: items.length,
           isOpen: isOpen,
           onTap: onToggle,
+          onHandlePointerDown: onGroupHandlePointerDown,
         ),
         if (isOpen && items.isNotEmpty)
           DownloadReorderItemList<T>(
@@ -380,8 +390,6 @@ class DownloadReorderItem extends StatelessWidget {
   final int index;
   final Widget child;
 
-  static const Duration dragDelay = Duration(seconds: 2);
-
   @override
   Widget build(BuildContext context) {
     final Widget draggableChild = MouseRegion(
@@ -391,9 +399,8 @@ class DownloadReorderItem extends StatelessWidget {
 
     if (defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS) {
-      return _DownloadReorderDragStartListener(
+      return ReorderableDelayedDragStartListener(
         index: index,
-        delay: dragDelay,
         child: draggableChild,
       );
     }
@@ -401,24 +408,6 @@ class DownloadReorderItem extends StatelessWidget {
     return ReorderableDragStartListener(
       index: index,
       child: draggableChild,
-    );
-  }
-}
-
-class _DownloadReorderDragStartListener extends ReorderableDragStartListener {
-  const _DownloadReorderDragStartListener({
-    required super.index,
-    required super.child,
-    required this.delay,
-  });
-
-  final Duration delay;
-
-  @override
-  MultiDragGestureRecognizer createRecognizer() {
-    return DelayedMultiDragGestureRecognizer(
-      delay: delay,
-      debugOwner: this,
     );
   }
 }

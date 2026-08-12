@@ -176,6 +176,7 @@ class ArchiveListDownloadPage extends StatelessWidget
           items: archives,
           itemKey: (archive) => ValueKey('drag_${archive.gid}'),
           onToggle: () => logic.toggleDisplayGroups(group),
+          onGroupHandlePointerDown: logic.handleGroupReorderStart,
           onReorderItems: (oldIndex, newIndex) =>
               logic.saveArchiveOrderAfterReordered(
                   group, archives, oldIndex, newIndex),

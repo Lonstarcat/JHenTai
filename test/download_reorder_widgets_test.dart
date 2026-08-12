@@ -67,7 +67,7 @@ void main() {
     );
   });
 
-  testWidgets('whole item starts dragging after 2 seconds on Android',
+  testWidgets('whole item uses the native long-press drag on Android',
       (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -98,7 +98,7 @@ void main() {
 
     final TestGesture gesture = await tester
         .startGesture(tester.getCenter(find.byKey(const ValueKey('item_0'))));
-    await tester.pump(const Duration(milliseconds: 1999));
+    await tester.pump(kLongPressTimeout - const Duration(milliseconds: 1));
     expect(dragStarted, isFalse);
     await tester.pump(const Duration(milliseconds: 2));
     expect(dragStarted, isTrue);
@@ -204,7 +204,7 @@ void main() {
     final TestGesture gesture = await tester.startGesture(
       tester.getCenter(find.byKey(const ValueKey('card_A1'))),
     );
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 1));
     await gesture.moveTo(originalB2);
     await tester.pump();
 
@@ -256,7 +256,7 @@ void main() {
     final TestGesture gesture = await tester.startGesture(
       tester.getCenter(find.byKey(const ValueKey('card_A'))),
     );
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 1));
     await gesture.moveTo(
       tester.getCenter(find.byKey(const ValueKey('card_C'))),
     );
@@ -329,6 +329,67 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('an Android item can reorder inside the outer group reorder list',
+      (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    int groupReorderCount = 0;
+    int? itemReorderedFrom;
+    int? itemReorderedTo;
+    const List<String> groups = ['A', 'B'];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ReorderableListView.builder(
+            buildDefaultDragHandles: false,
+            itemCount: groups.length,
+            onReorderItem: (_, __) => groupReorderCount += 1,
+            itemBuilder: (_, groupIndex) {
+              final String group = groups[groupIndex];
+              return DownloadReorderGroupSection<String>(
+                key: ValueKey('android_group_$group'),
+                groupIndex: groupIndex,
+                groupName: group,
+                isOpen: true,
+                items: ['$group-1', '$group-2', '$group-3'],
+                itemKey: (item) => ValueKey('android_drag_$item'),
+                onToggle: () {},
+                onReorderItems: (from, to) {
+                  itemReorderedFrom = from;
+                  itemReorderedTo = to;
+                },
+                itemBuilder: (_, item) => AbsorbPointer(
+                  child: SizedBox(
+                    key: ValueKey('android_card_$item'),
+                    height: 70,
+                    child: Text(item),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('android_card_A-1'))),
+    );
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 1));
+    await gesture.moveTo(
+      tester.getCenter(find.byKey(const ValueKey('android_card_A-3'))),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(groupReorderCount, 0);
+    expect(itemReorderedFrom, 0);
+    expect(itemReorderedTo, 1);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('group drag collapses all groups and exit restores the snapshot',
       (tester) async {
     final DownloadReorderExpansionSession session =
@@ -336,6 +397,7 @@ void main() {
     final Set<String> expandedGroups = {'A', 'B'};
     session.start(expandedGroups);
     late StateSetter setState;
+    bool groupDragStarted = false;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -350,9 +412,7 @@ void main() {
                     child: ReorderableListView.builder(
                       buildDefaultDragHandles: false,
                       itemCount: groups.length,
-                      onReorderStart: (_) => setState(
-                        () => session.collapseAll(expandedGroups),
-                      ),
+                      onReorderStart: (_) => groupDragStarted = true,
                       onReorderItem: (_, __) {},
                       itemBuilder: (_, index) {
                         final String group = groups[index];
@@ -364,6 +424,9 @@ void main() {
                           items: ['$group-item'],
                           itemKey: ValueKey<String>.new,
                           onToggle: () {},
+                          onGroupHandlePointerDown: () => setState(
+                            () => session.collapseAll(expandedGroups),
+                          ),
                           onReorderItems: (_, __) {},
                           itemBuilder: (_, item) =>
                               SizedBox(height: 60, child: Text(item)),
@@ -386,12 +449,20 @@ void main() {
       ),
     );
 
-    await tester.drag(
-      find.byIcon(Icons.drag_indicator).first,
-      const Offset(0, 80),
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(find.byIcon(Icons.drag_indicator).first),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
     expect(expandedGroups, isEmpty);
+    expect(find.text('A-item'), findsNothing);
+    expect(find.text('B-item'), findsNothing);
+    expect(groupDragStarted, isFalse);
+
+    await gesture.moveBy(const Offset(0, 80));
+    await tester.pump();
+    expect(groupDragStarted, isTrue);
+    await gesture.up();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('exit_reorder')));
     await tester.pump();

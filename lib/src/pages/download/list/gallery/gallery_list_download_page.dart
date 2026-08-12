@@ -183,6 +183,7 @@ class GalleryListDownloadPage extends StatelessWidget
           items: gallerys,
           itemKey: (gallery) => ValueKey('drag_${gallery.gid}'),
           onToggle: () => logic.toggleDisplayGroups(group),
+          onGroupHandlePointerDown: logic.handleGroupReorderStart,
           onReorderItems: (oldIndex, newIndex) =>
               logic.saveGalleryOrderAfterReordered(
                   group, gallerys, oldIndex, newIndex),
