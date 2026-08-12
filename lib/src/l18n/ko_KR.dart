@@ -68,8 +68,22 @@ class ko_KR {
       'logout': '로그아웃',
       'passwordLogin': '비밀번호 로그인',
       'cookieLogin': '쿠키 로그인',
-      'useWebview': 'Use Webview',
-      'skipCookieVerification': 'Skip Verification',
+      'passwordTab': '계정',
+      'cookieTab': 'Cookie',
+      'webTab': 'Web',
+      'webTabHint': '아래 버튼을 눌러 브라우저를 실행하세요. 브라우저에서 로그인 완료 시 자동으로 돌아옵니다.',
+      'launchWebLogin': '브라우저 로그인 실행',
+      'onlineVerification': '온라인 검증',
+      'webviewVerification': 'WebView 검증',
+      'skipVerification': '검증 건너뛰기',
+      'assist': '보조',
+      'onlineVerificationHint': 'HTTP 요청으로 검증',
+      'webviewVerificationHint': 'WebView로 검증 (온라인 검증 실패 시 사용)',
+      'skipVerificationHint': '검증 없이 바로 저장',
+      'igneousFieldHint': 'EX 사이트에만 필요, EH 사이트는 비워두세요',
+      'clipboardCookieDetected': '클립보드에서 cookie를 감지해 채웠습니다',
+      'verifyAndLogin': '검증 후 로그인',
+      'recommended': '권장',
       'youHaveLoggedInAs': '환영합니다:   ',
       'cookieIsBlack': '쿠키가 비었습니다',
       'cookieFormatError': '쿠키 형식이 잘못됐습니다.',
@@ -100,7 +114,7 @@ class ko_KR {
       'filtered': 'Filtered',
 
       /// gallery page
-      'getGallerysFailed': "갤러리 가져오기 실패",
+      'getGalleriesFailed': "갤러리 가져오기 실패",
       'refreshGalleryFailed': '갤러리 새로고침 실패',
       'tabBarSetting': '탭 바 설정',
       'jumpPageTo': '페이지 이동: ',
@@ -273,7 +287,7 @@ class ko_KR {
           'Try to load gallery detail page from EH site first to get better network performance',
       'redirectAllGallery': 'Redirect all gallery to EH',
       'imDonorHint':
-          'If you are a donor, you can turn this on to help you access gallerys in EX site',
+          'If you are a donor, you can turn this on to help you access galleries in EX site',
       'profileSetting': 'Profile Setting',
       'chooseProfileHint': 'Choose profile used in JHenTai',
       'siteSetting': '사이트 내부 설정',
@@ -293,7 +307,7 @@ class ko_KR {
       'myTagsHint': '강조하거나 숨기고 싶은 태그를 관리',
       'localTags': 'Local Tags',
       'localTagsHint': 'Extra filter tags',
-      'localTagsHint2': 'Gallerys with these tags will be hidden',
+      'localTagsHint2': 'Galleries with these tags will be hidden',
       'addLocalTags': 'Add Tags',
       'hidden': '숨김',
       'nope': '없음',
@@ -408,7 +422,7 @@ class ko_KR {
       'maxGalleryNum4Animation':
           'Max Gallery Num For List Animation in Download page',
       'maxGalleryNum4AnimationHint':
-          'Disable animation for groups which have more gallerys than this value(for list style)',
+          'Disable animation for groups which have more galleries than this value(for list style)',
 
       /// mouse wheel setting page
       'themeColorSettingHint': '라이트 모드와 다크 모드 각각에 다른 색을 지정합니다',
@@ -621,7 +635,7 @@ class ko_KR {
       'localGalleryHelpInfo':
           'JHenTai에서 다운로드하지 않은 갤러리를 불러옵니다. 다운로드 설정 → 추가 갤러리 스캔 경로를 추가하고 새로고침하세요.',
       'localGalleryHelpInfo4iOSAndMacOS':
-          'Load gallerys which is not downloaded by JHenTai. Put your gallerys in default download path and then refresh',
+          'Load galleries which is not downloaded by JHenTai. Put your galleries in default download path and then refresh',
       'deleteLocalGalleryHint': '사용자의 로컬 파일을 삭제합니다.',
       'priority': '우선순위',
       'highest': '높음',
@@ -641,8 +655,7 @@ class ko_KR {
       'exitReorderMode': '순서 변경 모드 종료',
       'sortGroups': '그룹 순서 변경',
       'sortGroupItems': '순서 변경: @group',
-      'sortGroupsHint':
-          '그룹 오른쪽 핸들로 그룹 순서를 변경하세요. 만화를 길게 눌러 순서를 변경하세요.',
+      'sortGroupsHint': '그룹 오른쪽 핸들로 그룹 순서를 변경하세요. 만화를 길게 눌러 순서를 변경하세요.',
       'downloadItemCount': '항목 @count개',
       'backToGroups': '그룹 목록으로',
       'switch2GridMode': '그리드 모드로 전환',
@@ -655,9 +668,10 @@ class ko_KR {
       'operationHasCompleted': '작업이 완료되었습니다',
       'operationInProgress': '작업이 진행 중입니다',
       'startProcess': '작업을 시작합니다',
-      'multiReDownloadHint': 'You will re-download all selected gallerys.',
-      'multiChangeGroupHint': 'You will change group of all selected gallerys.',
-      'multiDeleteHint': 'You will delete all selected gallerys.',
+      'multiReDownloadHint': 'You will re-download all selected galleries.',
+      'multiChangeGroupHint':
+          'You will change group of all selected galleries.',
+      'multiDeleteHint': 'You will delete all selected galleries.',
       'blankImageHint':
           'Downloading the image returned an empty result, trying to re-parse.',
       'peakHoursHint':
@@ -729,10 +743,10 @@ class ko_KR {
 
       /// ranklist page
       'getRanklistFailed': '순위 리스트 가져오기 실패',
-      'getSomeOfGallerysFailed': '일부 갤러리 가져오기 실패',
+      'getSomeOfGalleriesFailed': '일부 갤러리 가져오기 실패',
 
       /// history page
-      'getHistoryGallerysFailed': '일부 갤러리 기록 가져오기 실패',
+      'getHistoryGalleriesFailed': '일부 갤러리 기록 가져오기 실패',
 
       /// search page
       'search': '검색',
@@ -778,9 +792,9 @@ class ko_KR {
       'per': '/ 시간: ',
       'images': '장 ',
       'downloadTimeout': '다운로드 시간 초과',
-      'downloadAllGallerysOfSamePriority':
-          'Download All Gallerys of Same Priority',
-      'downloadAllGallerysOfSamePriorityHint':
+      'downloadAllGalleriesOfSamePriority':
+          'Download All Galleries of Same Priority',
+      'downloadAllGalleriesOfSamePriorityHint':
           'Download only 1 gallery simultaneously in 1 group with highest priority by default',
       'alwaysUseDefaultGroup': '항상 기본 그룹 사용',
       'enableStoreMetadataForRestore': '복원을 위한 저장소 메타데이터 사용',
@@ -871,7 +885,7 @@ class ko_KR {
           'Filter out gallery comments from users on the blocklist',
       'blockingRules': 'Block Rules',
       'blockingRulesHint':
-          'Additional blocking rules for gallerys and comments',
+          'Additional blocking rules for galleries and comments',
       'blockingTarget': 'Blocking Target',
       'blockingAttribute': 'Blocking Attribute',
       'blockingPattern': 'Blocking Pattern',

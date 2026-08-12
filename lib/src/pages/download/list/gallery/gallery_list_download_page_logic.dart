@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -9,11 +8,10 @@ import 'package:jhentai/src/pages/download/mixin/gallery/gallery_download_page_l
 import 'package:jhentai/src/setting/performance_setting.dart';
 import 'package:jhentai/src/utils/toast_util.dart';
 
-import '../../../../database/database.dart';
-import '../../../../database/dao/gallery_group_dao.dart';
 import '../../../../mixin/scroll_to_top_logic_mixin.dart';
 import '../../../../mixin/scroll_to_top_state_mixin.dart';
 import '../../../../mixin/update_global_gallery_status_logic_mixin.dart';
+import '../../../../service/gallery_download/gallery_download_service.dart';
 import '../../../../service/local_config_service.dart';
 import '../../../../widget/eh_alert_dialog.dart';
 import '../../mixin/basic/multi_select/multi_select_download_page_logic_mixin.dart';
@@ -25,7 +23,7 @@ import 'gallery_list_download_page_state.dart';
 class GalleryListDownloadPageLogic extends GetxController
     with
         Scroll2TopLogicMixin,
-        MultiSelectDownloadPageLogicMixin<GalleryDownloadedData>,
+        MultiSelectDownloadPageLogicMixin<GalleryDownloadInfo>,
         GalleryDownloadPageLogicMixin,
         UpdateGlobalGalleryStatusLogicMixin
     implements DownloadReorderModeParticipant {
@@ -65,29 +63,25 @@ class GalleryListDownloadPageLogic extends GetxController
     maxGalleryNum4AnimationListener.dispose();
   }
 
-  List<GalleryDownloadedData> get sortedGallerys {
-    List<GalleryDownloadedData> sorted = [...downloadService.gallerys];
-
-    Map<String, int> groupOrder = {};
-    for (int i = 0; i < downloadService.allGroups.length; i++) {
-      groupOrder[downloadService.allGroups[i]] = i;
-    }
+  List<GalleryDownloadInfo> get sortedGalleries {
+    final List<GalleryDownloadInfo> sorted = [...downloadService.galleries];
+    final Map<String, int> groupOrder = {
+      for (int i = 0; i < downloadService.allGroups.length; i++)
+        downloadService.allGroups[i]: i,
+    };
 
     sorted.sort((a, b) {
-      String aGroup = downloadService.galleryDownloadInfos[a.gid]!.group;
-      String bGroup = downloadService.galleryDownloadInfos[b.gid]!.group;
-
-      int groupCmp =
-          (groupOrder[aGroup] ?? 9999).compareTo(groupOrder[bGroup] ?? 9999);
-      if (groupCmp != 0) {
-        return groupCmp;
+      final int groupComparison =
+          (groupOrder[a.group] ?? 9999).compareTo(groupOrder[b.group] ?? 9999);
+      if (groupComparison != 0) {
+        return groupComparison;
       }
 
       switch (state.sortBy) {
         case SortBy.manual:
           return compareDownloadManualOrder(
-            firstOrder: downloadService.galleryDownloadInfos[a.gid]!.sortOrder,
-            secondOrder: downloadService.galleryDownloadInfos[b.gid]!.sortOrder,
+            firstOrder: a.sortOrder,
+            secondOrder: b.sortOrder,
             fallbackComparison: b.insertTime.compareTo(a.insertTime),
           );
         case SortBy.title:
@@ -102,11 +96,8 @@ class GalleryListDownloadPageLogic extends GetxController
     return sorted;
   }
 
-  List<GalleryDownloadedData> reorderGallerysInGroup(String group) {
-    return sortedGallerys
-        .where((gallery) =>
-            downloadService.galleryDownloadInfos[gallery.gid]!.group == group)
-        .toList();
+  List<GalleryDownloadInfo> reorderGalleriesInGroup(String group) {
+    return sortedGalleries.where((gallery) => gallery.group == group).toList();
   }
 
   void toggleEditMode() {
@@ -157,35 +148,25 @@ class GalleryListDownloadPageLogic extends GetxController
     if (oldIndex == newIndex) {
       return;
     }
-
-    final List<String> reordered =
-        reorderDownloadList(groups, oldIndex, newIndex);
-    downloadService.allGroups
-      ..clear()
-      ..addAll(reordered);
+    await downloadService.updateGroupOrder(oldIndex, newIndex);
     updateSafely([bodyId]);
-    for (int i = 0; i < reordered.length; i++) {
-      await GalleryGroupDao.updateGalleryGroupOrder(reordered[i], i);
-    }
   }
 
   Future<void> saveGalleryOrderAfterReordered(
     String group,
-    List<GalleryDownloadedData> gallerys,
+    List<GalleryDownloadInfo> galleries,
     int oldIndex,
     int newIndex,
   ) async {
     if (oldIndex == newIndex ||
-        gallerys.any((gallery) =>
-            downloadService.galleryDownloadInfos[gallery.gid]!.group !=
-            group)) {
+        galleries.any((gallery) => gallery.group != group)) {
       return;
     }
 
-    final List<GalleryDownloadedData> reordered =
-        reorderDownloadList(gallerys, oldIndex, newIndex);
+    final List<GalleryDownloadInfo> reordered =
+        reorderDownloadList(galleries, oldIndex, newIndex);
     for (int i = 0; i < reordered.length; i++) {
-      downloadService.galleryDownloadInfos[reordered[i].gid]!.sortOrder = i;
+      reordered[i].sortOrder = i;
     }
     state.sortBy = SortBy.manual;
     updateSafely([bodyId]);
@@ -220,7 +201,7 @@ class GalleryListDownloadPageLogic extends GetxController
   }
 
   @override
-  void handleRemoveItem(GalleryDownloadedData gallery, bool deleteImages,
+  void handleRemoveItem(GalleryDownloadInfo gallery, bool deleteImages,
       BuildContext context) async {
     bool confirmed = await confirmDestructiveAction(
         title: deleteImages
@@ -256,13 +237,13 @@ class GalleryListDownloadPageLogic extends GetxController
   Future<void> selectAllItem() async {
     await state.displayGroupsCompleter.future;
 
-    List<GalleryDownloadedData> gallerys = [];
+    List<GalleryDownloadInfo> galleries = [];
     for (String group in state.displayGroups) {
-      gallerys.addAll(downloadService.gallerysWithGroup(group));
+      galleries.addAll(downloadService.galleriesWithGroup(group));
     }
 
     multiSelectDownloadPageState.selectedGids
-        .addAll(gallerys.map((gallery) => gallery.gid));
+        .addAll(galleries.map((gallery) => gallery.gid));
     updateSafely(multiSelectDownloadPageState.selectedGids
         .map((gid) => '$itemCardId::$gid')
         .toList());

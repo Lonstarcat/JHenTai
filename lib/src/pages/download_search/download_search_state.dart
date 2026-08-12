@@ -8,7 +8,7 @@ class DownloadSearchState {
   bool caseSensitive = true;
   String? searchErrorKey;
 
-  List<GallerySearchVO> gallerys = [];
+  List<GallerySearchVO> galleries = [];
   List<ArchiveSearchVO> archives = [];
 }
 

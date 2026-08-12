@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:blur/blur.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/database/database.dart';
 import 'package:jhentai/src/mixin/scroll_to_top_page_mixin.dart';
 import 'package:jhentai/src/pages/download/grid/gallery/gallery_grid_download_page_state.dart';
 import 'package:jhentai/src/pages/download/mixin/basic/multi_select/multi_select_download_page_logic_mixin.dart';
@@ -19,7 +18,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 import '../../../../config/ui_config.dart';
 import '../../../../model/gallery_image.dart';
-import '../../../../service/gallery_download_service.dart';
+import '../../../../service/gallery_download/gallery_download_service.dart';
 import '../../download_base_page.dart';
 import '../../widget/download_page_more_menu.dart';
 import '../mixin/grid_download_page_mixin.dart';
@@ -95,13 +94,13 @@ class GalleryGridDownloadPage extends StatelessWidget
   @override
   GridGroup groupBuilder(
       BuildContext context, String groupName, bool inEditMode) {
-    List<GalleryDownloadedData> gallerys =
+    List<GalleryDownloadInfo> galleries =
         state.galleryObjectsWithGroup(groupName);
     return GridGroup(
       groupName: groupName,
-      contentSize: gallerys.length,
-      widgets: gallerys
-          .sublist(0, min(GridGroup.maxWidgetCount, gallerys.length))
+      contentSize: galleries.length,
+      widgets: galleries
+          .sublist(0, min(GridGroup.maxWidgetCount, galleries.length))
           .map(
             (gallery) => GetBuilder<GalleryDownloadService>(
               id: '${logic.downloadService.galleryDownloadSuccessId}::${gallery.gid}',
@@ -109,7 +108,7 @@ class GalleryGridDownloadPage extends StatelessWidget
                 id: '${logic.downloadService.downloadImageUrlId}::${gallery.gid}::0',
                 builder: (_) {
                   GalleryImage? image = logic.downloadService
-                      .galleryDownloadInfos[gallery.gid]?.images[0];
+                      .galleryDownloadInfos[gallery.gid]?.coverImage;
 
                   if (image == null) {
                     return Center(
@@ -154,7 +153,7 @@ class GalleryGridDownloadPage extends StatelessWidget
 
   @override
   GridGallery galleryBuilder(
-      BuildContext context, GalleryDownloadedData gallery, bool inEditMode) {
+      BuildContext context, GalleryDownloadInfo gallery, bool inEditMode) {
     return GridGallery(
       title: gallery.title,
       widget: GetBuilder<GalleryGridDownloadPageLogic>(
@@ -220,13 +219,12 @@ class GalleryGridDownloadPage extends StatelessWidget
     );
   }
 
-  GetBuilder<GalleryDownloadService> _buildCover(
-      GalleryDownloadedData gallery) {
+  GetBuilder<GalleryDownloadService> _buildCover(GalleryDownloadInfo gallery) {
     return GetBuilder<GalleryDownloadService>(
       id: '${logic.downloadService.downloadImageUrlId}::${gallery.gid}::0',
       builder: (_) {
         GalleryImage? image =
-            logic.downloadService.galleryDownloadInfos[gallery.gid]?.images[0];
+            logic.downloadService.galleryDownloadInfos[gallery.gid]?.coverImage;
 
         if (image?.downloadStatus == DownloadStatus.downloaded) {
           return buildGalleryImage(image!);
@@ -253,7 +251,7 @@ class GalleryGridDownloadPage extends StatelessWidget
   }
 
   Center _buildCircularProgressIndicator(
-      GalleryDownloadedData gallery, GalleryDownloadProgress downloadProgress) {
+      GalleryDownloadInfo gallery, GalleryDownloadProgress downloadProgress) {
     return Center(
       child: GetBuilder<GalleryDownloadService>(
         id: '${logic.downloadService.galleryDownloadProgressId}::${gallery.gid}',
@@ -273,7 +271,7 @@ class GalleryGridDownloadPage extends StatelessWidget
   }
 
   Center _buildDownloadProgress(
-      GalleryDownloadedData gallery, GalleryDownloadProgress downloadProgress) {
+      GalleryDownloadInfo gallery, GalleryDownloadProgress downloadProgress) {
     return Center(
       child: GetBuilder<GalleryDownloadService>(
         id: '${logic.downloadService.galleryDownloadProgressId}::${gallery.gid}',
@@ -288,7 +286,7 @@ class GalleryGridDownloadPage extends StatelessWidget
   }
 
   GestureDetector _buildActionButton(
-      GalleryDownloadedData gallery,
+      GalleryDownloadInfo gallery,
       GalleryDownloadProgress downloadProgress,
       GalleryDownloadSpeedComputer speedComputer) {
     return GestureDetector(
