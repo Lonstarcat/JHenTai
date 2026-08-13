@@ -1,4 +1,4 @@
-name: Build Android and macOS Release
+name: Build Android, macOS, and Windows Release
 
 on:
   push:
@@ -125,5 +125,59 @@ jobs:
         with:
           name: JHenTai-macOS-release
           path: "*.dmg"
+          if-no-files-found: error
+          retention-days: 7
+
+  windows:
+    name: Windows x64 Release
+    runs-on: windows-2022
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: master
+          cache: true
+
+      - name: Get app version
+        id: version
+        shell: pwsh
+        run: |
+          $Version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$').Matches.Groups[1].Value.Trim()
+          if (-not $Version) {
+            throw 'Unable to read version from pubspec.yaml'
+          }
+          "value=$Version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - run: flutter pub get
+
+      - name: Build Windows x64 Release ZIP
+        shell: pwsh
+        run: |
+          flutter build windows --release -t lib/src/main.dart --no-pub
+
+          $Version = '${{ steps.version.outputs.value }}'
+          $Destination = "build\windows\JHenTai_$Version"
+          $Source = 'build\windows\x64\runner\Release'
+          $Archive = "build\windows\JHenTai_${Version}_Windows.zip"
+
+          New-Item -Path $Destination -ItemType Directory -Force | Out-Null
+          Copy-Item "$Source\*" -Destination $Destination -Recurse -Force
+          Copy-Item -Path 'windows\*.dll' -Destination $Destination -Force -ErrorAction SilentlyContinue
+          Compress-Archive -Path $Destination -DestinationPath $Archive -CompressionLevel Optimal -Force
+
+          if (-not (Test-Path $Archive)) {
+            throw "Windows ZIP was not created: $Archive"
+          }
+
+          Get-FileHash -Algorithm SHA256 $Archive
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JHenTai-Windows-x64-release
+          path: build/windows/JHenTai_*_Windows.zip
           if-no-files-found: error
           retention-days: 7
