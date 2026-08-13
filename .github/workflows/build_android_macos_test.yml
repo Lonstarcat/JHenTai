@@ -154,30 +154,27 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Build Windows x64 Release ZIP
+      - name: Build Windows x64 Release
         shell: pwsh
         run: |
           flutter build windows --release -t lib/src/main.dart --no-pub
 
-          $Version = '${{ steps.version.outputs.value }}'
-          $Destination = "build\windows\JHenTai_$Version"
+          $Destination = 'build\windows\release-package'
           $Source = 'build\windows\x64\runner\Release'
-          $Archive = "build\windows\JHenTai_${Version}_Windows.zip"
 
           New-Item -Path $Destination -ItemType Directory -Force | Out-Null
           Copy-Item "$Source\*" -Destination $Destination -Recurse -Force
           Copy-Item -Path 'windows\*.dll' -Destination $Destination -Force -ErrorAction SilentlyContinue
-          Compress-Archive -Path $Destination -DestinationPath $Archive -CompressionLevel Optimal -Force
 
-          if (-not (Test-Path $Archive)) {
-            throw "Windows ZIP was not created: $Archive"
+          if (-not (Get-ChildItem -Path $Destination -Filter '*.exe')) {
+            throw "Windows executable was not copied to: $Destination"
           }
-
-          Get-FileHash -Algorithm SHA256 $Archive
 
       - uses: actions/upload-artifact@v4
         with:
-          name: JHenTai-Windows-x64-release
-          path: build/windows/JHenTai_*_Windows.zip
+          # GitHub packages the directory into this single ZIP automatically.
+          # Uploading a pre-compressed ZIP here would create a nested archive.
+          name: JHenTai_${{ steps.version.outputs.value }}e_Windows
+          path: build/windows/release-package/**
           if-no-files-found: error
           retention-days: 7
