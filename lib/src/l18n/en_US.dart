@@ -216,7 +216,11 @@ class en_US {
       'addTagFailed': 'Add Tag Failed',
       'parentGallery': 'Parent',
       'blockUploaderLocally': 'Block user locally',
-      'block': 'Block',
+      'blockTitleLocally': 'Block selected title locally',
+      'blockRuleAlreadyExists': 'This rule already exists',
+      'blockThisGallery': 'Block this gallery',
+      'blockGallerySuccess':
+          'Gallery blocked. You can modify it in Preference - Block Rules',
 
       /// detail dialog
       'galleryUrl': 'Gallery Url',
@@ -279,6 +283,12 @@ class en_US {
       'accountSetting': 'Account Setting',
       'styleSetting': 'Style Setting',
       'advancedSetting': 'Advanced Setting',
+      'refreshRate': 'Refresh Rate',
+      'refreshRateCurrent': 'Current',
+      'refreshRateHint':
+          'Applies immediately. May not take effect due to system restrictions.',
+      'refreshRateSecurityHint':
+          'Only change if necessary. If issues occur, reset the app data.',
       'securitySetting': 'Security Setting',
       'ehSetting': 'EH Site Setting',
       'readSetting': 'Read Setting',
@@ -319,6 +329,10 @@ class en_US {
       'addLocalTags': 'Add Tags',
       'hidden': 'Hidden',
       'nope': 'Nope',
+      'status': 'Status',
+      'tagSetDefaultColor': 'Default color of tag set',
+      'weight': 'Weight',
+      'color': 'Color',
       'getTagSetFailed': 'Get Tag Set Failed',
       'updateTagSetFailed': 'Update Tag Set Failed',
       'updateTagFailed': 'Update Tag Failed',
@@ -397,7 +411,7 @@ class en_US {
       'enableDefaultFavorite': 'Enable Default Favorite',
       'enableDefaultFavoriteHint': 'Long press to re-select',
       'enableDefaultTagSet': 'Enable Default Tag Set',
-      'enableDefaultTagSetHint': 'Long press to re-select',
+      'enableDefaultTagSetHint': 'Add to your default tag set directly',
       'disableDefaultTagSetHint': 'Select manually',
       'launchInFullScreen': 'Launch In Full Screen',
       'launchInFullScreenHint': 'Switch manually by F11',
@@ -528,6 +542,9 @@ class en_US {
           'Orientation-Specific Read Direction',
       'enableOrientationSpecificReadDirectionHint':
           'Set different read directions for portrait and landscape orientations',
+      'autoDetectWebtoon': 'Auto-detect Webtoon',
+      'autoDetectWebtoonHint':
+          'Automatically use top-to-bottom continuous reading mode for galleries tagged with webtoon',
       'portraitReadDirection': 'Portrait Read Direction',
       'landscapeReadDirection': 'Landscape Read Direction',
       'autoSwitchedReadDirection': 'Auto-switched read direction',
@@ -537,7 +554,26 @@ class en_US {
       'imageRegionWidthRatio': 'Image Region Width Ratio',
       'portraitImageRegionWidthRatio': 'Portrait Image Width Ratio',
       'landscapeImageRegionWidthRatio': 'Landscape Image Width Ratio',
-      'gestureRegionWidthRatio': 'Gesture Region Width Ratio',
+      'tapZoneStyle': 'Tap Zone Style',
+      'tapZoneStyleHint': 'Customize the tap zones on the reading page',
+      'tapZonePreset': 'Preset',
+      'tapZonePresetClassic': 'Classic',
+      'tapZonePresetVertical': 'Vertical',
+      'tapZoneRatio': 'Zone Size',
+      'tapZoneAction': 'Tap Zone Action',
+      'tapZoneActionNone': 'None',
+      'tapZoneActionPrevPage': 'Previous Page',
+      'tapZoneActionNextPage': 'Next Page',
+      'tapZoneActionToggleMenu': 'Toggle Menu',
+      'tapZoneLeftColumnRatio': 'Left Column Width',
+      'tapZoneMiddleColumnRatio': 'Middle Column Width',
+      'tapZoneRightColumnRatio': 'Right Column Width',
+      'tapZoneTopRowRatio': 'Top Row Height',
+      'tapZoneMiddleRowRatio': 'Middle Row Height',
+      'tapZoneBottomRowRatio': 'Bottom Row Height',
+      'tapZonePreview': 'Preview',
+      'tapZoneGuideHint':
+          'Tap anywhere to dismiss. Zones can be configured in Settings - Read.',
       'useThirdPartyViewer': 'Use Custom Viewer',
       'thirdPartyViewerPath': 'Custom Viewer Path(Executable file)',
       'showThumbnails': 'Show Thumbnails',
@@ -563,9 +599,7 @@ class en_US {
       'enableDoubleTapToScaleUp': 'Enable Double Tap to Scale up',
       'enableTapDragToScaleUp': 'Enable Tap Drag to Scale up',
       'enableBottomMenu': 'Enable Bottom Menu',
-      'reverseTurnPageDirection': 'Reverse Page Turning Direction',
       'disableGestureWhenScrolling': 'Disable Gesture When Scrolling',
-      'disablePageTurningOnTap': 'Disable Page Turning On Tap',
       'turnPageMode': 'Turn Page Mode',
       'turnPageModeHint': 'To next screen or next image',
       'enableImageMaxKilobytes': 'Enable Image Compression',
@@ -954,6 +988,21 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       /// tagSet dialog
       'chooseTagSet': 'Choose Tag Set',
 
+      /// tag dialog actions
+      'tagActionAccurate': 'Accurate',
+      'tagActionInaccurate': 'Inaccurate',
+      'tagActionFollow': 'Follow',
+      'tagActionHide': 'Hide Tag',
+      'tagActionTagSets': 'Manage Tag Sets',
+      'tagActionVoteUpTooltip':
+          'Vote that this tag is correct for this gallery',
+      'tagActionVoteDownTooltip':
+          'Vote that this tag is wrong for this gallery',
+      'tagActionFollowHint': 'Add this tag to a watched tag set',
+      'tagActionHideHint': 'Add this tag to a hidden tag set',
+      'tagActionTagSetsHint': 'Open tag set management',
+      'currentTagSet': 'Current',
+
       /// tag namespace
       'language': 'Language',
       'artist': 'Artist',
@@ -967,6 +1016,10 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'cosplayer': 'Cosplayer',
       'reclass': 'Reclass',
       'temp': 'Temp',
+      'permissionPermanentlyDenied': 'Permission permanently denied',
+      'permissionPermanentlyDeniedHint':
+          'Saving to album requires permission. Please go to system settings and grant full access to this app',
+      'goToSetting': 'Go to settings',
       'other': 'Other',
     };
   }

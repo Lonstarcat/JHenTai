@@ -222,7 +222,11 @@ class ru_RU {
       'addTagFailed': 'Не удалось добавить тег',
       'parentGallery': 'Родительская галерея',
       'blockUploaderLocally': 'Заблокировать пользователя локально',
-      'block': 'Block',
+      'blockTitleLocally': 'Заблокировать выбранное название локально',
+      'blockRuleAlreadyExists': 'Это правило уже существует',
+      'blockThisGallery': 'Заблокировать эту галерею',
+      'blockGallerySuccess':
+          'Галерея заблокирована. Изменить можно в Настройках — Правила блокировки',
 
       /// detail dialog
       'galleryUrl': 'URL Галереи',
@@ -286,6 +290,12 @@ class ru_RU {
       'accountSetting': 'Настройка аккаунта',
       'styleSetting': 'Настройка стиля',
       'advancedSetting': 'Расширенные настройки',
+      'refreshRate': 'Частота обновления',
+      'refreshRateCurrent': 'Текущая',
+      'refreshRateHint':
+          'Применяется сразу. Может не сработать из-за ограничений системы.',
+      'refreshRateSecurityHint':
+          'Не меняйте без необходимости. При проблемах сбросьте данные приложения.',
       'securitySetting': 'Настройки безопасности',
       'ehSetting': 'Настройки сайта EH',
       'readSetting': 'Настройки чтения',
@@ -326,6 +336,10 @@ class ru_RU {
       'addLocalTags': 'Добавить теги',
       'hidden': 'Скрытый',
       'nope': 'Нет',
+      'status': 'Статус',
+      'tagSetDefaultColor': 'Стандартный цвет набора тегов',
+      'weight': 'Вес',
+      'color': 'Цвет',
       'getTagSetFailed': 'Не удалось получить набор тегов',
       'updateTagSetFailed': 'Не удалось обновить набор тегов',
       'updateTagFailed': 'Не удалось обновить тег',
@@ -406,7 +420,8 @@ class ru_RU {
       'enableDefaultFavorite': 'Включить избранное по умолчанию',
       'enableDefaultFavoriteHint': 'Долгий тап для перевыбора',
       'enableDefaultTagSet': 'Включить набор тегов по умолчанию',
-      'enableDefaultTagSetHint': 'Долгий тап для перевыбора',
+      'enableDefaultTagSetHint':
+          'Добавлять в набор тегов по умолчанию напрямую',
       'disableDefaultTagSetHint': 'Выбирать вручную',
       'launchInFullScreen': 'Запускать в полноэкранном режиме',
       'launchInFullScreenHint': 'Переключение вручную по F11',
@@ -541,6 +556,9 @@ class ru_RU {
           'Направление чтения по ориентации',
       'enableOrientationSpecificReadDirectionHint':
           'Установить разное направление чтения для портретной и альбомной ориентации',
+      'autoDetectWebtoon': 'Автоопределение вебтунов',
+      'autoDetectWebtoonHint':
+          'Автоматически использовать режим непрерывного чтения сверху вниз для галерей с тегом webtoon',
       'portraitReadDirection': 'Направление чтения (портрет)',
       'landscapeReadDirection': 'Направление чтения (альбом)',
       'autoSwitchedReadDirection': 'Авто-смена направления чтения',
@@ -550,7 +568,26 @@ class ru_RU {
       'imageRegionWidthRatio': 'Соотношение ширины области изображения',
       'portraitImageRegionWidthRatio': 'Ширина изображения (портрет)',
       'landscapeImageRegionWidthRatio': 'Ширина изображения (ландшафт)',
-      'gestureRegionWidthRatio': 'Соотношение ширины области жестов',
+      'tapZoneStyle': 'Стиль зон нажатия',
+      'tapZoneStyleHint': 'Настройка зон нажатия на странице чтения',
+      'tapZonePreset': 'Пресет',
+      'tapZonePresetClassic': 'Классический',
+      'tapZonePresetVertical': 'Вертикальный',
+      'tapZoneRatio': 'Размер зон',
+      'tapZoneAction': 'Действие зоны нажатия',
+      'tapZoneActionNone': 'Нет',
+      'tapZoneActionPrevPage': 'Предыдущая страница',
+      'tapZoneActionNextPage': 'Следующая страница',
+      'tapZoneActionToggleMenu': 'Показать/скрыть меню',
+      'tapZoneLeftColumnRatio': 'Ширина левого столбца',
+      'tapZoneMiddleColumnRatio': 'Ширина среднего столбца',
+      'tapZoneRightColumnRatio': 'Ширина правого столбца',
+      'tapZoneTopRowRatio': 'Высота верхнего ряда',
+      'tapZoneMiddleRowRatio': 'Высота среднего ряда',
+      'tapZoneBottomRowRatio': 'Высота нижнего ряда',
+      'tapZonePreview': 'Предпросмотр',
+      'tapZoneGuideHint':
+          'Нажмите в любом месте, чтобы закрыть. Зоны настраиваются в Настройки → Чтение.',
       'useThirdPartyViewer': 'Использовать сторонний просмотрщик',
       'thirdPartyViewerPath': 'Путь к стороннему просмотрщику (исп. файл)',
       'showThumbnails': 'Показывать миниатюры',
@@ -577,9 +614,7 @@ class ru_RU {
       'enableDoubleTapToScaleUp': 'Включить двойной тап для увеличения',
       'enableTapDragToScaleUp': 'Включить тап с перетаскиванием для увеличения',
       'enableBottomMenu': 'Включить нижнее меню',
-      'reverseTurnPageDirection': 'Обратное направление перелистывания',
       'disableGestureWhenScrolling': 'Отключить жесты при прокрутке',
-      'disablePageTurningOnTap': 'Отключить перелистывание по тапу',
       'turnPageMode': 'Режим перелистывания',
       'turnPageModeHint': 'К следующему экрану или изображению',
       'enableImageMaxKilobytes': 'Включить сжатие изображений',
@@ -981,6 +1016,21 @@ class ru_RU {
       /// tagSet dialog
       'chooseTagSet': 'Выбрать набор тегов',
 
+      /// tag dialog actions
+      'tagActionAccurate': 'Точно',
+      'tagActionInaccurate': 'Неточно',
+      'tagActionFollow': 'Отслеживать',
+      'tagActionHide': 'Скрыть тег',
+      'tagActionTagSets': 'Управление наборами тегов',
+      'tagActionVoteUpTooltip':
+          'Проголосовать, что этот тег подходит для этой галереи',
+      'tagActionVoteDownTooltip':
+          'Проголосовать, что этот тег не подходит для этой галереи',
+      'tagActionFollowHint': 'Добавить этот тег в отслеживаемый набор',
+      'tagActionHideHint': 'Добавить этот тег в скрытый набор',
+      'tagActionTagSetsHint': 'Открыть управление наборами тегов',
+      'currentTagSet': 'Текущий',
+
       /// tag namespace
       'language': 'Язык',
       'artist': 'Художник',
@@ -994,6 +1044,10 @@ class ru_RU {
       'cosplayer': 'Косплеер',
       'reclass': 'Переклассификация',
       'temp': 'Временный',
+      'permissionPermanentlyDenied': 'Разрешение навсегда отклонено',
+      'permissionPermanentlyDeniedHint':
+          'Для сохранения в галерею требуется разрешение. Предоставьте приложению полный доступ в настройках системы',
+      'goToSetting': 'Перейти в настройки',
       'other': 'Другое',
     };
   }

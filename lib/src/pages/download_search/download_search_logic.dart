@@ -316,6 +316,11 @@ class DownloadSearchLogic extends GetxController
       await galleryDownloadService.galleryDownloadInfos[gallery.gid]!
           .ensureImagesLoaded();
 
+      ReadDirection? readDirection =
+          isWebtoonGalleryFromTagDataList(gallery.tags)
+              ? ReadDirection.top2bottomList
+              : null;
+
       toRoute(
         Routes.read,
         arguments: ReadPageInfo(
@@ -330,6 +335,7 @@ class DownloadSearchLogic extends GetxController
           useSuperResolution: superResolutionService.get(
                   gallery.gid, SuperResolutionType.gallery) !=
               null,
+          readDirection: readDirection,
         ),
       );
     }
@@ -357,6 +363,11 @@ class DownloadSearchLogic extends GetxController
       List<GalleryImage> images =
           await archiveDownloadService.getUnpackedImages(archive.gid);
 
+      ReadDirection? readDirection =
+          isWebtoonGalleryFromTagDataList(archive.tags)
+              ? ReadDirection.top2bottomList
+              : null;
+
       toRoute(
         Routes.read,
         arguments: ReadPageInfo(
@@ -372,6 +383,7 @@ class DownloadSearchLogic extends GetxController
           useSuperResolution: superResolutionService.get(
                   archive.gid, SuperResolutionType.archive) !=
               null,
+          readDirection: readDirection,
         ),
       );
     }
