@@ -8,6 +8,7 @@ import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/pages/download/grid/local/local_gallery_grid_page.dart';
 import 'package:jhentai/src/service/local_config_service.dart';
 import 'package:jhentai/src/setting/preference_setting.dart';
+import 'package:jhentai/src/service/download_task_navigation_service.dart';
 import 'package:simple_animations/animation_controller_extension/animation_controller_extension.dart';
 import 'package:simple_animations/animation_mixin/animation_mixin.dart';
 import '../../config/ui_config.dart';
@@ -26,8 +27,9 @@ class DownloadPage extends StatefulWidget {
 }
 
 class _DownloadPageState extends State<DownloadPage> {
-  DownloadPageGalleryType galleryType =
-      preferenceSetting.defaultDownloadTab.value;
+  late DownloadPageGalleryType galleryType =
+      _galleryTypeForNavigation(downloadTaskNavigationTarget.value) ??
+          preferenceSetting.defaultDownloadTab.value;
   DownloadPageBodyType bodyType = GetPlatform.isMobile
       ? DownloadPageBodyType.list
       : DownloadPageBodyType.grid;
@@ -36,6 +38,8 @@ class _DownloadPageState extends State<DownloadPage> {
   @override
   void initState() {
     super.initState();
+
+    downloadTaskNavigationTarget.addListener(_handleTaskNavigation);
 
     localConfigService
         .read(configKey: ConfigEnum.downloadPageBodyType)
@@ -46,13 +50,39 @@ class _DownloadPageState extends State<DownloadPage> {
       }
     }).whenComplete(() {
       bodyTypeCompleter.complete();
+      downloadTaskNavigationTarget.value = null;
     });
   }
 
   @override
   void dispose() {
+    downloadTaskNavigationTarget.removeListener(_handleTaskNavigation);
     exitAllDownloadReorderModes();
     super.dispose();
+  }
+
+  DownloadPageGalleryType? _galleryTypeForNavigation(
+      DownloadTaskNavigationTarget? target) {
+    return switch (target?.taskType) {
+      'archive' => DownloadPageGalleryType.archive,
+      'download' || 'favorite' => DownloadPageGalleryType.download,
+      _ => null,
+    };
+  }
+
+  void _handleTaskNavigation() {
+    final DownloadTaskNavigationTarget? target =
+        downloadTaskNavigationTarget.value;
+    final DownloadPageGalleryType? targetType =
+        _galleryTypeForNavigation(target);
+    if (!mounted || targetType == null) {
+      return;
+    }
+    if (targetType != galleryType) {
+      exitAllDownloadReorderModes();
+      setState(() => galleryType = targetType);
+    }
+    downloadTaskNavigationTarget.value = null;
   }
 
   @override

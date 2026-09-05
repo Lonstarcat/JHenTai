@@ -1,0 +1,213 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1060" width="1600" height="1060" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="7" data-visual-theme="OpenAI" data-diagram-type="architecture" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="showcase" data-max-bends-per-edge="2" data-max-total-bends="8" data-max-route-stretch="1.35" data-max-bridged-crossings="0" data-min-node-gap="40" data-min-container-gutter="20" data-min-label-clearance="4" data-min-segment-length="16">
+  <defs>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#10a37f"/></marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#7c3aed"/></marker>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#1d4ed8"/></marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/></marker>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#71717a"/></marker>
+    <marker id="arrow-black" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#0d0d0d"/></marker>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
+      .title { font-size: 24px; font-weight: 700; fill: #0d0d0d; }
+      .subtitle { font-size: 13px; font-weight: 500; fill: #6e6e80; }
+      .section { font-size: 13px; font-weight: 700; letter-spacing: 1.2px; }
+      .node-title { font-weight: 600; fill: #0d0d0d; }
+      .node-sub { font-size: 12px; font-weight: 400; fill: #6e6e80; }
+      .node-type { font-size: 10px; font-weight: 700; fill: #71717a; letter-spacing: 0.08em; }
+      .arrow-label { font-size: 12px; font-weight: 500; fill: #6e6e80; }
+      .legend { font-size: 12px; font-weight: 500; fill: #475569; }
+      .footnote { font-size: 12px; font-weight: 500; fill: #94a3b8; }
+    </style>
+  </defs>
+  <rect data-graph-role="background" width="1600" height="1060" fill="#ffffff"/>
+  <text x="40" y="44" class="title">JHenTai Enhanced Branch Architecture</text>
+  <text x="40" y="70" class="subtitle">Enhanced gallery search, metadata flow, downloads, and local reading — compatible with EHentai / ExHentai APIs</text>
+  <line x1="40" y1="92" x2="1560" y2="92" stroke="#e5e5e5" stroke-width="1"/>
+  <g id="original-client" data-graph-role="container" data-container-id="original-client" data-semantic-role="boundary" data-graph-bounds="40,160,360,984">
+    <rect data-graph-role="container" x="40" y="160" width="320" height="824" rx="16" fill="none" stroke="#cbd5e1" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="58" y="184" class="section" fill="#cbd5e1">ORIGINAL JHENTAI · FLUTTER CLIENT</text>
+    <rect id="original-client-header" data-graph-role="reserved" data-reserved-kind="container-header" x="48" y="166" width="288" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="enhanced-search" data-graph-role="container" data-container-id="enhanced-search" data-semantic-role="boundary" data-graph-bounds="400,160,800,640">
+    <rect data-graph-role="container" x="400" y="160" width="400" height="480" rx="16" fill="none" stroke="#10a37f" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="418" y="184" class="section" fill="#10a37f">ENHANCED BRANCH · SEARCH</text>
+    <rect id="enhanced-search-header" data-graph-role="reserved" data-reserved-kind="container-header" x="408" y="166" width="216" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="core-services" data-graph-role="container" data-container-id="core-services" data-semantic-role="boundary" data-graph-bounds="840,160,1240,984">
+    <rect data-graph-role="container" x="840" y="160" width="400" height="824" rx="16" fill="none" stroke="#71717a" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="858" y="184" class="section" fill="#71717a">CORE SERVICES</text>
+    <rect id="core-services-header" data-graph-role="reserved" data-reserved-kind="container-header" x="848" y="166" width="128" height="30" fill="none" stroke="none"/>
+  </g>
+  <g id="remote-services" data-graph-role="container" data-container-id="remote-services" data-semantic-role="boundary" data-graph-bounds="1280,160,1560,520">
+    <rect data-graph-role="container" x="1280" y="160" width="280" height="360" rx="16" fill="none" stroke="#1d4ed8" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="1298" y="184" class="section" fill="#1d4ed8">REMOTE SERVICES</text>
+    <rect id="remote-services-header" data-graph-role="reserved" data-reserved-kind="container-header" x="1288" y="166" width="144" height="30" fill="none" stroke="none"/>
+  </g>
+  <path id="user-opens" data-graph-role="edge" data-edge-id="user-opens" data-source="user" data-target="mobile" data-edge-kind="flow" data-flow="neutral" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 160,232 H 208" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)"/>
+  <path id="mobile-search" data-graph-role="edge" data-edge-id="mobile-search" data-source="mobile" data-target="search-page" data-edge-kind="flow" data-flow="neutral" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 272,264 V 320" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)"/>
+  <path id="search-submit" data-graph-role="edge" data-edge-id="search-submit" data-source="search-page" data-target="enhanced-engine" data-edge-kind="flow" data-flow="control" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 336,352 H 424" fill="none" stroke="#10a37f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <path id="parse" data-graph-role="edge" data-edge-id="parse" data-source="enhanced-engine" data-target="syntax-parser" data-edge-kind="flow" data-flow="control" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 502,392 V 432" fill="none" stroke="#10a37f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <path id="operators" data-graph-role="edge" data-edge-id="operators" data-source="syntax-parser" data-target="case-mode" data-edge-kind="flow" data-flow="transform" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 580,472 H 620" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-purple)"/>
+  <path id="case-normalize" data-graph-role="edge" data-edge-id="case-normalize" data-source="case-mode" data-target="query-builder" data-edge-kind="flow" data-flow="control" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 698,512 V 552" fill="none" stroke="#10a37f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <path id="query" data-graph-role="edge" data-edge-id="query" data-source="query-builder" data-target="network" data-edge-kind="flow" data-flow="network" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 776,584 H 864" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-blue)"/>
+  <path id="api-call" data-graph-role="edge" data-edge-id="api-call" data-source="network" data-target="ehentai" data-edge-kind="flow" data-flow="network" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 1216,584 H 1260 V 244 H 1304" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-blue)"/>
+  <path id="api-data" data-graph-role="edge" data-edge-id="api-data" data-source="ehentai" data-target="remote-data" data-edge-kind="flow" data-flow="network" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1420,288 V 336" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-blue)"/>
+  <path id="results" data-graph-role="edge" data-edge-id="results" data-source="remote-data" data-target="gallery-results" data-edge-kind="flow" data-flow="network" data-bends="1" data-route-stretch="1.0" data-bridges="" d="M 1420,424 V 672 H 336" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-blue)"/>
+  <path id="open-detail" data-graph-role="edge" data-edge-id="open-detail" data-source="gallery-results" data-target="gallery-detail" data-edge-kind="flow" data-flow="neutral" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 200,704 V 752" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)"/>
+  <path id="start-download" data-graph-role="edge" data-edge-id="start-download" data-source="gallery-detail" data-target="download" data-edge-kind="flow" data-flow="download" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 336,784 H 864" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-orange)"/>
+  <path id="record" data-graph-role="edge" data-edge-id="record" data-source="download" data-target="database" data-edge-kind="flow" data-flow="write" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 940,816 V 872" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)"/>
+  <path id="cache" data-graph-role="edge" data-edge-id="cache" data-source="download" data-target="image-cache" data-edge-kind="flow" data-flow="write" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1132,816 V 872" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)"/>
+  <path id="reader-state" data-graph-role="edge" data-edge-id="reader-state" data-source="database" data-target="reader" data-edge-kind="flow" data-flow="read" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 864,904 H 336" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)"/>
+  <path id="reader-images" data-graph-role="edge" data-edge-id="reader-images" data-source="image-cache" data-target="reader" data-edge-kind="flow" data-flow="read" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 1132,936 V 960 H 200 V 936" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-gray)"/>
+  <g id="node-user" data-graph-role="node" data-node-id="user" data-semantic-role="user_avatar" data-graph-bounds="64,200,160,264">
+    <rect x="64" y="200" width="96" height="64" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.8"/>
+    <circle cx="89" cy="224" r="9" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+    <path d="M 76,250 Q 76,236 89,236 Q 102,236 102,250" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="129" y="228" text-anchor="middle" class="node-title" font-size="15">User</text>
+    <text x="129" y="247" text-anchor="middle" class="node-sub" font-size="11">search + read</text>
+  </g>
+  <g id="node-mobile" data-graph-role="node" data-node-id="mobile" data-semantic-role="rect" data-graph-bounds="208,200,336,264">
+    <rect x="208" y="200" width="128" height="64" rx="14" fill="#ffffff" stroke="#0d0d0d" stroke-width="1.8"/>
+    <text x="272.0" y="229.0" text-anchor="middle" class="node-title" font-size="16">Mobile Client</text>
+    <text x="272.0" y="251.0" text-anchor="middle" class="node-sub">Flutter UI shell</text>
+  </g>
+  <g id="node-search-page" data-graph-role="node" data-node-id="search-page" data-semantic-role="rect" data-graph-bounds="64,320,336,384">
+    <rect x="64" y="320" width="272" height="64" rx="14" fill="#ffffff" stroke="#0d0d0d" stroke-width="1.8"/>
+    <text x="200.0" y="349.0" text-anchor="middle" class="node-title" font-size="16">Search Page</text>
+    <text x="200.0" y="371.0" text-anchor="middle" class="node-sub">Search UI · gallery browser</text>
+  </g>
+  <g id="node-gallery-results" data-graph-role="node" data-node-id="gallery-results" data-semantic-role="rect" data-graph-bounds="64,640,336,704">
+    <rect x="64" y="640" width="272" height="64" rx="14" fill="#ffffff" stroke="#0d0d0d" stroke-width="1.8"/>
+    <text x="200.0" y="669.0" text-anchor="middle" class="node-title" font-size="16">Gallery Results</text>
+    <text x="200.0" y="691.0" text-anchor="middle" class="node-sub">metadata · thumbnails · tags</text>
+  </g>
+  <g id="node-gallery-detail" data-graph-role="node" data-node-id="gallery-detail" data-semantic-role="rect" data-graph-bounds="64,752,336,816">
+    <rect x="64" y="752" width="272" height="64" rx="14" fill="#ffffff" stroke="#0d0d0d" stroke-width="1.8"/>
+    <text x="200.0" y="781.0" text-anchor="middle" class="node-title" font-size="16">Gallery Detail</text>
+    <text x="200.0" y="803.0" text-anchor="middle" class="node-sub">metadata · favorites · actions</text>
+  </g>
+  <g id="node-reader" data-graph-role="node" data-node-id="reader" data-semantic-role="rect" data-graph-bounds="64,872,336,936">
+    <rect x="64" y="872" width="272" height="64" rx="14" fill="#ffffff" stroke="#0d0d0d" stroke-width="1.8"/>
+    <text x="200.0" y="901.0" text-anchor="middle" class="node-title" font-size="16">Reader</text>
+    <text x="200.0" y="923.0" text-anchor="middle" class="node-sub">cached and offline reading</text>
+  </g>
+  <g id="node-enhanced-engine" data-graph-role="node" data-node-id="enhanced-engine" data-semantic-role="double_rect" data-graph-bounds="424,312,776,392">
+    <rect x="424" y="312" width="352" height="80" rx="14" fill="#ffffff" stroke="#10a37f" stroke-width="2"/>
+    <rect x="430" y="318" width="340" height="68" rx="11" fill="none" stroke="#10a37f" stroke-width="1.2" opacity="0.65"/>
+    <text x="600.0" y="349.0" text-anchor="middle" class="node-title" font-size="16">Enhanced Search Engine</text>
+    <text x="600.0" y="371.0" text-anchor="middle" class="node-sub">mixed expressions · automatic refresh</text>
+  </g>
+  <g id="node-syntax-parser" data-graph-role="node" data-node-id="syntax-parser" data-semantic-role="rect" data-graph-bounds="424,432,580,512">
+    <rect x="424" y="432" width="156" height="80" rx="14" fill="#ffffff" stroke="#7c3aed" stroke-width="1.8"/>
+    <text x="502.0" y="469.0" text-anchor="middle" class="node-title" font-size="16">Syntax Parser</text>
+    <text x="502.0" y="491.0" text-anchor="middle" class="node-sub">+ AND · | OR · − NOT</text>
+  </g>
+  <g id="node-case-mode" data-graph-role="node" data-node-id="case-mode" data-semantic-role="rect" data-graph-bounds="620,432,776,512">
+    <rect x="620" y="432" width="156" height="80" rx="14" fill="#ffffff" stroke="#10a37f" stroke-width="1.8"/>
+    <text x="698.0" y="469.0" text-anchor="middle" class="node-title" font-size="16">Case Mode</text>
+    <text x="698.0" y="491.0" text-anchor="middle" class="node-sub">sensitive / insensitive</text>
+  </g>
+  <g id="node-query-builder" data-graph-role="node" data-node-id="query-builder" data-semantic-role="rect" data-graph-bounds="424,552,776,616">
+    <rect x="424" y="552" width="352" height="64" rx="14" fill="#ffffff" stroke="#10a37f" stroke-width="1.8"/>
+    <text x="600.0" y="581.0" text-anchor="middle" class="node-title" font-size="16">Query Builder</text>
+    <text x="600.0" y="603.0" text-anchor="middle" class="node-sub">validated EH-compatible parameters</text>
+  </g>
+  <g id="node-network" data-graph-role="node" data-node-id="network" data-semantic-role="hexagon" data-graph-bounds="864,552,1216,616">
+    <polygon points="886,552 1194,552 1216,584.0 1194,616 886,616 864,584.0" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+    <text x="1040.0" y="581.0" text-anchor="middle" class="node-title" font-size="16">Network Layer</text>
+    <text x="1040.0" y="603.0" text-anchor="middle" class="node-sub">auth · cookies · retry · rate limits</text>
+  </g>
+  <g id="node-download" data-graph-role="node" data-node-id="download" data-semantic-role="rect" data-graph-bounds="864,752,1216,816">
+    <rect x="864" y="752" width="352" height="64" rx="14" fill="#ffffff" stroke="#f97316" stroke-width="1.8"/>
+    <text x="1040.0" y="781.0" text-anchor="middle" class="node-title" font-size="16">Download Manager</text>
+    <text x="1040.0" y="803.0" text-anchor="middle" class="node-sub">queue · parallel · resume · archives</text>
+  </g>
+  <g id="node-database" data-graph-role="node" data-node-id="database" data-semantic-role="cylinder" data-graph-bounds="864,872,1016,936">
+    <path d="M 864,882 C 864,874 1016,874 1016,882 L 1016,926 C 1016,934 864,934 864,926 Z" fill="#ffffff" stroke="#71717a" stroke-width="1.8"/>
+    <ellipse cx="940.0" cy="882" rx="76.0" ry="10" fill="#ffffff" stroke="#71717a" stroke-width="1.8"/>
+    <path d="M 864,926 C 864,934 1016,934 1016,926" fill="none" stroke="#71717a" stroke-width="1.4"/>
+    <text x="940.0" y="890" text-anchor="middle" class="node-type">HISTORY · DOWNLOADS</text>
+    <text x="940.0" y="911" text-anchor="middle" class="node-title" font-size="15">SQLite Database</text>
+    <text x="940.0" y="928" text-anchor="middle" class="node-sub" font-size="11">favorites · settings</text>
+  </g>
+  <g id="node-image-cache" data-graph-role="node" data-node-id="image-cache" data-semantic-role="cylinder" data-graph-bounds="1056,872,1208,936">
+    <path d="M 1056,882 C 1056,874 1208,874 1208,882 L 1208,926 C 1208,934 1056,934 1056,926 Z" fill="#ffffff" stroke="#71717a" stroke-width="1.8"/>
+    <ellipse cx="1132.0" cy="882" rx="76.0" ry="10" fill="#ffffff" stroke="#71717a" stroke-width="1.8"/>
+    <path d="M 1056,926 C 1056,934 1208,934 1208,926" fill="none" stroke="#71717a" stroke-width="1.4"/>
+    <text x="1132.0" y="890" text-anchor="middle" class="node-type">LOCAL STORAGE</text>
+    <text x="1132.0" y="911" text-anchor="middle" class="node-title" font-size="15">Image Cache</text>
+    <text x="1132.0" y="928" text-anchor="middle" class="node-sub" font-size="11">thumbnails · images</text>
+  </g>
+  <g id="node-ehentai" data-graph-role="node" data-node-id="ehentai" data-semantic-role="hexagon" data-graph-bounds="1304,200,1536,288">
+    <polygon points="1326,200 1514,200 1536,244.0 1514,288 1326,288 1304,244.0" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+    <text x="1420.0" y="218" text-anchor="middle" class="node-type">REMOTE API</text>
+    <text x="1420.0" y="239" text-anchor="middle" class="node-title" font-size="15">EHentai / ExHentai</text>
+    <text x="1420.0" y="256" text-anchor="middle" class="node-sub" font-size="11">original compatible endpoints</text>
+  </g>
+  <g id="node-remote-data" data-graph-role="node" data-node-id="remote-data" data-semantic-role="rect" data-graph-bounds="1304,336,1536,424">
+    <rect x="1304" y="336" width="232" height="88" rx="14" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+    <text x="1420.0" y="377.0" text-anchor="middle" class="node-title" font-size="16">Gallery API Data</text>
+    <text x="1420.0" y="399.0" text-anchor="middle" class="node-sub">search · metadata · images · tags</text>
+  </g>
+  <g id="mobile-search-label" data-graph-role="label" data-owner="mobile-search" data-graph-bounds="271.0,277,317.0,297">
+    <rect x="271.0" y="277" width="46" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="294" y="291" text-anchor="middle" class="arrow-label">opens</text>
+  </g>
+  <g id="search-submit-label" data-graph-role="label" data-owner="search-submit" data-graph-bounds="344.0,322,416.0,342">
+    <rect x="344.0" y="322" width="72" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="380" y="336" text-anchor="middle" class="arrow-label">user input</text>
+  </g>
+  <g id="parse-label" data-graph-role="label" data-owner="parse" data-graph-bounds="526.0,401,570.0,421">
+    <rect x="526.0" y="401" width="44" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="548" y="415" text-anchor="middle" class="arrow-label">parse</text>
+  </g>
+  <g id="query-label" data-graph-role="label" data-owner="query" data-graph-bounds="797.0,554,843.0,574">
+    <rect x="797.0" y="554" width="46" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="820" y="568" text-anchor="middle" class="arrow-label">query</text>
+  </g>
+  <g id="api-call-label" data-graph-role="label" data-owner="api-call" data-graph-bounds="1213.0,405,1295.0,425">
+    <rect x="1213.0" y="405" width="82" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="1254" y="419" text-anchor="middle" class="arrow-label">API request</text>
+  </g>
+  <g id="results-label" data-graph-role="label" data-owner="results" data-graph-bounds="851.0,642,949.0,662">
+    <rect x="851.0" y="642" width="98" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="900" y="656" text-anchor="middle" class="arrow-label">gallery results</text>
+  </g>
+  <g id="open-detail-label" data-graph-role="label" data-owner="open-detail" data-graph-bounds="214.0,715,262.0,735">
+    <rect x="214.0" y="715" width="48" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="238" y="729" text-anchor="middle" class="arrow-label">select</text>
+  </g>
+  <g id="start-download-label" data-graph-role="label" data-owner="start-download" data-graph-bounds="564.0,754,636.0,774">
+    <rect x="564.0" y="754" width="72" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="600" y="768" text-anchor="middle" class="arrow-label">download</text>
+  </g>
+  <g id="reader-state-label" data-graph-role="label" data-owner="reader-state" data-graph-bounds="544.0,874,656.0,894">
+    <rect x="544.0" y="874" width="112" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="600" y="888" text-anchor="middle" class="arrow-label">history + settings</text>
+  </g>
+  <g id="reader-images-label" data-graph-role="label" data-owner="reader-images" data-graph-bounds="654.0,966,746.0,986">
+    <rect x="654.0" y="966" width="92" height="20" rx="6" fill="#ffffff" opacity="0.96"/>
+    <text x="700" y="980" text-anchor="middle" class="arrow-label">cached images</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="30" y="98" width="890" height="42" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="40" y1="116" x2="70" y2="116" stroke="#10a37f" stroke-width="2"/>
+    <circle data-graph-role="decoration" cx="55" cy="116" r="3" fill="#10a37f"/>
+    <text data-graph-role="decoration" x="80" y="120" class="legend">Enhanced Search</text>
+    <line data-graph-role="decoration" x1="220" y1="116" x2="250" y2="116" stroke="#7c3aed" stroke-width="2"/>
+    <circle data-graph-role="decoration" cx="235" cy="116" r="3" fill="#7c3aed"/>
+    <text data-graph-role="decoration" x="260" y="120" class="legend">Search Parser</text>
+    <line data-graph-role="decoration" x1="386" y1="116" x2="416" y2="116" stroke="#1d4ed8" stroke-width="2"/>
+    <circle data-graph-role="decoration" cx="401" cy="116" r="3" fill="#1d4ed8"/>
+    <text data-graph-role="decoration" x="426" y="120" class="legend">Network</text>
+    <line data-graph-role="decoration" x1="508" y1="116" x2="538" y2="116" stroke="#f97316" stroke-width="2"/>
+    <circle data-graph-role="decoration" cx="523" cy="116" r="3" fill="#f97316"/>
+    <text data-graph-role="decoration" x="548" y="120" class="legend">Download Manager</text>
+    <line data-graph-role="decoration" x1="700" y1="116" x2="730" y2="116" stroke="#71717a" stroke-width="2"/>
+    <circle data-graph-role="decoration" cx="715" cy="116" r="3" fill="#71717a"/>
+    <text data-graph-role="decoration" x="740" y="120" class="legend">Local Storage</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="40,1016,1030,1040">
+    <text x="40" y="1032" class="footnote">Original JHenTai modules remain compatible; Enhanced Branch modules extend search parsing and user experience.</text>
+  </g>
+</svg>

@@ -3,7 +3,9 @@ import 'package:flutter_resizable_container/flutter_resizable_container.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/routes/routes.dart';
 import 'package:jhentai/src/pages/download/download_reorder_mode.dart';
+import 'package:jhentai/src/service/download_task_navigation_service.dart';
 import 'package:jhentai/src/service/windows_service.dart';
+import 'package:jhentai/src/setting/style_setting.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 
 import '../../../mixin/double_tap_to_refresh_logic_mixin.dart';
@@ -24,6 +26,10 @@ class DesktopLayoutPageLogic extends GetxController
   void onInit() {
     super.onInit();
 
+    downloadPageNavigationPending.addListener(_handleDownloadPageNavigation);
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _handleDownloadPageNavigation());
+
     resizableController.addListener(() {
       windowService.handleDoubleColumnResized(resizableController.ratios);
     });
@@ -31,9 +37,32 @@ class DesktopLayoutPageLogic extends GetxController
 
   @override
   void onClose() {
+    downloadPageNavigationPending.removeListener(_handleDownloadPageNavigation);
     super.onClose();
 
     resizableController.dispose();
+  }
+
+  void _handleDownloadPageNavigation() {
+    if (!downloadPageNavigationPending.value ||
+        !styleSetting.isInDesktopLayout ||
+        Get.currentRoute == Routes.lock) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!downloadPageNavigationPending.value ||
+          !styleSetting.isInDesktopLayout ||
+          Get.currentRoute == Routes.lock) {
+        return;
+      }
+      final int index =
+          state.icons.indexWhere((icon) => icon.routeName == Routes.download);
+      if (index < 0) {
+        return;
+      }
+      handleTapTabBarButton(index);
+      completeDownloadPageNavigation();
+    });
   }
 
   void updateHoveringTabIndex(int? index) {

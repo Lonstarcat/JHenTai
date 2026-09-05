@@ -18,7 +18,9 @@ mixin GridBasePageState implements Scroll2TopStateMixin {
 
   final ScrollController rootScrollController = ScrollController();
   final ScrollController galleryScrollController = ScrollController();
+  final Map<int, GlobalKey> navigationItemKeys = <int, GlobalKey>{};
 
   @override
-  ScrollController get scrollController => isAtRoot ? rootScrollController : galleryScrollController;
+  ScrollController get scrollController =>
+      isAtRoot ? rootScrollController : galleryScrollController;
 }

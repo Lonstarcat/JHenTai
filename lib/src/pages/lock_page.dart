@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:jhentai/src/mixin/window_widget_mixin.dart';
 import 'package:jhentai/src/routes/routes.dart';
 import 'package:jhentai/src/setting/security_setting.dart';
+import 'package:jhentai/src/service/download_task_navigation_service.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 import 'package:jhentai/src/utils/string_uril.dart';
 import 'package:local_auth/local_auth.dart';
@@ -23,7 +24,8 @@ class LockPage extends StatefulWidget {
   State<LockPage> createState() => _LockPageState();
 }
 
-class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMixin {
+class _LockPageState extends State<LockPage>
+    with WindowListener, WindowWidgetMixin {
   String hintText = 'localizedReason'.tr;
 
   TextEditingController controller = TextEditingController();
@@ -79,7 +81,8 @@ class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMi
                       textStyle: TextStyle(fontSize: 24),
                     ),
                     onCompleted: (String value) {
-                      if (keyToMd5(value) != securitySetting.encryptedPassword.value) {
+                      if (keyToMd5(value) !=
+                          securitySetting.encryptedPassword.value) {
                         setState(() {
                           controller.clear();
                           hintText = 'passwordErrorHint'.tr;
@@ -97,7 +100,10 @@ class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMi
                   child: Text(hintText),
                 ),
                 if (securitySetting.enableBiometricAuth.isTrue)
-                  IconButton(onPressed: biometricAuth, icon: const Icon(Icons.fingerprint, size: 40)).marginOnly(top: 24),
+                  IconButton(
+                          onPressed: biometricAuth,
+                          icon: const Icon(Icons.fingerprint, size: 40))
+                      .marginOnly(top: 24),
               ],
             ),
           ),
@@ -150,5 +156,8 @@ class _LockPageState extends State<LockPage> with WindowListener, WindowWidgetMi
     else {
       backRoute();
     }
+
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => retryPendingDownloadPageNavigation());
   }
 }

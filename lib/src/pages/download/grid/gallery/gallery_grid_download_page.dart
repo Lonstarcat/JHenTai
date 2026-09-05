@@ -43,6 +43,10 @@ class GalleryGridDownloadPage extends StatelessWidget
       Get.find<GalleryGridDownloadPageLogic>().state;
 
   @override
+  Widget buildPageFloatingActionButton(BuildContext context) =>
+      buildDownloadFloatingActionButtons(context);
+
+  @override
   GalleryDownloadPageLogicMixin get galleryDownloadPageLogic => logic;
 
   @override
@@ -155,6 +159,7 @@ class GalleryGridDownloadPage extends StatelessWidget
   GridGallery galleryBuilder(
       BuildContext context, GalleryDownloadInfo gallery, bool inEditMode) {
     return GridGallery(
+      key: state.navigationItemKeys[gallery.gid],
       title: gallery.title,
       widget: GetBuilder<GalleryGridDownloadPageLogic>(
         id: '${logic.itemCardId}::${gallery.gid}',

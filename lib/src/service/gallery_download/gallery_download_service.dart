@@ -72,6 +72,19 @@ class GalleryDownloadService extends GetxController with GridBasePageServiceMixi
   final String galleryDownloadProgressId = 'galleryDownloadProgressId';
   final String galleryDownloadSpeedComputerId = 'galleryDownloadSpeedComputerId';
   final String galleryDownloadSuccessId = 'galleryDownloadSuccessId';
+  final String activeDownloadTaskChangedId = 'activeDownloadTaskChangedId';
+
+  @override
+  void update([List<Object>? ids, bool condition = true]) {
+    super.update(ids, condition);
+    if (condition &&
+        ids != null &&
+        ids.any((id) =>
+            id == galleryCountChangedId ||
+            id.toString().startsWith(galleryDownloadProgressId))) {
+      super.update([activeDownloadTaskChangedId]);
+    }
+  }
 
   late EHExecutor executor;
 

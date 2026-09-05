@@ -51,6 +51,19 @@ ArchiveDownloadService archiveDownloadService = ArchiveDownloadService();
 class ArchiveDownloadService extends GetxController with GridBasePageServiceMixin, JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
   static const String archiveStatusId = 'archiveStatusId';
   static const String archiveSpeedComputerId = 'archiveSpeedComputerId';
+  static const String activeDownloadTaskChangedId = 'activeDownloadTaskChangedId';
+
+  @override
+  void update([List<Object>? ids, bool condition = true]) {
+    super.update(ids, condition);
+    if (condition &&
+        ids != null &&
+        ids.any((id) =>
+            id == galleryCountChangedId ||
+            id.toString().startsWith(archiveStatusId))) {
+      super.update([activeDownloadTaskChangedId]);
+    }
+  }
 
   static const int _maxRetryTimes = 3;
   static const String metadataFileName = 'ametadata';

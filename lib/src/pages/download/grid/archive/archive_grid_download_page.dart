@@ -42,6 +42,10 @@ class ArchiveGridDownloadPage extends StatelessWidget
       Get.find<ArchiveGridDownloadPageLogic>().state;
 
   @override
+  Widget buildPageFloatingActionButton(BuildContext context) =>
+      buildDownloadFloatingActionButtons(context);
+
+  @override
   ArchiveDownloadPageLogicMixin get archiveDownloadPageLogic => logic;
 
   @override
@@ -135,6 +139,7 @@ class ArchiveGridDownloadPage extends StatelessWidget
   GridGallery galleryBuilder(
       BuildContext context, ArchiveDownloadedData archive, bool inEditMode) {
     return GridGallery(
+      key: state.navigationItemKeys[archive.gid],
       title: archive.title,
       widget: GetBuilder<ArchiveGridDownloadPageLogic>(
         id: '${logic.itemCardId}::${archive.gid}',

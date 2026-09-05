@@ -61,7 +61,7 @@ class GalleryListDownloadPage extends StatelessWidget
     return Scaffold(
       appBar: buildAppBar(context),
       body: buildBody(context),
-      floatingActionButton: buildFloatingActionButton(),
+      floatingActionButton: buildDownloadFloatingActionButtons(context),
       bottomNavigationBar: buildBottomAppBar(),
     );
   }
@@ -224,7 +224,7 @@ class GalleryListDownloadPage extends StatelessWidget
 
   Widget _itemBuilder(BuildContext context, GalleryDownloadInfo gallery) {
     return Slidable(
-      key: Key(gallery.gid.toString()),
+      key: state.navigationItemKeys[gallery.gid] ?? ValueKey(gallery.gid),
       endActionPane: _buildEndActionPane(context, gallery),
       child: GestureDetector(
         onSecondaryTapDown: (details) =>

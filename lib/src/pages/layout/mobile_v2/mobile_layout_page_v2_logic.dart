@@ -4,9 +4,13 @@ import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/extension/list_extension.dart';
 import 'package:jhentai/src/pages/layout/mobile_v2/mobile_layout_page_v2_state.dart';
 import 'package:jhentai/src/pages/download/download_reorder_mode.dart';
+import 'package:jhentai/src/routes/routes.dart';
+import 'package:jhentai/src/service/download_task_navigation_service.dart';
+import 'package:jhentai/src/setting/style_setting.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 
 import '../../../mixin/double_tap_to_refresh_logic_mixin.dart';
+import '../../home_page.dart';
 import '../../../setting/preference_setting.dart';
 
 class MobileLayoutPageV2Logic extends GetxController
@@ -20,6 +24,14 @@ class MobileLayoutPageV2Logic extends GetxController
 
   Worker? hideBottomBarLister;
   Worker? simpleModeLister;
+
+  @override
+  void onInit() {
+    super.onInit();
+    downloadPageNavigationPending.addListener(_handleDownloadPageNavigation);
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _handleDownloadPageNavigation());
+  }
 
   @override
   void onReady() {
@@ -39,9 +51,40 @@ class MobileLayoutPageV2Logic extends GetxController
 
   @override
   void onClose() {
+    downloadPageNavigationPending.removeListener(_handleDownloadPageNavigation);
     super.onClose();
     hideBottomBarLister?.dispose();
     state.scrollController.dispose();
+  }
+
+  void _handleDownloadPageNavigation() {
+    if (!downloadPageNavigationPending.value ||
+        (!styleSetting.isInMobileLayout && !styleSetting.isInTabletLayout) ||
+        Get.currentRoute == Routes.lock) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!downloadPageNavigationPending.value ||
+          (!styleSetting.isInMobileLayout && !styleSetting.isInTabletLayout) ||
+          Get.currentRoute == Routes.lock) {
+        return;
+      }
+
+      if (styleSetting.isInMobileLayout && Get.currentRoute != Routes.home) {
+        Get.until((route) => route.settings.name == Routes.home);
+      } else if (styleSetting.isInTabletLayout &&
+          Get.keys[leftV2]?.currentContext != null) {
+        Get.until(
+          (route) => route.settings.name == Routes.mobileLayoutV2,
+          id: leftV2,
+        );
+      }
+
+      MobileLayoutPageV2State.scaffoldKey.currentState?.closeDrawer();
+      handleTapNavigationBarButton(1);
+      completeDownloadPageNavigation();
+    });
   }
 
   void handleTapTabBarButton(int index) {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:jhentai/src/pages/download/mixin/basic/multi_select/multi_select_download_page_mixin.dart';
+import 'package:jhentai/src/service/archive_download_service.dart';
 
 import '../../../../mixin/scroll_to_top_logic_mixin.dart';
 import '../../../../mixin/scroll_to_top_page_mixin.dart';
@@ -9,7 +11,8 @@ import '../basic/multi_select/multi_select_download_page_state_mixin.dart';
 import 'archive_download_page_logic_mixin.dart';
 import 'archive_download_page_state_mixin.dart';
 
-mixin ArchiveDownloadPageMixin on StatelessWidget implements Scroll2TopPageMixin, MultiSelectDownloadPageMixin {
+mixin ArchiveDownloadPageMixin on StatelessWidget
+    implements Scroll2TopPageMixin, MultiSelectDownloadPageMixin {
   ArchiveDownloadPageLogicMixin get archiveDownloadPageLogic;
 
   ArchiveDownloadPageStateMixin get archiveDownloadPageState;
@@ -20,23 +23,80 @@ mixin ArchiveDownloadPageMixin on StatelessWidget implements Scroll2TopPageMixin
   @override
   Scroll2TopStateMixin get scroll2TopState => archiveDownloadPageState;
 
-  @override
-  MultiSelectDownloadPageLogicMixin get multiSelectDownloadPageLogic => archiveDownloadPageLogic;
+  Widget buildDownloadFloatingActionButtons(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GetBuilder<ArchiveDownloadService>(
+          id: ArchiveDownloadService.activeDownloadTaskChangedId,
+          builder: (_) {
+            final bool hasRunningTask =
+                archiveDownloadPageLogic.runningDownloadTask != null;
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: hasRunningTask
+                  ? Padding(
+                      key: const ValueKey('locateRunningArchiveDownload'),
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: FloatingActionButton(
+                        heroTag: null,
+                        tooltip: 'locateRunningDownload'.tr,
+                        onPressed: () => archiveDownloadPageLogic
+                            .locateRunningDownloadTask(context),
+                        child: const Icon(Icons.my_location),
+                      ),
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('noRunningArchiveDownload'),
+                    ),
+            );
+          },
+        ),
+        buildFloatingActionButton(),
+      ],
+    );
+  }
 
   @override
-  MultiSelectDownloadPageStateMixin get multiSelectDownloadPageState => archiveDownloadPageState;
+  MultiSelectDownloadPageLogicMixin get multiSelectDownloadPageLogic =>
+      archiveDownloadPageLogic;
+
+  @override
+  MultiSelectDownloadPageStateMixin get multiSelectDownloadPageState =>
+      archiveDownloadPageState;
 
   @override
   List<Widget> buildBottomAppBarButtons() {
     return [
-      IconButton(icon: const Icon(Icons.done_all), onPressed: archiveDownloadPageLogic.selectAllItem),
-      IconButton(icon: const Icon(Icons.play_arrow), onPressed: archiveDownloadPageLogic.handleMultiResumeTasks),
-      IconButton(icon: const Icon(Icons.pause), onPressed: archiveDownloadPageLogic.handleMultiPauseTasks),
-      IconButton(icon: const Icon(Icons.bookmark), onPressed: archiveDownloadPageLogic.handleMultiChangeGroup),
-      IconButton(icon: const Icon(Icons.delete), onPressed: archiveDownloadPageLogic.handleMultiDelete),
-      IconButton(icon: const Icon(Icons.smart_toy_outlined), onPressed: archiveDownloadPageLogic.handleChangeParseSource),
+      IconButton(
+          icon: const Icon(Icons.done_all),
+          onPressed: archiveDownloadPageLogic.selectAllItem),
+      IconButton(
+          icon: const Icon(Icons.play_arrow),
+          onPressed: archiveDownloadPageLogic.handleMultiResumeTasks),
+      IconButton(
+          icon: const Icon(Icons.pause),
+          onPressed: archiveDownloadPageLogic.handleMultiPauseTasks),
+      IconButton(
+        tooltip: 'batchFavorite'.tr,
+        icon: const Icon(Icons.favorite_outline),
+        onPressed: multiSelectDownloadPageState.selectedGids.isEmpty
+            ? null
+            : archiveDownloadPageLogic.handleMultiFavoriteItems,
+      ),
+      IconButton(
+          icon: const Icon(Icons.bookmark),
+          onPressed: archiveDownloadPageLogic.handleMultiChangeGroup),
+      IconButton(
+          icon: const Icon(Icons.delete),
+          onPressed: archiveDownloadPageLogic.handleMultiDelete),
+      IconButton(
+          icon: const Icon(Icons.smart_toy_outlined),
+          onPressed: archiveDownloadPageLogic.handleChangeParseSource),
       const Expanded(child: SizedBox()),
-      IconButton(icon: const Icon(Icons.close), onPressed: multiSelectDownloadPageLogic.exitSelectMode),
+      IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: multiSelectDownloadPageLogic.exitSelectMode),
     ];
   }
 }

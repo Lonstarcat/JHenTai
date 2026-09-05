@@ -9,6 +9,7 @@ import 'package:jhentai/src/setting/super_resolution_setting.dart';
 
 import '../../../../database/database.dart';
 import '../../../../model/read_page_info.dart';
+import '../../../../model/background_task_info.dart';
 import '../../../../routes/routes.dart';
 import '../../../../service/gallery_download/download_path_resolver.dart';
 import '../../../../service/gallery_download/gallery_download_service.dart';
@@ -19,18 +20,55 @@ import '../../../../utils/process_util.dart';
 import '../../../../utils/route_util.dart';
 import '../../../../utils/toast_util.dart';
 import '../../../../utils/convert_util.dart';
+import '../../../../utils/batch_favorite_util.dart';
 import '../../../../widget/eh_alert_dialog.dart';
 import '../../../../widget/eh_context_menu.dart';
 import '../../../../widget/eh_download_dialog.dart';
 import '../basic/multi_select/multi_select_download_page_logic_mixin.dart';
 
 mixin GalleryDownloadPageLogicMixin on GetxController
-    implements Scroll2TopLogicMixin, MultiSelectDownloadPageLogicMixin<GalleryDownloadInfo>, UpdateGlobalGalleryStatusLogicMixin {
+    implements
+        Scroll2TopLogicMixin,
+        MultiSelectDownloadPageLogicMixin<GalleryDownloadInfo>,
+        UpdateGlobalGalleryStatusLogicMixin {
   final String bodyId = 'bodyId';
 
   final GalleryDownloadService downloadService = galleryDownloadService;
 
-  Future<bool> confirmDestructiveAction({required String title, String? content}) async {
+  GalleryDownloadInfo? get runningDownloadTask {
+    final List<GalleryDownloadInfo> tasks = downloadService
+        .galleryDownloadInfos.values
+        .where((item) =>
+            item.downloadProgress.downloadStatus == DownloadStatus.downloading)
+        .toList();
+    if (tasks.isEmpty) {
+      return null;
+    }
+    tasks.sort((a, b) {
+      final int speedComparison = b.speedComputer.speedBytesPerSecond
+          .compareTo(a.speedComputer.speedBytesPerSecond);
+      if (speedComparison != 0) {
+        return speedComparison;
+      }
+      final int priorityComparison = a.priority.compareTo(b.priority);
+      return priorityComparison != 0
+          ? priorityComparison
+          : a.insertTimePriority.compareTo(b.insertTimePriority);
+    });
+    return tasks.first;
+  }
+
+  Future<bool> locateDownloadTask(int gid, BuildContext context);
+
+  Future<void> locateRunningDownloadTask(BuildContext context) async {
+    final GalleryDownloadInfo? task = runningDownloadTask;
+    if (task != null) {
+      await locateDownloadTask(task.gid, context);
+    }
+  }
+
+  Future<bool> confirmDestructiveAction(
+      {required String title, String? content}) async {
     if (!preferenceSetting.confirmDestructiveActions.isTrue) {
       return true;
     }
@@ -64,7 +102,8 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   Future<void> handleLongPressGroup(String oldGroup) async {
-    if (downloadService.galleryDownloadInfos.values.every((g) => g.group != oldGroup)) {
+    if (downloadService.galleryDownloadInfos.values
+        .every((g) => g.group != oldGroup)) {
       return handleDeleteGroup(oldGroup);
     }
     return handleRenameGroup(oldGroup);
@@ -117,7 +156,9 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   @override
-  void handleLongPressOrSecondaryTapItem(GalleryDownloadInfo item, BuildContext context, {Offset? position}) {
+  void handleLongPressOrSecondaryTapItem(
+      GalleryDownloadInfo item, BuildContext context,
+      {Offset? position}) {
     if (multiSelectDownloadPageState.inMultiSelectMode) {
       toggleSelectItem(item.gid);
     } else {
@@ -133,7 +174,8 @@ mixin GalleryDownloadPageLogicMixin on GetxController
     downloadService.pauseAllDownloadGallery();
   }
 
-  void handleRemoveItem(GalleryDownloadInfo gallery, bool deleteImages, BuildContext context) async {
+  void handleRemoveItem(GalleryDownloadInfo gallery, bool deleteImages,
+      BuildContext context) async {
     downloadService.update([downloadService.galleryCountChangedId]);
   }
 
@@ -143,7 +185,8 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   Future<void> handleReDownloadItem(GalleryDownloadInfo gallery) async {
-    bool confirmed = await confirmDestructiveAction(title: 'reDownload'.tr + '?');
+    bool confirmed =
+        await confirmDestructiveAction(title: 'reDownload'.tr + '?');
     if (!confirmed) {
       return;
     }
@@ -151,18 +194,25 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   Future<void> goToReadPage(GalleryDownloadInfo gallery) async {
-    if (readSetting.useThirdPartyViewer.isTrue && readSetting.thirdPartyViewerPath.value != null) {
-      openThirdPartyViewer(DownloadPathResolver.computeGalleryDownloadAbsolutePath(gallery.toGalleryDownloadedData()));
+    if (readSetting.useThirdPartyViewer.isTrue &&
+        readSetting.thirdPartyViewerPath.value != null) {
+      openThirdPartyViewer(
+          DownloadPathResolver.computeGalleryDownloadAbsolutePath(
+              gallery.toGalleryDownloadedData()));
     } else {
-      int readIndexRecord = await readProgressService.getReadProgress(gallery.gid);
+      int readIndexRecord =
+          await readProgressService.getReadProgress(gallery.gid);
 
       /// Ensure the gallery's image list is resident before entering read
       /// page — ReadPageState's constructor reads [imageAtSync] synchronously
       /// to build the initial snapshot. If images has been evicted (gallery
       /// was fully downloaded), this reloads from DB.
-      await galleryDownloadService.galleryDownloadInfos[gallery.gid]!.ensureImagesLoaded();
+      await galleryDownloadService.galleryDownloadInfos[gallery.gid]!
+          .ensureImagesLoaded();
 
-      ReadDirection? readDirection = isWebtoonGalleryFromTagString(gallery.tags) ? ReadDirection.top2bottomList : null;
+      ReadDirection? readDirection = isWebtoonGalleryFromTagString(gallery.tags)
+          ? ReadDirection.top2bottomList
+          : null;
 
       toRoute(
         Routes.read,
@@ -175,45 +225,74 @@ mixin GalleryDownloadPageLogicMixin on GetxController
           initialIndex: readIndexRecord,
           readProgressRecordStorageKey: gallery.gid.toString(),
           pageCount: gallery.pageCount,
-          useSuperResolution: superResolutionService.get(gallery.gid, SuperResolutionType.gallery) != null,
+          useSuperResolution: superResolutionService.get(
+                  gallery.gid, SuperResolutionType.gallery) !=
+              null,
           readDirection: readDirection,
         ),
       );
     }
   }
 
-  void showBottomSheet(GalleryDownloadInfo gallery, BuildContext context, {Offset? position}) {
+  void showBottomSheet(GalleryDownloadInfo gallery, BuildContext context,
+      {Offset? position}) {
     showEHContextMenu(
       context,
       position: position,
       actions: [
         if (superResolutionSetting.modelDirectoryPath.value != null &&
-            downloadService.galleryDownloadInfos[gallery.gid]?.downloadProgress.downloadStatus == DownloadStatus.downloaded &&
-            (superResolutionService.get(gallery.gid, SuperResolutionType.gallery) == null ||
-                superResolutionService.get(gallery.gid, SuperResolutionType.gallery)?.status == SuperResolutionStatus.paused))
+            downloadService.galleryDownloadInfos[gallery.gid]?.downloadProgress
+                    .downloadStatus ==
+                DownloadStatus.downloaded &&
+            (superResolutionService.get(
+                        gallery.gid, SuperResolutionType.gallery) ==
+                    null ||
+                superResolutionService
+                        .get(gallery.gid, SuperResolutionType.gallery)
+                        ?.status ==
+                    SuperResolutionStatus.paused))
           EHContextMenuAction(
             text: 'superResolution'.tr,
             onTap: () async {
-              if (superResolutionService.get(gallery.gid, SuperResolutionType.gallery) == null && gallery.downloadOriginalImage) {
-                bool? result = await Get.dialog(EHDialog(title: 'attention'.tr + '!', content: 'superResolveOriginalImageHint'.tr));
+              if (superResolutionService.get(
+                          gallery.gid, SuperResolutionType.gallery) ==
+                      null &&
+                  gallery.downloadOriginalImage) {
+                bool? result = await Get.dialog(EHDialog(
+                    title: 'attention'.tr + '!',
+                    content: 'superResolveOriginalImageHint'.tr));
                 if (result != true) {
                   return;
                 }
               }
 
-              superResolutionService.superResolve(gallery.gid, SuperResolutionType.gallery);
+              superResolutionService.superResolve(
+                  gallery.gid, SuperResolutionType.gallery);
             },
           ),
-        if (superResolutionService.get(gallery.gid, SuperResolutionType.gallery)?.status == SuperResolutionStatus.running)
+        if (superResolutionService
+                .get(gallery.gid, SuperResolutionType.gallery)
+                ?.status ==
+            SuperResolutionStatus.running)
           EHContextMenuAction(
             text: 'stopSuperResolution'.tr,
-            onTap: () => superResolutionService.pauseSuperResolve(gallery.gid, SuperResolutionType.gallery).then((_) => toast("success".tr)),
+            onTap: () => superResolutionService
+                .pauseSuperResolve(gallery.gid, SuperResolutionType.gallery)
+                .then((_) => toast("success".tr)),
           ),
-        if (superResolutionService.get(gallery.gid, SuperResolutionType.gallery)?.status == SuperResolutionStatus.paused ||
-            superResolutionService.get(gallery.gid, SuperResolutionType.gallery)?.status == SuperResolutionStatus.success)
+        if (superResolutionService
+                    .get(gallery.gid, SuperResolutionType.gallery)
+                    ?.status ==
+                SuperResolutionStatus.paused ||
+            superResolutionService
+                    .get(gallery.gid, SuperResolutionType.gallery)
+                    ?.status ==
+                SuperResolutionStatus.success)
           EHContextMenuAction(
             text: 'deleteSuperResolvedImage'.tr,
-            onTap: () => superResolutionService.deleteSuperResolve(gallery.gid, SuperResolutionType.gallery).then((_) => toast("success".tr)),
+            onTap: () => superResolutionService
+                .deleteSuperResolve(gallery.gid, SuperResolutionType.gallery)
+                .then((_) => toast("success".tr)),
           ),
         EHContextMenuAction(
           text: 'changeGroup'.tr,
@@ -241,31 +320,37 @@ mixin GalleryDownloadPageLogicMixin on GetxController
     );
   }
 
-  void showPrioritySheet(GalleryDownloadInfo gallery, BuildContext context, {Offset? position}) {
+  void showPrioritySheet(GalleryDownloadInfo gallery, BuildContext context,
+      {Offset? position}) {
     showEHContextMenu(
       context,
       position: position,
       actions: [
         EHContextMenuAction(
           text: '${'priority'.tr} : 1 (${'highest'.tr})',
-          isDefault: downloadService.galleryDownloadInfos[gallery.gid]?.priority == 1,
+          isDefault:
+              downloadService.galleryDownloadInfos[gallery.gid]?.priority == 1,
           onTap: () => handleAssignPriority(gallery, 1),
         ),
         ...[2, 3]
             .map((i) => EHContextMenuAction(
                   text: '${'priority'.tr} : $i',
-                  isDefault: downloadService.galleryDownloadInfos[gallery.gid]?.priority == i,
+                  isDefault: downloadService
+                          .galleryDownloadInfos[gallery.gid]?.priority ==
+                      i,
                   onTap: () => handleAssignPriority(gallery, i),
                 ))
             .toList(),
         EHContextMenuAction(
           text: '${'priority'.tr} : 4 (${'default'.tr})',
-          isDefault: downloadService.galleryDownloadInfos[gallery.gid]?.priority == 4,
+          isDefault:
+              downloadService.galleryDownloadInfos[gallery.gid]?.priority == 4,
           onTap: () => handleAssignPriority(gallery, 4),
         ),
         EHContextMenuAction(
           text: '${'priority'.tr} : 5',
-          isDefault: downloadService.galleryDownloadInfos[gallery.gid]?.priority == 5,
+          isDefault:
+              downloadService.galleryDownloadInfos[gallery.gid]?.priority == 5,
           onTap: () => handleAssignPriority(gallery, 5),
         ),
       ],
@@ -302,6 +387,19 @@ mixin GalleryDownloadPageLogicMixin on GetxController
     }
   }
 
+  Future<void> handleMultiFavoriteItems() async {
+    final List<BackgroundFavoriteItem> items = multiSelectDownloadPageState
+        .selectedGids
+        .map((gid) => downloadService.galleryDownloadInfos[gid])
+        .whereType<GalleryDownloadInfo>()
+        .map((gallery) => BackgroundFavoriteItem(
+            gid: gallery.gid, token: gallery.token, title: gallery.title))
+        .toList();
+    if (await chooseAndStartBatchFavorite(items)) {
+      exitSelectMode();
+    }
+  }
+
   Future<void> handleMultiChangeGroup() async {
     ({String group, bool downloadOriginalImage})? result = await Get.dialog(
       EHDownloadDialog(
@@ -326,12 +424,16 @@ mixin GalleryDownloadPageLogicMixin on GetxController
   }
 
   Future<void> handleMultiDelete() async {
-    bool isUpdatingDependent = multiSelectDownloadPageState.selectedGids.any(downloadService.isUpdatingDependent);
+    bool isUpdatingDependent = multiSelectDownloadPageState.selectedGids
+        .any(downloadService.isUpdatingDependent);
 
     bool? result = await Get.dialog(
       EHDialog(
         title: 'delete'.tr,
-        content: 'multiDeleteHint'.tr + (isUpdatingDependent ? '\n\n' + 'deleteUpdatingDependentHint'.tr : ''),
+        content: 'multiDeleteHint'.tr +
+            (isUpdatingDependent
+                ? '\n\n' + 'deleteUpdatingDependentHint'.tr
+                : ''),
       ),
     );
 

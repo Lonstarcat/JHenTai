@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/enum/config_enum.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/mixin/update_global_gallery_status_logic_mixin.dart';
@@ -12,6 +14,7 @@ import '../../../../mixin/scroll_to_top_logic_mixin.dart';
 import '../../../../mixin/scroll_to_top_state_mixin.dart';
 import '../../../../service/archive_download_service.dart';
 import '../../../../service/local_config_service.dart';
+import '../../../../utils/download_task_locator_util.dart';
 import '../../../../setting/performance_setting.dart';
 import '../../mixin/archive/archive_download_page_logic_mixin.dart';
 import '../../mixin/archive/archive_download_page_state_mixin.dart';
@@ -110,6 +113,59 @@ class ArchiveListDownloadPageLogic extends GetxController
             archiveDownloadService.archiveDownloadInfos[archive.gid]!.group ==
             group)
         .toList();
+  }
+
+  @override
+  Future<bool> locateDownloadTask(int gid, BuildContext context) async {
+    await state.displayGroupsCompleter.future;
+    ArchiveDownloadedData? target;
+    for (final ArchiveDownloadedData archive
+        in archiveDownloadService.archives) {
+      if (archive.gid == gid) {
+        target = archive;
+        break;
+      }
+    }
+    if (target == null) {
+      return false;
+    }
+
+    exitEditMode();
+    final String group =
+        archiveDownloadService.archiveDownloadInfos[gid]!.group;
+    if (!state.displayGroups.contains(group)) {
+      await toggleDisplayGroups(group);
+      await Future<void>.delayed(const Duration(milliseconds: 180));
+    }
+
+    final List<ArchiveDownloadedData> groupItems =
+        reorderArchivesInGroup(group);
+    final int targetIndex = groupItems.indexWhere((item) => item.gid == gid);
+    if (targetIndex < 0) {
+      return false;
+    }
+    final double offset = downloadListTaskOffset(
+      groups: archiveDownloadService.allGroups,
+      expandedGroups: state.displayGroups,
+      targetGroup: group,
+      targetIndex: targetIndex,
+      itemCount: (name) => reorderArchivesInGroup(name).length,
+      groupExtent: UIConfig.groupListHeight + 10,
+      itemExtent: UIConfig.downloadPageCardHeight + 10,
+    );
+    final GlobalKey itemKey = state.navigationItemKeys
+        .putIfAbsent(gid, () => GlobalKey(debugLabel: 'archive-$gid'));
+    updateSafely([bodyId]);
+    try {
+      return await revealDownloadTask(
+        controller: state.scrollController,
+        itemKey: itemKey,
+        estimatedOffset: offset,
+      );
+    } finally {
+      state.navigationItemKeys.remove(gid);
+      updateSafely([bodyId]);
+    }
   }
 
   void toggleEditMode() {

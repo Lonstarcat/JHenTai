@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:jhentai/src/pages/download/mixin/basic/multi_select/multi_select_download_page_state_mixin.dart';
 
 import '../../../../database/database.dart';
@@ -23,6 +24,7 @@ class ArchiveListDownloadPageState
   final GroupedListController<String, ArchiveDownloadedData>
       groupedListController =
       GroupedListController<String, ArchiveDownloadedData>();
+  final Map<int, GlobalKey> navigationItemKeys = <int, GlobalKey>{};
 }
 
 enum SortBy {

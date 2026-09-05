@@ -7,6 +7,8 @@ class SpeedComputer {
 
   String speed = '0 B/s';
 
+  double speedBytesPerSecond = 0;
+
   int downloadedBytesLastTime = 0;
   int downloadedBytes = 0;
 
@@ -22,7 +24,8 @@ class SpeedComputer {
     if (isActive()) {
       return;
     }
-    timer = Timer.periodic(const Duration(seconds: 1), (_) => computeAndUpdateSpeed());
+    timer = Timer.periodic(
+        const Duration(seconds: 1), (_) => computeAndUpdateSpeed());
   }
 
   void computeAndUpdateSpeed() {
@@ -30,6 +33,7 @@ class SpeedComputer {
     downloadedBytesLastTime = downloadedBytes;
 
     double difference = 0.0 + downloadedBytes - prevDownloadedBytesLastTime;
+    speedBytesPerSecond = difference > 0 ? difference : 0;
 
     if (difference <= 0) {
       speed = '0 B/s';
@@ -70,6 +74,7 @@ class SpeedComputer {
   void pause() {
     timer?.cancel();
     speed = '0 KB/s';
+    speedBytesPerSecond = 0;
   }
 
   void dispose() {

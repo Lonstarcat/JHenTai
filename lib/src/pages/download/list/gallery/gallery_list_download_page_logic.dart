@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/enum/config_enum.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/pages/download/mixin/gallery/gallery_download_page_logic_mixin.dart';
@@ -13,6 +14,7 @@ import '../../../../mixin/scroll_to_top_state_mixin.dart';
 import '../../../../mixin/update_global_gallery_status_logic_mixin.dart';
 import '../../../../service/gallery_download/gallery_download_service.dart';
 import '../../../../service/local_config_service.dart';
+import '../../../../utils/download_task_locator_util.dart';
 import '../../../../widget/eh_alert_dialog.dart';
 import '../../mixin/basic/multi_select/multi_select_download_page_logic_mixin.dart';
 import '../../mixin/basic/multi_select/multi_select_download_page_state_mixin.dart';
@@ -98,6 +100,51 @@ class GalleryListDownloadPageLogic extends GetxController
 
   List<GalleryDownloadInfo> reorderGalleriesInGroup(String group) {
     return sortedGalleries.where((gallery) => gallery.group == group).toList();
+  }
+
+  @override
+  Future<bool> locateDownloadTask(int gid, BuildContext context) async {
+    await state.displayGroupsCompleter.future;
+    final GalleryDownloadInfo? target =
+        downloadService.galleryDownloadInfos[gid];
+    if (target == null) {
+      return false;
+    }
+
+    exitEditMode();
+    final String group = target.group;
+    if (!state.displayGroups.contains(group)) {
+      await toggleDisplayGroups(group);
+      await Future<void>.delayed(const Duration(milliseconds: 180));
+    }
+
+    final List<GalleryDownloadInfo> groupItems = reorderGalleriesInGroup(group);
+    final int targetIndex = groupItems.indexWhere((item) => item.gid == gid);
+    if (targetIndex < 0) {
+      return false;
+    }
+    final double offset = downloadListTaskOffset(
+      groups: downloadService.allGroups,
+      expandedGroups: state.displayGroups,
+      targetGroup: group,
+      targetIndex: targetIndex,
+      itemCount: (name) => reorderGalleriesInGroup(name).length,
+      groupExtent: UIConfig.groupListHeight + 10,
+      itemExtent: UIConfig.downloadPageCardHeight + 10,
+    );
+    final GlobalKey itemKey = state.navigationItemKeys
+        .putIfAbsent(gid, () => GlobalKey(debugLabel: 'download-$gid'));
+    updateSafely([bodyId]);
+    try {
+      return await revealDownloadTask(
+        controller: state.scrollController,
+        itemKey: itemKey,
+        estimatedOffset: offset,
+      );
+    } finally {
+      state.navigationItemKeys.remove(gid);
+      updateSafely([bodyId]);
+    }
   }
 
   void toggleEditMode() {

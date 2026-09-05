@@ -668,6 +668,7 @@ class zh_TW {
       'multiSelectHint': '點擊以選中',
       'resumeAllTasks': '復原所有任務',
       'pauseAllTasks': '暫停所有任務',
+      'locateRunningDownload': '定位正在下載的任務',
       'requireDownloadComplete': '需要等待下載完成',
       'operationHasCompleted': '操作已經結束',
       'operationInProgress': '操作正在進行中',

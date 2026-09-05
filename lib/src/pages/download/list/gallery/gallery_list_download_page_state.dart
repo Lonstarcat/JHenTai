@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:jhentai/src/mixin/scroll_to_top_state_mixin.dart';
 import 'package:jhentai/src/pages/download/mixin/gallery/gallery_download_page_state_mixin.dart';
 
@@ -23,6 +24,7 @@ class GalleryListDownloadPageState
   final GroupedListController<String, GalleryDownloadInfo>
       groupedListController =
       GroupedListController<String, GalleryDownloadInfo>();
+  final Map<int, GlobalKey> navigationItemKeys = <int, GlobalKey>{};
 }
 
 enum SortBy {

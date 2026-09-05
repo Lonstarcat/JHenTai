@@ -733,6 +733,7 @@ class ru_RU {
       'multiSelectHint': 'Нажмите для выбора',
       'resumeAllTasks': 'Возобновить все задачи',
       'pauseAllTasks': 'Приостановить все задачи',
+      'locateRunningDownload': 'Найти текущую загрузку',
       'requireDownloadComplete': 'Требуется завершение загрузки',
       'operationHasCompleted': 'Операция завершена',
       'operationInProgress': 'Операция в процессе',

@@ -38,10 +38,13 @@ mixin GridBasePage on StatelessWidget implements Scroll2TopPageMixin {
     return Scaffold(
       appBar: buildAppBar(context),
       body: buildBody(context),
-      floatingActionButton: buildFloatingActionButton(),
+      floatingActionButton: buildPageFloatingActionButton(context),
       bottomNavigationBar: buildGridBottomAppBar(context),
     );
   }
+
+  Widget buildPageFloatingActionButton(BuildContext context) =>
+      buildFloatingActionButton();
 
   AppBar buildAppBar(BuildContext context) {
     return AppBar(

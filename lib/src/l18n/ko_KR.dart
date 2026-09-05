@@ -695,6 +695,7 @@ class ko_KR {
       'multiSelectHint': 'Tap to select',
       'resumeAllTasks': '모든 작업 이어서 시작',
       'pauseAllTasks': '모든 작업 일시 정지',
+      'locateRunningDownload': '진행 중인 다운로드 찾기',
       'requireDownloadComplete': '다운로드가 완료되어야 합니다',
       'operationHasCompleted': '작업이 완료되었습니다',
       'operationInProgress': '작업이 진행 중입니다',

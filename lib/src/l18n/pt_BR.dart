@@ -733,6 +733,7 @@ class pt_BR {
       'multiSelectHint': 'Tap to select',
       'resumeAllTasks': 'Resume All Tasks',
       'pauseAllTasks': 'Pause All Tasks',
+      'locateRunningDownload': 'Localizar download em andamento',
       'requireDownloadComplete': 'Require download complete',
       'operationHasCompleted': 'The operation has completed',
       'operationInProgress': 'The operation is in progress',

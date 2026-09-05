@@ -56,7 +56,7 @@ class ArchiveListDownloadPage extends StatelessWidget
     return Scaffold(
       appBar: buildAppBar(context),
       body: buildBody(context),
-      floatingActionButton: buildFloatingActionButton(),
+      floatingActionButton: buildDownloadFloatingActionButtons(context),
       bottomNavigationBar: buildBottomAppBar(),
     );
   }
@@ -220,7 +220,7 @@ class ArchiveListDownloadPage extends StatelessWidget
 
   Widget _itemBuilder(BuildContext context, ArchiveDownloadedData archive) {
     return Slidable(
-      key: Key(archive.gid.toString()),
+      key: state.navigationItemKeys[archive.gid] ?? ValueKey(archive.gid),
       endActionPane: _buildEndActionPane(context, archive),
       child: GestureDetector(
         onSecondaryTapDown: (details) =>
