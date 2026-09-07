@@ -67,7 +67,7 @@ class NameOrganizerPage(FeatureBasePage):
                     self._database.log_operation(operation, "失败", plan.source, plan.target, str(error)); result.failed += 1
                 progress(index, len(plans), plan.source.name)
             return result
-        self.run_worker(action, "正在安全移动…", lambda result: self._after_execute(result))
+        self.run_worker(action, "正在安全移动…", lambda result: self._after_execute(result), allow_pause=True)
 
     def _after_execute(self, result: FeatureResult) -> None:
         self.task.status.setText(f"完成 · 成功 {result.success} · 失败 {result.failed}")

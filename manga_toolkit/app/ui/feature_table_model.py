@@ -10,11 +10,33 @@ class FeatureTableModel(QAbstractTableModel):
         super().__init__()
         self._columns = tuple(columns)
         self.rows: list[object] = []
+        self._original_rows: list[object] = []
 
     def set_rows(self, rows: list[object]) -> None:
         self.beginResetModel()
-        self.rows = rows
+        self._original_rows = list(rows)
+        self.rows = list(rows)
         self.endResetModel()
+
+    def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
+        self.layoutAboutToBeChanged.emit()
+        if column < 0:
+            self.rows = list(self._original_rows)
+        elif column < len(self._columns):
+            getter = self._columns[column][1]
+            self.rows.sort(
+                key=lambda row: self._sort_key(getter(row)),
+                reverse=order is Qt.SortOrder.DescendingOrder,
+            )
+        self.layoutChanged.emit()
+
+    @staticmethod
+    def _sort_key(value: object) -> tuple[int, object]:
+        if value is None:
+            return (2, "")
+        if isinstance(value, (int, float)):
+            return (0, value)
+        return (1, str(value).casefold())
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         return 0 if parent.isValid() else len(self.rows)

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import subprocess
+import shutil
+from datetime import UTC, datetime
+from uuid import uuid4
 import zipfile
 from pathlib import Path
 
 from app.models.gallery_folder import GalleryFolder
-from app.models.toolkit_features import CbzCheckResult, CbzStatus
+from app.models.toolkit_features import CbzCheckResult, CbzStatus, ExistingCbzPolicy
 from app.services.directory_check_service import DirectoryCheckService
 
 
@@ -30,6 +33,40 @@ class CbzService:
         if process.returncode != 0:
             destination.unlink(missing_ok=True)
             raise RuntimeError(process.stderr.strip() or process.stdout.strip() or f"7-Zip 退出码 {process.returncode}")
+
+    def pack_with_policy(
+        self,
+        seven_zip: Path,
+        gallery: GalleryFolder,
+        destination: Path,
+        compression: int,
+        policy: ExistingCbzPolicy,
+        backup_root: Path,
+    ) -> tuple[str, Path | None]:
+        """Pack one item and preserve an existing archive before replacement."""
+        if destination.exists():
+            if policy is ExistingCbzPolicy.SKIP:
+                return "skipped", None
+            if policy is ExistingCbzPolicy.VERIFY and self.check(gallery, destination).status is CbzStatus.VALID:
+                return "verified", None
+        temporary = destination.with_name(f".{destination.stem}.{uuid4().hex}.tmp.cbz")
+        self.pack(seven_zip, gallery.path, temporary, compression)
+        backup: Path | None = None
+        try:
+            if destination.exists():
+                backup_root.mkdir(parents=True, exist_ok=True)
+                backup = backup_root / destination.name
+                if backup.exists():
+                    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+                    backup = backup.with_name(f"{destination.stem}.{stamp}{destination.suffix}")
+                shutil.move(str(destination), str(backup))
+            temporary.replace(destination)
+        except Exception:
+            temporary.unlink(missing_ok=True)
+            if backup is not None and backup.exists() and not destination.exists():
+                shutil.move(str(backup), str(destination))
+            raise
+        return "rebuilt" if backup is not None else "created", backup
 
     def check(self, gallery: GalleryFolder, cbz_path: Path) -> CbzCheckResult:
         if not cbz_path.is_file():

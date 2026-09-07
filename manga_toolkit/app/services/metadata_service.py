@@ -9,7 +9,7 @@ import unicodedata
 import zipfile
 from pathlib import Path
 
-from app.models.gallery_folder import GalleryFolder, GalleryStorage
+from app.models.gallery_folder import GalleryFolder, GalleryStorage, GalleryType
 from app.models.toolkit_features import MetadataIssue
 from app.services.name_organizer_service import folder_title
 
@@ -24,7 +24,7 @@ class MetadataService:
             if gallery.storage_type is GalleryStorage.CBZ:
                 issues.extend(self._analyze_cbz(gallery, expected))
                 continue
-            for file_name in self.FILES:
+            for file_name in self._expected_files(gallery):
                 path = gallery.path / file_name
                 if not path.is_file():
                     issues.append(MetadataIssue(gallery.path, file_name, "缺失", folder_title=expected))
@@ -49,7 +49,7 @@ class MetadataService:
                     if not info.is_dir()
                     and "/" not in info.filename.replace("\\", "/").removeprefix("./")
                 }
-                for file_name in self.FILES:
+                for file_name in self._expected_files(gallery):
                     info = members.get(file_name)
                     if info is None:
                         issues.append(MetadataIssue(gallery.path, file_name, "缺失", folder_title=expected, detail="CBZ 内部（只读）"))
@@ -63,9 +63,17 @@ class MetadataService:
                     except (UnicodeError, json.JSONDecodeError, TypeError, OSError) as error:
                         issues.append(MetadataIssue(gallery.path, file_name, "解析失败", folder_title=expected, detail=f"CBZ 内部（只读） · {error}"))
         except (OSError, zipfile.BadZipFile) as error:
-            for file_name in self.FILES:
+            for file_name in self._expected_files(gallery):
                 issues.append(MetadataIssue(gallery.path, file_name, "解析失败", folder_title=expected, detail=f"损坏 CBZ · {error}"))
         return issues
+
+    @staticmethod
+    def _expected_files(gallery: GalleryFolder) -> tuple[str, ...]:
+        if gallery.gallery_type is GalleryType.NORMAL:
+            return ("metadata",)
+        if gallery.gallery_type is GalleryType.ARCHIVE:
+            return ("ametadata",)
+        return MetadataService.FILES
 
     def update_group_name(
         self,
@@ -95,6 +103,31 @@ class MetadataService:
             data["groupName"] = value
         self._atomic_json_write(path, data)
         return backup
+
+    def backup_files(
+        self,
+        folder: Path,
+        backup_root: Path,
+        *,
+        include_comic_info: bool = False,
+    ) -> list[Path]:
+        """Back up existing metadata files without touching image content."""
+        names = [*self.FILES]
+        if include_comic_info:
+            names.append("ComicInfo.xml")
+        backups: list[Path] = []
+        for file_name in names:
+            source = folder / file_name
+            if not source.is_file():
+                continue
+            destination = backup_root / folder.name / file_name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if destination.exists():
+                timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+                destination = destination.with_name(f"{file_name}.{timestamp}.bak")
+            shutil.copy2(source, destination)
+            backups.append(destination)
+        return backups
 
     @staticmethod
     def _title(data: object, file_name: str) -> str:
@@ -129,16 +162,29 @@ class MetadataService:
             return "Unicode 差异", "NFC 标准化后相同"
         if actual.replace(" ", "") == expected.replace(" ", ""):
             return "空格差异", "忽略普通空格后相同"
+        without_colon = lambda value: value.replace(":", "").replace("：", "").replace(" ", "")
+        if without_colon(actual) == without_colon(expected):
+            return "冒号差异", "忽略全角/半角冒号和空格后相同"
+        without_exclamation = lambda value: value.replace("!", "").replace("！", "").replace(" ", "")
+        if without_exclamation(actual) == without_exclamation(expected):
+            return "感叹号差异", "忽略全角/半角感叹号和空格后相同"
         if unicodedata.normalize("NFKC", actual) == unicodedata.normalize("NFKC", expected):
             return "全角半角差异", "NFKC 标准化后相同"
-        punctuation = str.maketrans("：！!", ":::" )
-        if actual.translate(punctuation).replace(" ", "") == expected.translate(punctuation).replace(" ", ""):
-            return "标点差异", "冒号、感叹号或空格不同"
         normalized_actual = unicodedata.normalize("NFKC", actual).casefold()
         normalized_expected = unicodedata.normalize("NFKC", expected).casefold()
         if normalized_actual.startswith(normalized_expected) or normalized_expected.startswith(normalized_actual):
             return "文本截断", "一侧标题是另一侧的前缀"
-        return "标题不一致", "标题内容不同"
+        index = MetadataService._first_difference(actual, expected)
+        actual_part = actual[index : index + 16] or "<结束>"
+        expected_part = expected[index : index + 16] or "<结束>"
+        return "标题不一致", f"第 {index + 1} 个字符起不同：Metadata={actual_part!r}，文件夹={expected_part!r}"
+
+    @staticmethod
+    def _first_difference(left: str, right: str) -> int:
+        for index, (left_char, right_char) in enumerate(zip(left, right)):
+            if left_char != right_char:
+                return index
+        return min(len(left), len(right))
 
     @staticmethod
     def _atomic_json_write(path: Path, data: object) -> None:

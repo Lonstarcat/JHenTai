@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from app.models.gallery_folder import GalleryFolder, GalleryStorage, GalleryType, UnicodeStatus
-from app.models.toolkit_features import OperationLog
+from app.models.toolkit_features import CbzTaskRecord, ExistingCbzPolicy, OperationLog
 
 
 class DatabaseService:
@@ -57,6 +57,18 @@ class DatabaseService:
                     result TEXT NOT NULL,
                     error TEXT
                 );
+
+                CREATE TABLE IF NOT EXISTS cbz_task_items (
+                    source_path TEXT NOT NULL,
+                    target_path TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    policy TEXT NOT NULL,
+                    error TEXT NOT NULL DEFAULT '',
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (source_path, target_path)
+                );
+                CREATE INDEX IF NOT EXISTS idx_cbz_task_status
+                    ON cbz_task_items(status);
 
                 CREATE TABLE IF NOT EXISTS gallery_status_cache (
                     scan_root TEXT NOT NULL DEFAULT '',
@@ -143,6 +155,70 @@ class DatabaseService:
                 source_path=row["source_path"] or "",
                 target_path=row["target_path"] or "",
                 result=row["result"],
+                error=row["error"] or "",
+            )
+            for row in rows
+        ]
+
+    def prepare_cbz_tasks(
+        self,
+        galleries: Iterable[GalleryFolder],
+        output: Path,
+        policy: ExistingCbzPolicy,
+    ) -> None:
+        rows = [
+            (str(gallery.path), str(output / f"{gallery.folder_name}.cbz"), "waiting", policy.value)
+            for gallery in galleries
+        ]
+        with self._connect() as connection:
+            connection.executemany(
+                """
+                INSERT INTO cbz_task_items (source_path, target_path, status, policy, error, updated_at)
+                VALUES (?, ?, ?, ?, '', CURRENT_TIMESTAMP)
+                ON CONFLICT(source_path, target_path) DO UPDATE SET
+                    status=excluded.status,
+                    policy=excluded.policy,
+                    error='',
+                    updated_at=CURRENT_TIMESTAMP
+                """,
+                rows,
+            )
+
+    def update_cbz_task(
+        self,
+        source: Path,
+        target: Path,
+        status: str,
+        policy: ExistingCbzPolicy,
+        error: str = "",
+    ) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO cbz_task_items (source_path, target_path, status, policy, error, updated_at)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(source_path, target_path) DO UPDATE SET
+                    status=excluded.status,
+                    policy=excluded.policy,
+                    error=excluded.error,
+                    updated_at=CURRENT_TIMESTAMP
+                """,
+                (str(source), str(target), status, policy.value, error),
+            )
+
+    def list_cbz_tasks(self, limit: int = 5000) -> list[CbzTaskRecord]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM cbz_task_items ORDER BY updated_at DESC LIMIT ?",
+                (max(1, limit),),
+            ).fetchall()
+        return [
+            CbzTaskRecord(
+                source_path=row["source_path"],
+                target_path=row["target_path"],
+                status=row["status"],
+                policy=row["policy"],
+                updated_at=datetime.fromisoformat(row["updated_at"]),
                 error=row["error"] or "",
             )
             for row in rows

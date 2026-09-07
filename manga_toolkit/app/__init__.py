@@ -1,1 +1,1 @@
-"""Manga Library Toolkit application package."""
+"""Emangato application package."""

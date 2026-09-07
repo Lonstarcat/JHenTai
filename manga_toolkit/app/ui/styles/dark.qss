@@ -5,6 +5,12 @@
 }
 QMainWindow, QWidget#AppRoot, QWidget#PageRoot, QStackedWidget#PageStack { background: #111315; }
 QFrame#TopBar { background: #181B1F; border-bottom: 1px solid #2A2F35; }
+QWidget#SettingsContent, QScrollArea#SettingsScroll, QScrollArea#SettingsScroll > QWidget > QWidget { background: #111315; }
+QGroupBox#SettingsGroup QLabel { color: #F3F4F6; background: transparent; }
+QLabel#ModeLabel { color: #D1D5DB; font-weight: 600; }
+QComboBox#TopModeSelector { min-width: 92px; }
+QCheckBox#ModeSwitch::indicator { width: 38px; height: 20px; border-radius: 10px; background: #39404A; border: 1px solid #59616D; }
+QCheckBox#ModeSwitch::indicator:checked { background: #B56A35; border-color: #D18A55; }
 QFrame#Sidebar { background: #181B1F; border-right: 1px solid #2A2F35; }
 QLabel#BrandTitle { font-size: 15px; font-weight: 600; }
 QLabel#BrandSubtitle, QLabel#SecondaryText, QLabel#PageDescription,
@@ -34,6 +40,9 @@ QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox { min-height: 34px; padding: 0 10
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus { border-color: #6D8DFF; }
 QComboBox::drop-down { border: none; width: 28px; }
 QComboBox QAbstractItemView { background: #20242A; border: 1px solid #343A43; selection-background-color: #263452; }
+QMenu { background: #20242A; color: #F3F4F6; border: 1px solid #343A43; padding: 5px; }
+QMenu::item { padding: 7px 28px 7px 10px; border-radius: 5px; }
+QMenu::item:selected { background: #263452; }
 QTableView { background: #181B1F; alternate-background-color: #1A1D21; border: 1px solid #2A2F35; border-radius: 9px; gridline-color: transparent; selection-background-color: #263452; selection-color: #F3F4F6; outline: none; }
 QTableView::item { border-bottom: 1px solid #24282E; padding: 0 8px; }
 QTableView::item:hover { background: #20252C; }

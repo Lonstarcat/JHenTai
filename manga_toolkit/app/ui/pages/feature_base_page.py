@@ -11,6 +11,7 @@ from app.ui.components import PageHeader, TaskProgress
 from app.ui.feature_table_model import FeatureTableModel
 from app.workers.feature_workers import FeatureWorker
 from app.services.report_service import ReportService
+from app.ui.table_interactions import install_table_interactions
 
 
 class FeatureBasePage(QWidget):
@@ -21,15 +22,24 @@ class FeatureBasePage(QWidget):
         self.setObjectName("PageRoot")
         self._thread: QThread | None = None
         self._worker: FeatureWorker | None = None
+        self._paused = False
         self.model = FeatureTableModel(columns)
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(28, 26, 28, 26)
         self.layout.setSpacing(14)
         self.action_button = QPushButton(action_text)
-        self.export_button = QPushButton("导出 Excel")
-        self.export_button.clicked.connect(lambda: self.export_excel(title))
+        self.export_button = QPushButton("导出报告")
+        self.export_button.clicked.connect(lambda: self.export_report(title))
+        self._pause_task_button = QPushButton("暂停")
+        self._pause_task_button.setEnabled(False)
+        self._pause_task_button.clicked.connect(self.toggle_task_pause)
+        self._cancel_task_button = QPushButton("取消")
+        self._cancel_task_button.setEnabled(False)
+        self._cancel_task_button.clicked.connect(self.cancel_running_task)
         self.header = PageHeader(title, subtitle)
         self.header.add_action(self.export_button)
+        self.header.add_action(self._pause_task_button)
+        self.header.add_action(self._cancel_task_button)
         self.header.add_action(self.action_button, primary=True)
         self.layout.addWidget(self.header)
         self.task = TaskProgress(title, "等待操作；耗时任务将在后台运行")
@@ -44,6 +54,7 @@ class FeatureBasePage(QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.verticalHeader().setDefaultSectionSize(40)
         self.table.horizontalHeader().setStretchLastSection(True)
+        install_table_interactions(self.table)
         self.layout.addWidget(self.table, 1)
 
     def add_control_bar(self, *widgets: QWidget) -> None:
@@ -55,23 +66,44 @@ class FeatureBasePage(QWidget):
         for widget in widgets:
             row.addWidget(widget)
         row.addStretch(1)
+        install_table_interactions(self.table, panel)
         self.layout.insertWidget(1, panel)
 
-    def export_excel(self, title: str) -> None:
+    def export_report(self, title: str) -> None:
         if not self.model.rows:
             QMessageBox.information(self, "导出报告", "当前没有可导出的结果。")
             return
-        value, _ = QFileDialog.getSaveFileName(self, "导出报告", f"{title}.xlsx", "Excel (*.xlsx)")
+        value, selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "导出报告",
+            f"{title}.xlsx",
+            "Excel (*.xlsx);;CSV (*.csv);;JSON (*.json)",
+        )
         if not value:
             return
-        destination = Path(value if value.casefold().endswith(".xlsx") else value + ".xlsx")
+        suffix = Path(value).suffix.casefold()
+        if suffix not in {".xlsx", ".csv", ".json"}:
+            suffix = ".csv" if selected_filter.startswith("CSV") else ".json" if selected_filter.startswith("JSON") else ".xlsx"
+            value += suffix
+        destination = Path(value)
         headers = self.model.headers
         rows = self.model.values()
+        service = ReportService()
+        if suffix == ".csv":
+            action = lambda progress, cancelled: service.export_table_csv(headers, rows, destination)
+        elif suffix == ".json":
+            action = lambda progress, cancelled: service.export_table_json(headers, rows, destination)
+        else:
+            action = lambda progress, cancelled: service.export_table(title, headers, rows, destination)
         self.run_worker(
-            lambda progress, cancelled: ReportService().export_table(title, headers, rows, destination),
-            "正在导出 Excel…",
+            action,
+            f"正在导出 {suffix[1:].upper()}…",
             lambda _: QMessageBox.information(self, "导出完成", str(destination)),
         )
+
+    def export_excel(self, title: str) -> None:
+        """Compatibility entry point retained for existing callers."""
+        self.export_report(title)
 
     @property
     def is_running(self) -> bool:
@@ -81,7 +113,47 @@ class FeatureBasePage(QWidget):
         if self._worker is not None:
             self._worker.request_cancel()
 
-    def run_worker(self, action, label: str, completed: Callable[[object], None] | None = None) -> None:
+    @property
+    def is_paused(self) -> bool:
+        return self._paused
+
+    def pause(self) -> None:
+        if self._worker is not None and not self._paused:
+            self._worker.request_pause()
+            self._paused = True
+
+    def resume(self) -> None:
+        if self._worker is not None and self._paused:
+            self._worker.request_resume()
+            self._paused = False
+
+    def toggle_task_pause(self) -> None:
+        if self._thread is None:
+            return
+        if self._paused:
+            self.resume()
+            self._pause_task_button.setText("暂停")
+            self.task.status.setText("任务已继续")
+        else:
+            self.pause()
+            self._pause_task_button.setText("继续")
+            self.task.status.setText("任务将在当前安全检查点暂停")
+
+    def cancel_running_task(self) -> None:
+        if self._thread is None:
+            return
+        self.stop()
+        self._cancel_task_button.setEnabled(False)
+        self.task.status.setText("正在安全停止当前任务…")
+
+    def run_worker(
+        self,
+        action,
+        label: str,
+        completed: Callable[[object], None] | None = None,
+        *,
+        allow_pause: bool = False,
+    ) -> None:
         if self._thread is not None:
             return
         thread = QThread(self)
@@ -97,9 +169,12 @@ class FeatureBasePage(QWidget):
         thread.finished.connect(thread.deleteLater)
         self._thread = thread
         self._worker = worker
+        self._paused = False
         self.action_button.setEnabled(False)
+        self._pause_task_button.setEnabled(allow_pause)
+        self._cancel_task_button.setEnabled(True)
         self.task_state_changed.emit(label)
-        self.task.update_progress(0, 1, label)
+        self.task.begin(label)
         thread.start()
 
     def _default_completed(self, result: object) -> None:
@@ -112,5 +187,10 @@ class FeatureBasePage(QWidget):
     def _thread_finished(self) -> None:
         self._thread = None
         self._worker = None
+        self._paused = False
         self.action_button.setEnabled(True)
+        self._pause_task_button.setEnabled(False)
+        self._pause_task_button.setText("暂停")
+        self._cancel_task_button.setEnabled(False)
+        self.task.finish()
         self.task_state_changed.emit("空闲")

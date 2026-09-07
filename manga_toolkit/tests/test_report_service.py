@@ -1,3 +1,5 @@
+import csv
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -70,3 +72,30 @@ def test_export_generic_table(tmp_path: Path) -> None:
     destination = tmp_path / "table.xlsx"
     ReportService().export_table("目录检查", ["路径", "状态"], [[tmp_path, "正常"]], destination)
     assert load_workbook(destination, read_only=True).sheetnames == ["目录检查"]
+
+
+def test_export_generic_csv_and_json(tmp_path: Path) -> None:
+    service = ReportService()
+    rows = [[tmp_path / "漫画", "正常", 3]]
+    csv_path = tmp_path / "table.csv"
+    json_path = tmp_path / "table.json"
+    service.export_table_csv(["路径", "状态", "数量"], rows, csv_path)
+    service.export_table_json(["路径", "状态", "数量"], rows, json_path)
+    with csv_path.open(encoding="utf-8-sig", newline="") as stream:
+        assert list(csv.reader(stream))[1] == [str(tmp_path / "漫画"), "正常", "3"]
+    assert json.loads(json_path.read_text(encoding="utf-8"))[0] == {
+        "路径": str(tmp_path / "漫画"),
+        "状态": "正常",
+        "数量": 3,
+    }
+
+
+def test_spreadsheet_exports_escape_formula_like_values(tmp_path: Path) -> None:
+    service = ReportService()
+    xlsx_path = tmp_path / "safe.xlsx"
+    csv_path = tmp_path / "safe.csv"
+    service.export_table("报告", ["名称"], [["=HYPERLINK(\"https://example.invalid\")"]], xlsx_path)
+    service.export_table_csv(["名称"], [["+formula"]], csv_path)
+    assert load_workbook(xlsx_path, read_only=True)["报告"]["A2"].value.startswith("'=")
+    with csv_path.open(encoding="utf-8-sig", newline="") as stream:
+        assert list(csv.reader(stream))[1][0].startswith("'+")

@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from app.models.gallery_folder import GalleryFolder, GalleryStorage, GalleryType, UnicodeStatus
+from app.models.toolkit_features import ExistingCbzPolicy
 from app.services.database_service import DatabaseService
 
 
@@ -101,3 +102,18 @@ def test_operation_log_round_trip(tmp_path: Path) -> None:
     assert len(rows) == 1
     assert rows[0].operation_type == "测试"
     assert rows[0].result == "成功"
+
+
+def test_cbz_task_state_round_trip(tmp_path: Path) -> None:
+    database = DatabaseService(tmp_path / "app.db")
+    database.initialize()
+    root = tmp_path / "library"
+    item = GalleryFolder("123", GalleryType.NORMAL, "123 - title", root / "123 - title", UnicodeStatus.NFC, 2, 10, True, False, True, 1, "now")
+    output = tmp_path / "cbz"
+    database.prepare_cbz_tasks([item], output, ExistingCbzPolicy.VERIFY)
+    waiting = database.list_cbz_tasks()[0]
+    assert waiting.status == "waiting" and waiting.policy == ExistingCbzPolicy.VERIFY.value
+    target = output / "123 - title.cbz"
+    database.update_cbz_task(item.path, target, "failed", ExistingCbzPolicy.VERIFY, "test error")
+    failed = database.list_cbz_tasks()[0]
+    assert failed.status == "failed" and failed.error == "test error"

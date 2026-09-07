@@ -44,6 +44,7 @@ from app.ui.components import (
     TaskProgress,
 )
 from app.ui.gallery_status_table_model import GalleryStatusFilterModel, GalleryStatusTableModel
+from app.ui.table_interactions import install_table_interactions
 from app.workers.gallery_status_worker import GalleryStatusWorker
 from app.workers.report_worker import GalleryStatusReportWorker
 
@@ -212,6 +213,7 @@ class GalleryStatusPage(QWidget):
         self.table.setColumnWidth(2, 90)
         self.table.setColumnWidth(3, 320)
         self.table.setColumnWidth(12, 300)
+        install_table_interactions(self.table, filters)
         self.detail = DetailPanel()
         splitter.addWidget(self.table)
         splitter.addWidget(self.detail)

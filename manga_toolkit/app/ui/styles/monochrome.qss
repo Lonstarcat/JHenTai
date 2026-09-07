@@ -10,6 +10,12 @@ QFrame#TopBar {
     background: #FFFFFF;
     border-bottom: 1px solid #000000;
 }
+QWidget#SettingsContent, QScrollArea#SettingsScroll, QScrollArea#SettingsScroll > QWidget > QWidget { background: #F2F2F2; }
+QGroupBox#SettingsGroup QLabel { color: #000000; background: transparent; }
+QLabel#ModeLabel { color: #222222; font-weight: 600; }
+QComboBox#TopModeSelector { min-width: 92px; }
+QCheckBox#ModeSwitch::indicator { width: 38px; height: 20px; border-radius: 10px; background: #FFFFFF; border: 2px solid #000000; }
+QCheckBox#ModeSwitch::indicator:checked { background: #000000; border-color: #000000; }
 QFrame#Sidebar {
     background: #FFFFFF;
     border-right: 1px solid #000000;
@@ -93,6 +99,9 @@ QComboBox QAbstractItemView {
     selection-background-color: #000000;
     selection-color: #FFFFFF;
 }
+QMenu { background: #FFFFFF; color: #000000; border: 1px solid #000000; padding: 5px; }
+QMenu::item { padding: 7px 28px 7px 10px; border-radius: 5px; }
+QMenu::item:selected { background: #000000; color: #FFFFFF; }
 QTableView {
     background: #FFFFFF;
     alternate-background-color: #F4F4F4;

@@ -16,6 +16,7 @@ class AppSettings:
     seven_zip_path: str = ""
     ffmpeg_path: str = ""
     ffprobe_path: str = ""
+    czkawka_path: str = ""
     safety_mode: bool = True
     gallery_site: str = "exhentai"
     status_batch_size: int = 25
@@ -47,6 +48,7 @@ class SettingsService:
                 seven_zip_path=str(data.get("seven_zip_path", "")),
                 ffmpeg_path=str(data.get("ffmpeg_path", "")),
                 ffprobe_path=str(data.get("ffprobe_path", "")),
+                czkawka_path=str(data.get("czkawka_path", "")),
                 safety_mode=bool(data.get("safety_mode", True)),
                 gallery_site=gallery_site,
                 status_batch_size=min(25, max(1, int(data.get("status_batch_size", 25)))),

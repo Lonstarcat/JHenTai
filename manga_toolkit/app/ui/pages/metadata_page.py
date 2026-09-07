@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtWidgets import QComboBox, QMessageBox, QPushButton
+from PySide6.QtWidgets import QCheckBox, QMessageBox, QPushButton
 
 from app.models.toolkit_features import FeatureResult, MetadataIssue
 from app.services.database_service import DatabaseService
@@ -22,23 +22,34 @@ class MetadataPage(FeatureBasePage):
         self._database, self._settings = database, settings
         self._root = Path(settings.load().library_path) if settings.load().library_path else None
         self.action_button.clicked.connect(self.analyze)
-        self.group_combo = QComboBox(); self.group_combo.setEditable(True); self.group_combo.addItems(("下载", "归档"))
-        self.group_combo.setMinimumWidth(180)
-        update = QPushButton("修改选中 groupName"); update.clicked.connect(self.update_selected)
-        self.add_control_bar(self.group_combo, update)
+        metadata_group = QPushButton("metadata → 下载")
+        metadata_group.clicked.connect(lambda: self.update_selected("metadata", "下载"))
+        ametadata_group = QPushButton("ametadata → 归档")
+        ametadata_group.clicked.connect(lambda: self.update_selected("ametadata", "归档"))
+        self.include_comic_info = QCheckBox("备份包含 ComicInfo.xml")
+        backup = QPushButton("备份选中目录")
+        backup.clicked.connect(self.backup_selected)
+        self.add_control_bar(metadata_group, ametadata_group, self.include_comic_info, backup)
 
     def set_library_root(self, value: str) -> None: self._root = Path(value) if value else None
     def analyze(self) -> None:
         if not self._root: QMessageBox.warning(self, "Metadata", "请先完成库扫描。"); return
-        self.run_worker(analyze_metadata(self._database, self._root), "正在检查 Metadata…")
+        self.run_worker(analyze_metadata(self._database, self._root), "正在检查 Metadata…", allow_pause=True)
 
-    def update_selected(self) -> None:
+    def update_selected(self, file_name: str, value: str) -> None:
         selection = self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
         rows = [self.model.row(index) for index in selection]
-        items = [row for row in rows if isinstance(row, MetadataIssue) and row.status != "缺失" and row.folder.is_dir()]
-        value = self.group_combo.currentText().strip()
-        if not items or not value: QMessageBox.information(self, "Metadata", "请选择文件夹载体中存在的 metadata/ametadata 行；CBZ 内 Metadata 当前仅支持只读检查。"); return
-        if QMessageBox.question(self, "确认修改", f"将备份并修改 {len(items)} 个文件的 groupName，是否继续？") != QMessageBox.StandardButton.Yes: return
+        items = [
+            row for row in rows
+            if isinstance(row, MetadataIssue)
+            and row.file_name == file_name
+            and row.status != "缺失"
+            and row.folder.is_dir()
+        ]
+        if not items:
+            QMessageBox.information(self, "Metadata", f"请选择文件夹载体中存在的 {file_name} 行；CBZ 内 Metadata 当前仅支持只读检查。")
+            return
+        if QMessageBox.question(self, "确认修改", f"将备份并把 {len(items)} 个 {file_name} 的 groupName 修改为“{value}”，是否继续？") != QMessageBox.StandardButton.Yes: return
         backup_root = (self._root or Path.cwd()) / "metadata_backup"
         def action(progress, cancelled):
             result = FeatureResult(); service = MetadataService()
@@ -52,8 +63,39 @@ class MetadataPage(FeatureBasePage):
                     self._database.log_operation("Metadata groupName", "失败", source, backup_root, str(error)); result.failed += 1
                 progress(index, len(items), item.folder.name)
             return result
-        self.run_worker(action, "正在备份并修改 Metadata…", lambda result: self._done(result))
+        self.run_worker(action, "正在备份并修改 Metadata…", lambda result: self._done(result), allow_pause=True)
+
+    def backup_selected(self) -> None:
+        selection = self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
+        folders = {
+            row.folder
+            for index in selection
+            if isinstance((row := self.model.row(index)), MetadataIssue) and row.folder.is_dir()
+        }
+        if not folders:
+            QMessageBox.information(self, "Metadata", "请选择一个或多个文件夹载体；CBZ 当前仅支持只读检查。")
+            return
+        include_comic_info = self.include_comic_info.isChecked()
+        if QMessageBox.question(self, "确认备份", f"将备份 {len(folders)} 个目录中的 Metadata" + (" 和 ComicInfo.xml" if include_comic_info else "") + "，是否继续？") != QMessageBox.StandardButton.Yes:
+            return
+        backup_root = (self._root or Path.cwd()) / "metadata_backup"
+
+        def action(progress, cancelled):
+            result = FeatureResult(); service = MetadataService()
+            for index, folder in enumerate(sorted(folders), 1):
+                if cancelled(): break
+                try:
+                    backups = service.backup_files(folder, backup_root, include_comic_info=include_comic_info)
+                    self._database.log_operation("Metadata 备份", "成功", folder, backup_root)
+                    if backups: result.success += 1
+                    else: result.skipped += 1
+                except Exception as error:
+                    self._database.log_operation("Metadata 备份", "失败", folder, backup_root, str(error)); result.failed += 1
+                progress(index, len(folders), folder.name)
+            return result
+
+        self.run_worker(action, "正在备份 Metadata…", lambda result: self._done(result), allow_pause=True)
 
     def _done(self, result: FeatureResult) -> None:
-        self.task.status.setText(f"完成 · 成功 {result.success} · 失败 {result.failed}")
+        self.task.status.setText(f"完成 · 成功 {result.success} · 失败 {result.failed} · 跳过 {result.skipped}")
         QMessageBox.information(self, "Metadata", f"{self.task.status.text()}\n备份位于漫画库 metadata_backup。")

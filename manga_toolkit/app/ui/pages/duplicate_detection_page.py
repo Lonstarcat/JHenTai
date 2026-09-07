@@ -24,6 +24,7 @@ from app.services.database_service import DatabaseService
 from app.services.settings_service import SettingsService
 from app.ui.components import BadgeDelegate, DetailPanel, EmptyState, FilterBar, PageHeader, StatCard, TaskProgress
 from app.ui.library_analysis_table_models import DuplicateFilterModel, DuplicateTableModel
+from app.ui.table_interactions import install_table_interactions
 from app.workers.analysis_report_worker import DuplicateReportWorker
 from app.workers.library_analysis_worker import DuplicateAnalysisWorker
 
@@ -127,6 +128,7 @@ class DuplicateDetectionPage(QWidget):
         self.table.setColumnWidth(1, 90)
         self.table.setColumnWidth(2, 90)
         self.table.setColumnWidth(5, 360)
+        install_table_interactions(self.table, filters)
         self.detail = DetailPanel()
         splitter.addWidget(self.table)
         splitter.addWidget(self.detail)

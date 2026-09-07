@@ -20,7 +20,8 @@ class CredentialStorageError(RuntimeError):
 class CredentialService:
     """Store EH cookies in the OS credential vault, never in settings or logs."""
 
-    SERVICE_NAME = "MangaLibraryToolkit.EHentai"
+    SERVICE_NAME = "Emangato.EHentai"
+    LEGACY_SERVICE_NAME = "MangaLibraryToolkit.EHentai"
     COOKIE_NAMES = ("ipb_member_id", "ipb_pass_hash", "igneous")
 
     def set_cookie(self, name: str, value: str) -> None:
@@ -36,7 +37,13 @@ class CredentialService:
     def get_cookie(self, name: str) -> str | None:
         self._validate_name(name)
         try:
-            return keyring.get_password(self.SERVICE_NAME, name)
+            value = keyring.get_password(self.SERVICE_NAME, name)
+            if value:
+                return value
+            legacy = keyring.get_password(self.LEGACY_SERVICE_NAME, name)
+            if legacy:
+                keyring.set_password(self.SERVICE_NAME, name, legacy)
+            return legacy
         except KeyringError as error:
             raise CredentialStorageError("无法读取 Windows Credential Manager") from error
 
@@ -45,9 +52,15 @@ class CredentialService:
         try:
             keyring.delete_password(self.SERVICE_NAME, name)
         except PasswordDeleteError:
-            return
+            pass
         except KeyringError as error:
             raise CredentialStorageError("无法更新 Windows Credential Manager") from error
+        try:
+            keyring.delete_password(self.LEGACY_SERVICE_NAME, name)
+        except PasswordDeleteError:
+            pass
+        except KeyringError as error:
+            raise CredentialStorageError("无法更新旧版凭据") from error
 
     def get_cookies(self) -> dict[str, str]:
         result: dict[str, str] = {}

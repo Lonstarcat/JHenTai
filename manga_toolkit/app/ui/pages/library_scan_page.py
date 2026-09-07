@@ -32,6 +32,7 @@ from app.ui.components import (
     TaskProgress,
 )
 from app.ui.gallery_table_model import GalleryFilterModel, GalleryTableModel
+from app.ui.table_interactions import install_table_interactions
 from app.workers.scan_worker import ScanWorker
 
 
@@ -140,6 +141,7 @@ class LibraryScanPage(QWidget):
         self.table.setColumnWidth(2, 75)
         self.table.setColumnWidth(3, 340)
         self.table.setColumnWidth(4, 420)
+        install_table_interactions(self.table, filters)
         self.detail = DetailPanel()
         splitter.addWidget(self.table)
         splitter.addWidget(self.detail)

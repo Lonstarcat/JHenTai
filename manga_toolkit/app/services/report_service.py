@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import json
 from pathlib import Path
 
 from openpyxl import Workbook
@@ -33,6 +35,47 @@ class ReportService:
         )
         destination.parent.mkdir(parents=True, exist_ok=True)
         workbook.save(destination)
+
+    def export_table_csv(
+        self,
+        headers: list[str],
+        rows: list[list[object]],
+        destination: Path,
+    ) -> None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with destination.open("w", encoding="utf-8-sig", newline="") as stream:
+            writer = csv.writer(stream)
+            writer.writerow(headers)
+            writer.writerows([
+                [self._spreadsheet_safe(self._serializable(value)) for value in row]
+                for row in rows
+            ])
+
+    def export_table_json(
+        self,
+        headers: list[str],
+        rows: list[list[object]],
+        destination: Path,
+    ) -> None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        payload = [
+            {header: self._serializable(value) for header, value in zip(headers, row, strict=False)}
+            for row in rows
+        ]
+        destination.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    @staticmethod
+    def _serializable(value: object) -> object:
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        return str(value)
+
+    @staticmethod
+    def _spreadsheet_safe(value: object) -> object:
+        if isinstance(value, str) and value.startswith(("=", "+", "-", "@")):
+            return f"'{value}"
+        return value
+
     def export_duplicates(self, groups: list[DuplicateGroup], destination: Path) -> None:
         workbook = Workbook()
         workbook.remove(workbook.active)
@@ -237,7 +280,7 @@ class ReportService:
         sheet = workbook.create_sheet(title)
         sheet.append(headers)
         for row in rows:
-            sheet.append(row)
+            sheet.append([ReportService._spreadsheet_safe(value) for value in row])
         fill = PatternFill("solid", fgColor="DCE6F1")
         for cell in sheet[1]:
             cell.font = Font(bold=True)

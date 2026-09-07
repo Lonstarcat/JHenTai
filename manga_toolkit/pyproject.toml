@@ -3,8 +3,8 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "manga-library-toolkit"
-version = "0.1.0"
+name = "emangato"
+version = "0.6.0"
 description = "A safety-first Windows manga library maintenance application"
 requires-python = ">=3.12"
 dependencies = [

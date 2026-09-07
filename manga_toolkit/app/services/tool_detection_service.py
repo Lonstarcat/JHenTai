@@ -21,6 +21,7 @@ class ToolDetectionService:
         "7-Zip": ("7z.exe", "7zz.exe", "7z", "7zz"),
         "FFmpeg": ("ffmpeg.exe", "ffmpeg"),
         "FFprobe": ("ffprobe.exe", "ffprobe"),
+        "Czkawka": ("czkawka_gui.exe", "czkawka_cli.exe", "czkawka_gui", "czkawka_cli"),
     }
 
     def detect(self, configured_paths: dict[str, str] | None = None) -> list[ToolInfo]:

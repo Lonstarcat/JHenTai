@@ -21,4 +21,4 @@ class DirectoryCheckPage(FeatureBasePage):
     def set_library_root(self, value: str) -> None: self._root = Path(value) if value else None
     def run_check(self) -> None:
         if not self._root: QMessageBox.warning(self, "目录检查", "请先完成库扫描。"); return
-        self.run_worker(check_directories(self._database, self._root), "正在检查目录…")
+        self.run_worker(check_directories(self._database, self._root), "正在检查目录…", allow_pause=True)

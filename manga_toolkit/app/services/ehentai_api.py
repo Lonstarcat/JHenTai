@@ -39,7 +39,7 @@ class EhentaiApiClient:
             timeout=httpx.Timeout(timeout_seconds),
             follow_redirects=True,
             transport=transport,
-            headers={"User-Agent": "MangaLibraryToolkit/0.1"},
+            headers={"User-Agent": "Emangato/0.6"},
         )
 
     def close(self) -> None:

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from app.core.logging_config import configure_logging
@@ -10,6 +12,7 @@ from app.services.database_service import DatabaseService
 from app.services.credential_service import CredentialService
 from app.services.settings_service import SettingsService
 from app.ui.main_window import MainWindow
+from app.ui.input_guard import AccidentalWheelGuard
 from app.ui.theme_manager import ThemeManager
 
 
@@ -23,8 +26,13 @@ def main() -> int:
     settings_service = SettingsService(paths.settings_path)
 
     application = QApplication(sys.argv)
-    application.setApplicationName("Manga Library Toolkit")
-    application.setOrganizationName("MangaLibraryToolkit")
+    application.setApplicationName("Emangato")
+    application.setOrganizationName("Emangato")
+    icon_path = Path(__file__).resolve().parent / "Emangato.png"
+    if icon_path.is_file():
+        application.setWindowIcon(QIcon(str(icon_path)))
+    wheel_guard = AccidentalWheelGuard(application)
+    application.installEventFilter(wheel_guard)
     theme_manager = ThemeManager(application, settings_service.load().theme_mode)
     credentials = CredentialService()
     window = MainWindow(

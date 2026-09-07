@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QSplitter,
@@ -20,11 +22,16 @@ from PySide6.QtWidgets import (
 )
 
 from app.models.library_analysis import UnicodeAnalysisResult
+from app.models.toolkit_features import FeatureResult, PlanStatus, UnicodeOperationPlan, UnicodeOperationType
 from app.services.database_service import DatabaseService
 from app.services.settings_service import SettingsService
+from app.services.unicode_operation_service import UnicodeOperationService
 from app.ui.components import BadgeDelegate, DetailPanel, EmptyState, FilterBar, PageHeader, StatCard, TaskProgress
 from app.ui.library_analysis_table_models import TextFilterModel, UnicodeDuplicateTableModel, UnicodeTableModel
+from app.ui.feature_table_model import FeatureTableModel
+from app.ui.table_interactions import install_table_interactions
 from app.workers.analysis_report_worker import UnicodeReportWorker
+from app.workers.feature_workers import FeatureWorker
 from app.workers.library_analysis_worker import UnicodeAnalysisWorker
 
 
@@ -36,6 +43,7 @@ class UnicodeToolsPage(QWidget):
         super().__init__()
         self.setObjectName("PageRoot")
         self._database = database
+        self._settings = settings
         configured = settings.load().library_path
         self._root = Path(configured) if configured else None
         self._result: UnicodeAnalysisResult | None = None
@@ -43,17 +51,29 @@ class UnicodeToolsPage(QWidget):
         self._worker: UnicodeAnalysisWorker | None = None
         self._report_thread: QThread | None = None
         self._report_worker: UnicodeReportWorker | None = None
+        self._operation_thread: QThread | None = None
+        self._operation_worker: FeatureWorker | None = None
         self._detection_model = UnicodeTableModel()
         self._detection_proxy = TextFilterModel()
         self._detection_proxy.setSourceModel(self._detection_model)
         self._duplicate_model = UnicodeDuplicateTableModel()
         self._duplicate_proxy = TextFilterModel()
         self._duplicate_proxy.setSourceModel(self._duplicate_model)
+        self._operation_model = FeatureTableModel((
+            ("操作", lambda row: row.operation.value),
+            ("状态", lambda row: row.status.value),
+            ("ID", lambda row: row.gallery_id or "—"),
+            ("源路径", lambda row: row.source),
+            ("配对路径", lambda row: row.companion or ""),
+            ("目标路径", lambda row: row.target),
+            ("变更", lambda row: "、".join(row.changes)),
+            ("说明", lambda row: row.reason),
+        ))
         self._build_ui()
 
     @property
     def is_running(self) -> bool:
-        return self._thread is not None or self._report_thread is not None
+        return self._thread is not None or self._report_thread is not None or self._operation_thread is not None
 
     def set_library_root(self, value: str) -> None:
         self._root = Path(value) if value else None
@@ -91,10 +111,7 @@ class UnicodeToolsPage(QWidget):
         tabs = QTabWidget()
         tabs.addTab(self._build_detection_tab(), "检测")
         tabs.addTab(self._build_duplicate_tab(), "重复")
-        tabs.addTab(
-            EmptyState("转换将在 Phase 3 开放", "转换前必须生成操作计划、预览并由用户确认。"),
-            "转换",
-        )
+        tabs.addTab(self._build_operation_tab(), "转换与合并")
         self.stack.addWidget(tabs)
         layout.addWidget(self.stack, 1)
 
@@ -111,6 +128,7 @@ class UnicodeToolsPage(QWidget):
         layout.addWidget(filters)
         splitter = QSplitter()
         self.detection_table = self._table(self._detection_proxy, {0, 2})
+        install_table_interactions(self.detection_table, filters)
         self.detection_detail = DetailPanel()
         splitter.addWidget(self.detection_table)
         splitter.addWidget(self.detection_detail)
@@ -119,6 +137,51 @@ class UnicodeToolsPage(QWidget):
         selection = self.detection_table.selectionModel()
         if selection is not None:
             selection.currentRowChanged.connect(self._show_detection_detail)
+        return page
+
+    def _build_operation_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 12, 0, 0)
+        controls = QWidget()
+        row = QHBoxLayout(controls)
+        row.setContentsMargins(0, 0, 0, 0)
+        self.operation_mode = QComboBox()
+        self.operation_mode.addItem("输出 NFC 副本（推荐）", UnicodeOperationType.COPY_NORMALIZED.value)
+        self.operation_mode.addItem("原地转换 NFC（高级模式）", UnicodeOperationType.NORMALIZE_IN_PLACE.value)
+        self.operation_mode.addItem("NFC/NFD 分类移动", UnicodeOperationType.CLASSIFY.value)
+        self.operation_mode.addItem("NFC/NFD 内容合并", UnicodeOperationType.MERGE.value)
+        self.operation_output = QLineEdit()
+        self.operation_output.setPlaceholderText("输出目录；默认位于漫画库同级")
+        self.operation_output.setMinimumWidth(360)
+        browse = QPushButton("选择输出目录")
+        browse.clicked.connect(self._choose_operation_output)
+        generate = QPushButton("生成操作计划")
+        generate.clicked.connect(self.generate_operation_plans)
+        self.execute_operations_button = QPushButton("执行计划")
+        self.execute_operations_button.clicked.connect(self.execute_operation_plans)
+        row.addWidget(QLabel("模式"))
+        row.addWidget(self.operation_mode)
+        row.addWidget(self.operation_output, 1)
+        row.addWidget(browse)
+        row.addWidget(generate)
+        row.addWidget(self.execute_operations_button)
+        layout.addWidget(controls)
+        warning = QLabel("默认输出新目录且不修改源数据；原地转换会先备份 metadata、ametadata 和 ComicInfo.xml。所有操作均拒绝覆盖现有目标。")
+        warning.setObjectName("SecondaryText")
+        warning.setWordWrap(True)
+        layout.addWidget(warning)
+        table = QTableView()
+        table.setModel(self._operation_model)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        table.setAlternatingRowColors(True)
+        table.setShowGrid(False)
+        table.verticalHeader().setVisible(False)
+        table.verticalHeader().setDefaultSectionSize(40)
+        table.horizontalHeader().setStretchLastSection(True)
+        install_table_interactions(table)
+        layout.addWidget(table, 1)
         return page
 
     def _build_duplicate_tab(self) -> QWidget:
@@ -130,6 +193,7 @@ class UnicodeToolsPage(QWidget):
         layout.addWidget(filters)
         splitter = QSplitter()
         self.duplicate_table = self._table(self._duplicate_proxy, {0, 2, 3})
+        install_table_interactions(self.duplicate_table, filters)
         self.duplicate_detail = DetailPanel()
         splitter.addWidget(self.duplicate_table)
         splitter.addWidget(self.duplicate_detail)
@@ -157,7 +221,7 @@ class UnicodeToolsPage(QWidget):
         return table
 
     def run_analysis(self) -> None:
-        if self._thread is not None:
+        if self._thread is not None or self._operation_thread is not None:
             return
         if self._root is None:
             QMessageBox.warning(self, "Unicode 工具", "请先完成漫画库扫描。")
@@ -183,6 +247,130 @@ class UnicodeToolsPage(QWidget):
     def stop(self) -> None:
         if self._worker is not None:
             self._worker.request_cancel()
+        if self._operation_worker is not None:
+            self._operation_worker.request_cancel()
+
+    def _choose_operation_output(self) -> None:
+        value = QFileDialog.getExistingDirectory(self, "选择 Unicode 操作输出目录")
+        if value:
+            self.operation_output.setText(value)
+
+    def _operation_destination(self, operation: UnicodeOperationType) -> Path | None:
+        if operation is UnicodeOperationType.NORMALIZE_IN_PLACE:
+            return self._root
+        configured = self.operation_output.text().strip()
+        if configured:
+            return Path(configured)
+        if self._root is None:
+            return None
+        default_name = "Unicode_NFC" if operation is UnicodeOperationType.COPY_NORMALIZED else "Unicode处理"
+        destination = self._root.parent / default_name
+        self.operation_output.setText(str(destination))
+        return destination
+
+    def generate_operation_plans(self) -> None:
+        if self._operation_thread is not None or self._thread is not None:
+            return
+        if self._root is None:
+            QMessageBox.warning(self, "Unicode 工具", "请先完成漫画库扫描。")
+            return
+        operation = UnicodeOperationType(str(self.operation_mode.currentData()))
+        if operation is UnicodeOperationType.NORMALIZE_IN_PLACE and self._settings.load().safety_mode:
+            QMessageBox.warning(self, "安全模式", "原地 Unicode 转换只在高级模式下开放。请在设置中关闭安全模式，或使用“输出 NFC 副本”。")
+            return
+        destination = self._operation_destination(operation)
+        if destination is None:
+            QMessageBox.warning(self, "Unicode 工具", "请选择输出目录。")
+            return
+
+        def action(progress, cancelled):
+            galleries = self._database.list_galleries(self._root)
+            service = UnicodeOperationService()
+            if operation in {UnicodeOperationType.COPY_NORMALIZED, UnicodeOperationType.NORMALIZE_IN_PLACE}:
+                return service.build_normalization_plans(
+                    galleries,
+                    destination,
+                    in_place=operation is UnicodeOperationType.NORMALIZE_IN_PLACE,
+                )
+            if operation is UnicodeOperationType.CLASSIFY:
+                return service.build_classification_plans(galleries, destination)
+            return service.build_merge_plans(galleries, destination)
+
+        self._run_operation_worker(action, "正在生成 Unicode 操作计划…", self._plans_generated)
+
+    def _plans_generated(self, plans: list[UnicodeOperationPlan]) -> None:
+        self._operation_model.set_rows(plans)
+        ready = sum(item.status is PlanStatus.READY for item in plans)
+        conflicts = len(plans) - ready
+        self.task.status.setText(f"计划生成完成 · 可执行 {ready} · 冲突 {conflicts}")
+
+    def execute_operation_plans(self) -> None:
+        plans = [
+            item for item in self._operation_model.rows
+            if isinstance(item, UnicodeOperationPlan) and item.status is PlanStatus.READY
+        ]
+        if not plans:
+            QMessageBox.information(self, "Unicode 工具", "当前没有可执行计划。")
+            return
+        in_place = any(item.operation is UnicodeOperationType.NORMALIZE_IN_PLACE for item in plans)
+        if in_place and self._settings.load().safety_mode:
+            QMessageBox.warning(self, "安全模式", "原地转换计划不能在安全模式下执行。")
+            return
+        message = f"将执行 {len(plans)} 项计划。"
+        if in_place:
+            message += "\n其中包含原地修改；程序会先备份文本元数据，但文件夹名称变化需通过任务状态手动恢复。"
+        else:
+            message += "\n不会覆盖目标；输出副本和合并操作不会删除源目录。"
+        if QMessageBox.question(self, "确认执行 Unicode 计划", message) != QMessageBox.StandardButton.Yes:
+            return
+        backup_root = (self._root or Path.cwd()) / "metadata_backup" / "unicode_nfc"
+
+        def action(progress, cancelled):
+            result = FeatureResult(); service = UnicodeOperationService()
+            for index, plan in enumerate(plans, 1):
+                if cancelled(): break
+                try:
+                    service.execute(plan, backup_root)
+                    self._database.log_operation(plan.operation.value, "成功", plan.source, plan.target)
+                    result.success += 1
+                except Exception as error:
+                    self._database.log_operation(plan.operation.value, "失败", plan.source, plan.target, str(error))
+                    result.failed += 1
+                progress(index, len(plans), plan.source.name)
+            return result
+
+        self._run_operation_worker(action, "正在执行 Unicode 计划…", self._operation_completed)
+
+    def _run_operation_worker(self, action, label: str, completed) -> None:
+        if self._operation_thread is not None:
+            return
+        thread = QThread(self)
+        worker = FeatureWorker(action)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.progress.connect(self._on_progress)
+        worker.completed.connect(completed)
+        worker.failed.connect(lambda message: QMessageBox.critical(self, "Unicode 操作失败", message))
+        worker.finished.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        thread.finished.connect(self._operation_finished)
+        thread.finished.connect(thread.deleteLater)
+        self._operation_thread = thread
+        self._operation_worker = worker
+        self.execute_operations_button.setEnabled(False)
+        self.task_state_changed.emit(label)
+        self.task.update_progress(0, 1, label)
+        thread.start()
+
+    def _operation_completed(self, result: FeatureResult) -> None:
+        self.task.status.setText(f"完成 · 成功 {result.success} · 失败 {result.failed} · 跳过 {result.skipped}")
+        QMessageBox.information(self, "Unicode 工具", self.task.status.text() + "\n执行后请重新扫描漫画库。")
+
+    def _operation_finished(self) -> None:
+        self._operation_thread = None
+        self._operation_worker = None
+        self.execute_operations_button.setEnabled(True)
+        self.task_state_changed.emit("空闲")
 
     def export_report(self) -> None:
         if self._result is None:
