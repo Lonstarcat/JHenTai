@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import logging
 from enum import StrEnum
-from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication
+
+from app.core.resources import bundled_resource, resource_candidates
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ThemeMode(StrEnum):
@@ -22,7 +27,6 @@ class ThemeManager(QObject):
         super().__init__(application)
         self._application = application
         self._mode = self._parse_mode(mode)
-        self._styles_dir = Path(__file__).resolve().parent / "styles"
         font = QFont()
         font.setFamilies(["Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI"])
         font.setPointSize(10)
@@ -37,18 +41,23 @@ class ThemeManager(QObject):
         return self._mode
 
     def set_mode(self, mode: str | ThemeMode) -> None:
-        parsed = self._parse_mode(mode)
-        if parsed == self._mode:
-            return
-        self._mode = parsed
+        self._mode = self._parse_mode(mode)
         self.apply()
 
     def apply(self) -> None:
         resolved = self._resolved_mode()
-        stylesheet_path = self._styles_dir / f"{resolved.value}.qss"
+        relative_path = f"app/ui/styles/{resolved.value}.qss"
+        stylesheet_path = bundled_resource(relative_path)
         try:
             stylesheet = stylesheet_path.read_text(encoding="utf-8")
-        except OSError:
+        except OSError as error:
+            candidates = ", ".join(str(path) for path in resource_candidates(relative_path))
+            LOGGER.error(
+                "Unable to load theme '%s'; checked %s: %s",
+                resolved.value,
+                candidates,
+                error,
+            )
             stylesheet = ""
         self._application.setProperty("theme", resolved.value)
         self._application.setStyleSheet(stylesheet)

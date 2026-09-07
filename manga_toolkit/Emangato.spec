@@ -1,10 +1,21 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from pathlib import Path
+
+from PyInstaller.utils.hooks import collect_submodules
 
 
-datas = collect_data_files("app", includes=["ui/styles/*.qss"])
-datas.extend([("Emangato.png", "."), ("Emangato.ico", ".")])
+project_root = Path(SPECPATH)
+datas = [
+    (str(style_path), "app/ui/styles")
+    for style_path in sorted((project_root / "app/ui/styles").glob("*.qss"))
+]
+datas.extend(
+    [
+        (str(project_root / "Emangato.png"), "."),
+        (str(project_root / "Emangato.ico"), "."),
+    ]
+)
 hiddenimports = collect_submodules("keyring.backends")
 
 analysis = Analysis(

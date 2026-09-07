@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from app.core.logging_config import configure_logging
 from app.core.paths import AppPaths
+from app.core.resources import bundled_resource
 from app.services.database_service import DatabaseService
 from app.services.credential_service import CredentialService
 from app.services.settings_service import SettingsService
@@ -28,7 +28,7 @@ def main() -> int:
     application = QApplication(sys.argv)
     application.setApplicationName("Emangato")
     application.setOrganizationName("Emangato")
-    icon_path = Path(__file__).resolve().parent / "Emangato.png"
+    icon_path = bundled_resource("Emangato.png")
     if icon_path.is_file():
         application.setWindowIcon(QIcon(str(icon_path)))
     wheel_guard = AccidentalWheelGuard(application)

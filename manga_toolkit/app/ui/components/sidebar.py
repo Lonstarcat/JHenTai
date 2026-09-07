@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-
 from PySide6.QtCore import QSize, Signal, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
@@ -15,6 +13,8 @@ from PySide6.QtWidgets import (
     QStyle,
     QVBoxLayout,
 )
+
+from app.core.resources import bundled_resource
 
 @dataclass(frozen=True, slots=True)
 class NavigationItem:
@@ -33,7 +33,7 @@ class Sidebar(QFrame):
         layout.setContentsMargins(12, 18, 12, 14)
         brand_row = QHBoxLayout()
         logo = QLabel()
-        logo_path = Path(__file__).resolve().parents[3] / "Emangato.png"
+        logo_path = bundled_resource("Emangato.png")
         if logo_path.is_file():
             logo.setPixmap(
                 QPixmap(str(logo_path)).scaled(
