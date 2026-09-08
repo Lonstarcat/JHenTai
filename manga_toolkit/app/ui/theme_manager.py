@@ -40,6 +40,10 @@ class ThemeManager(QObject):
     def mode(self) -> ThemeMode:
         return self._mode
 
+    @property
+    def resolved_mode(self) -> ThemeMode:
+        return self._resolved_mode()
+
     def set_mode(self, mode: str | ThemeMode) -> None:
         self._mode = self._parse_mode(mode)
         self.apply()

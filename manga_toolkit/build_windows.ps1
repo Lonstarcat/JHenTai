@@ -17,6 +17,8 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $venvPython)) {
 if ($LASTEXITCODE -ne 0) { throw "pip 更新失败。" }
 & $venvPython -m pip install -r requirements-dev.txt
 if ($LASTEXITCODE -ne 0) { throw "项目依赖安装失败。" }
+& $venvPython tools\generate_icon.py
+if ($LASTEXITCODE -ne 0) { throw "应用图标生成失败。" }
 & $venvPython -m pytest
 if ($LASTEXITCODE -ne 0) { throw "测试失败，已停止打包。" }
 & $venvPython -m PyInstaller --noconfirm --clean Emangato.spec

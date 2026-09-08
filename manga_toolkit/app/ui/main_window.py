@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QSignalBlocker
+from PySide6.QtCore import QSize, QSignalBlocker
 from PySide6.QtGui import QCloseEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -14,8 +14,6 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
-    QStackedWidget,
-    QStyle,
     QVBoxLayout,
     QWidget,
 )
@@ -23,7 +21,7 @@ from PySide6.QtWidgets import (
 from app.services.credential_service import CredentialService
 from app.services.database_service import DatabaseService
 from app.services.settings_service import AppSettings, SettingsService
-from app.ui.components import NavigationItem, Sidebar
+from app.ui.components import AnimatedStackedWidget, NavigationItem, Sidebar
 from app.ui.pages.dashboard_page import DashboardPage
 from app.ui.pages.duplicate_detection_page import DuplicateDetectionPage
 from app.ui.pages.gallery_status_page import GalleryStatusPage
@@ -36,23 +34,24 @@ from app.ui.pages.cbz_tools_page import CbzToolsPage
 from app.ui.pages.task_history_page import TaskHistoryPage
 from app.ui.pages.settings_page import SettingsPage
 from app.ui.pages.unicode_tools_page import UnicodeToolsPage
+from app.ui.navigation_icons import menu_icon
 from app.ui.theme_manager import ThemeManager
 
 
 class MainWindow(QMainWindow):
     NAVIGATION = (
-        NavigationItem("仪表盘", QStyle.StandardPixmap.SP_ComputerIcon),
-        NavigationItem("任务状态", QStyle.StandardPixmap.SP_MessageBoxInformation),
-        NavigationItem("库扫描", QStyle.StandardPixmap.SP_DirHomeIcon),
-        NavigationItem("画廊状态", QStyle.StandardPixmap.SP_BrowserReload),
-        NavigationItem("重复检测", QStyle.StandardPixmap.SP_FileDialogDetailedView),
-        NavigationItem("Unicode 工具", QStyle.StandardPixmap.SP_FileDialogContentsView),
-        NavigationItem("名称整理", QStyle.StandardPixmap.SP_FileDialogListView),
-        NavigationItem("Metadata", QStyle.StandardPixmap.SP_FileIcon),
-        NavigationItem("目录检查", QStyle.StandardPixmap.SP_DialogApplyButton),
-        NavigationItem("库对比", QStyle.StandardPixmap.SP_ArrowForward),
-        NavigationItem("CBZ 工具", QStyle.StandardPixmap.SP_DriveHDIcon),
-        NavigationItem("设置", QStyle.StandardPixmap.SP_FileDialogInfoView),
+        NavigationItem("仪表盘", "dashboard"),
+        NavigationItem("任务状态", "tasks"),
+        NavigationItem("库扫描", "scan"),
+        NavigationItem("画廊状态", "status"),
+        NavigationItem("重复检测", "duplicate"),
+        NavigationItem("Unicode 工具", "unicode"),
+        NavigationItem("名称整理", "rename"),
+        NavigationItem("Metadata", "metadata"),
+        NavigationItem("目录检查", "directory"),
+        NavigationItem("库对比", "compare"),
+        NavigationItem("CBZ 工具", "cbz"),
+        NavigationItem("设置", "settings"),
     )
 
     def __init__(
@@ -103,7 +102,10 @@ class MainWindow(QMainWindow):
         header.setFixedHeight(58)
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(14, 0, 20, 0)
-        self.sidebar_toggle = QPushButton("☰")
+        self.sidebar_toggle = QPushButton()
+        self.sidebar_toggle.setObjectName("SidebarToggle")
+        self.sidebar_toggle.setIcon(menu_icon(self._theme_manager.resolved_mode.value))
+        self.sidebar_toggle.setIconSize(QSize(20, 20))
         self.sidebar_toggle.setFixedSize(36, 34)
         self.sidebar_toggle.setToolTip("折叠或展开导航")
         self.sidebar_toggle.clicked.connect(self._toggle_sidebar)
@@ -150,7 +152,8 @@ class MainWindow(QMainWindow):
         body_layout.setContentsMargins(0, 0, 0, 0)
         body_layout.setSpacing(0)
         self.sidebar = Sidebar(self.NAVIGATION)
-        self.pages = QStackedWidget()
+        self.sidebar.set_theme(self._theme_manager.resolved_mode.value)
+        self.pages = AnimatedStackedWidget()
         self.pages.setObjectName("PageStack")
         self.pages.addWidget(self.dashboard)
         self.pages.addWidget(self.task_page)
@@ -171,6 +174,7 @@ class MainWindow(QMainWindow):
         self.sidebar.current_changed.connect(self.pages.setCurrentIndex)
         self.security_switch.toggled.connect(self._on_security_mode_toggled)
         self.theme_selector.currentIndexChanged.connect(self._on_theme_selected)
+        self._theme_manager.theme_changed.connect(self._on_theme_changed)
         self.settings_page.settings_saved.connect(self._on_settings_saved)
         self.scan_page.scan_started.connect(self._on_scan_started)
         self.scan_page.scan_summary.connect(self._on_scan_summary)
@@ -265,6 +269,10 @@ class MainWindow(QMainWindow):
             return
         self._theme_manager.set_mode(mode)
         self.settings_page.set_global_modes(updated.safety_mode, mode)
+
+    def _on_theme_changed(self, resolved_mode: str) -> None:
+        self.sidebar.set_theme(resolved_mode)
+        self.sidebar_toggle.setIcon(menu_icon(resolved_mode))
 
     def _on_scan_started(self, root: str) -> None:
         self.library_label.setText(root)

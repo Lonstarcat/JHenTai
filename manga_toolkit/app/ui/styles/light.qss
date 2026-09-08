@@ -24,6 +24,7 @@ QFrame#Sidebar {
 }
 QFrame#Sidebar[compact="true"] QListWidget#Navigation { padding: 4px 2px; }
 QFrame#Sidebar[compact="true"] QListWidget#Navigation::item { padding: 0; }
+QFrame#NavigationIndicator { background: #4F7CF7; border: none; border-radius: 1px; }
 QLabel#BrandTitle { font-size: 15px; font-weight: 600; }
 QLabel#BrandSubtitle, QLabel#SecondaryText, QLabel#PageDescription,
 QLabel#CardLabel, QLabel#FieldLabel, QLabel#EmptyDescription { color: #667085; }
@@ -103,6 +104,7 @@ QPushButton[variant="primary"] { background: #4F7CF7; color: #FFFFFF; border-col
 QPushButton[variant="primary"]:hover { background: #416DE0; }
 QPushButton[variant="danger"] { color: #B42318; border-color: #F3B7B2; }
 QPushButton[variant="danger"]:hover { background: #FFF1F0; }
+QPushButton#SidebarToggle { padding: 0; }
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {
     min-height: 34px;
     padding: 0 10px;

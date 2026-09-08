@@ -6,6 +6,9 @@ from PyInstaller.utils.hooks import collect_submodules
 
 
 project_root = Path(SPECPATH)
+icon_path = project_root / "Emangato.ico"
+if not icon_path.is_file():
+    raise FileNotFoundError("Emangato.ico 不存在，请先运行 python tools/generate_icon.py")
 datas = [
     (str(style_path), "app/ui/styles")
     for style_path in sorted((project_root / "app/ui/styles").glob("*.qss"))
@@ -13,7 +16,6 @@ datas = [
 datas.extend(
     [
         (str(project_root / "Emangato.png"), "."),
-        (str(project_root / "Emangato.ico"), "."),
     ]
 )
 hiddenimports = collect_submodules("keyring.backends")
@@ -38,7 +40,7 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name="Emangato",
-    icon="Emangato.ico",
+    icon=str(icon_path),
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QSortFilterProxyModel, Qt
+from PySide6.QtCore import QPropertyAnimation, QSortFilterProxyModel, Qt
 from PySide6.QtWidgets import QApplication, QStyle
+from PySide6.QtTest import QTest
 
 from app.models.gallery_folder import GalleryFolder, GalleryStorage, GalleryType, UnicodeStatus
 from app.ui.feature_table_model import FeatureTableModel
 from app.ui.components.filter_bar import FilterBar
+from app.ui.components.animated_stack import AnimatedStackedWidget
 from app.ui.components.sidebar import NavigationItem, Sidebar
 from app.ui.pages.dashboard_page import DashboardPage
 from app.ui.table_interactions import TableInteractions
@@ -93,3 +95,51 @@ def test_dashboard_responsive_relayout_reuses_cards() -> None:
     dashboard.set_width_class("medium")
     assert dashboard.total is total_card
     assert dashboard._column_count == 3
+
+
+def test_animated_stack_rapid_navigation_cleans_up_effect() -> None:
+    _application()
+    stack = AnimatedStackedWidget(duration=20)
+    pages = [DashboardPage() for _ in range(3)]
+    for page in pages:
+        stack.addWidget(page)
+    stack.show()
+    animation = stack._animation
+    animation_count = len(stack.findChildren(QPropertyAnimation))
+    for index in range(100):
+        stack.setCurrentIndex((index + 1) % len(pages))
+    assert stack.currentIndex() == 1
+    QTest.qWait(80)
+    assert stack._animation is animation
+    assert len(stack.findChildren(QPropertyAnimation)) == animation_count
+    assert not stack.animation_running
+    assert all(page.graphicsEffect() is None for page in pages)
+
+
+def test_animated_stack_skips_current_index_and_zero_duration() -> None:
+    _application()
+    stack = AnimatedStackedWidget(duration=0)
+    pages = [DashboardPage() for _ in range(2)]
+    for page in pages:
+        stack.addWidget(page)
+    stack.setCurrentIndex(0)
+    assert pages[0].graphicsEffect() is None
+    stack.setCurrentIndex(1)
+    assert stack.currentIndex() == 1
+    assert not stack.animation_running
+    assert all(page.graphicsEffect() is None for page in pages)
+
+
+def test_sidebar_icons_are_theme_aware_and_rows_stay_aligned() -> None:
+    _application()
+    items = (
+        NavigationItem("仪表盘", "dashboard"),
+        NavigationItem("设置", "settings"),
+    )
+    sidebar = Sidebar(items)
+    sidebar.set_current_index(0)
+    light_icon_key = sidebar.navigation.item(0).icon().cacheKey()
+    sidebar.set_theme("dark")
+    assert sidebar.navigation.item(0).icon().cacheKey() != light_icon_key
+    alignment = sidebar.navigation.item(0).textAlignment()
+    assert alignment & int(Qt.AlignmentFlag.AlignVCenter)

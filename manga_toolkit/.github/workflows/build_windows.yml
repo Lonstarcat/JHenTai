@@ -35,6 +35,9 @@ jobs:
       - name: Run tests
         run: python -m pytest
 
+      - name: Generate Windows icon
+        run: python tools/generate_icon.py
+
       - name: Build Windows application
         run: pyinstaller --noconfirm --clean Emangato.spec
 

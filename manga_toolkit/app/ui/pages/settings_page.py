@@ -19,7 +19,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
-    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -28,7 +27,7 @@ from app.models.gallery_status import GallerySite
 from app.services.credential_service import CredentialService, CredentialStorageError
 from app.services.settings_service import AppSettings, SettingsService
 from app.services.tool_detection_service import ToolInfo
-from app.ui.components import PageHeader, StatusBadge
+from app.ui.components import AnimatedStackedWidget, PageHeader, StatusBadge
 from app.ui.widgets.numeric_inputs import NoWheelDoubleSpinBox, NoWheelSpinBox
 from app.workers.tool_detection_worker import ToolDetectionWorker
 from app.workers.login_test_worker import LoginTestWorker
@@ -152,7 +151,7 @@ class SettingsPage(QWidget):
             item = QListWidgetItem(label)
             item.setSizeHint(QSize(0, 42))
             self.category_list.addItem(item)
-        self.category_stack = QStackedWidget()
+        self.category_stack = AnimatedStackedWidget(duration=120)
         self.category_stack.setObjectName("SettingsStack")
         self.category_stack.addWidget(self._category_page(general_group))
         self.category_stack.addWidget(self._category_page(tools_group, self.detect_button))
