@@ -10,7 +10,9 @@ QFrame#TopBar {
     background: #FFFFFF;
     border-bottom: 1px solid #E5E7EB;
 }
+QFrame#TopBar QLabel#PathLabel { font-weight: 600; color: #344054; }
 QWidget#SettingsContent, QScrollArea#SettingsScroll, QScrollArea#SettingsScroll > QWidget > QWidget { background: #F7F7F8; }
+QWidget#DashboardContent, QScrollArea#DashboardScroll, QScrollArea#DashboardScroll > QWidget > QWidget { background: #F7F7F8; }
 QGroupBox#SettingsGroup QLabel { color: #1F2328; background: transparent; }
 QLabel#ModeLabel { color: #4B5563; font-weight: 600; }
 QComboBox#TopModeSelector { min-width: 92px; }
@@ -20,6 +22,8 @@ QFrame#Sidebar {
     background: #FFFFFF;
     border-right: 1px solid #E5E7EB;
 }
+QFrame#Sidebar[compact="true"] QListWidget#Navigation { padding: 4px 2px; }
+QFrame#Sidebar[compact="true"] QListWidget#Navigation::item { padding: 0; }
 QLabel#BrandTitle { font-size: 15px; font-weight: 600; }
 QLabel#BrandSubtitle, QLabel#SecondaryText, QLabel#PageDescription,
 QLabel#CardLabel, QLabel#FieldLabel, QLabel#EmptyDescription { color: #667085; }
@@ -51,6 +55,11 @@ QGroupBox#SettingsGroup {
     border-radius: 10px;
 }
 QFrame#Card[clickable="true"]:hover { border-color: #B8C7F8; background: #FBFCFF; }
+QFrame#Card[clickable="true"]:focus { border: 2px solid #4F7CF7; }
+QFrame#Card[tone="attention"] { background: #FFFBF3; border-color: #EBCB88; }
+QFrame#Card[tone="attention"] QLabel#CardValue { color: #9A5B08; }
+QFrame#Card[tone="info"] { background: #F7F9FF; border-color: #C8D4FA; }
+QFrame#Card[tone="info"] QLabel#CardValue { color: #315CC8; }
 QFrame#InfoBanner {
     background: #FFF8E8;
     border: 1px solid #F5D89A;
@@ -67,6 +76,19 @@ QGroupBox#SettingsGroup::title {
     left: 14px;
     padding: 0 6px;
 }
+QFrame#SettingsShell { background: transparent; }
+QStackedWidget#SettingsStack { background: transparent; }
+QListWidget#SettingsNavigation {
+    background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 10px;
+    outline: none; padding: 8px;
+}
+QListWidget#SettingsNavigation::item { border-radius: 7px; padding: 0 12px; color: #4B5563; }
+QListWidget#SettingsNavigation::item:hover { background: #F3F4F6; }
+QListWidget#SettingsNavigation::item:selected { background: #EAF0FF; color: #244EBC; font-weight: 600; }
+QLabel#SettingsHint { color: #667085; background: #F5F7FB; border: 1px solid #E5EAF3; border-radius: 8px; padding: 10px; }
+QLabel#ResultCount { color: #667085; font-weight: 600; padding: 0 4px; }
+QPushButton#CompactButton { min-height: 30px; padding: 0 10px; }
+QLabel#FieldValue { color: #344054; }
 QPushButton {
     min-height: 34px;
     padding: 0 14px;
@@ -106,6 +128,7 @@ QTableView {
 }
 QTableView::item { border-bottom: 1px solid #F0F1F3; padding: 0 8px; }
 QTableView::item:hover { background: #F6F8FC; }
+QTableView::item:selected { border-left: 2px solid #4F7CF7; }
 QHeaderView::section {
     background: #F4F5F7;
     color: #667085;

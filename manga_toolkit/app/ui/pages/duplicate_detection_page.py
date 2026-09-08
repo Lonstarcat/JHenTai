@@ -105,6 +105,7 @@ class DuplicateDetectionPage(QWidget):
             )
         )
         filters.add_control(kind_combo)
+        filters.bind_model(self._proxy)
         layout.addWidget(filters)
 
         self.task = TaskProgress("重复 ID 分析", "等待检测；本页面不会移动或删除目录")

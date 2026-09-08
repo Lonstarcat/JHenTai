@@ -3,19 +3,23 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QSize, QThread, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFileDialog,
     QFormLayout,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -66,26 +70,14 @@ class SettingsPage(QWidget):
         self.save_button.clicked.connect(self.save)
         header = PageHeader("设置", "管理漫画库、外部工具和网络凭据")
         header.add_action(self.save_feedback)
-        header.add_action(self.detect_button)
         header.add_action(self.save_button, primary=True)
         outer_layout.addWidget(header)
-
-        scroll = QScrollArea()
-        scroll.setObjectName("SettingsScroll")
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        content = QWidget()
-        content.setObjectName("SettingsContent")
-        layout = QVBoxLayout(content)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(14)
 
         general_group = QGroupBox("常规")
         general_group.setObjectName("SettingsGroup")
         general_form = QFormLayout(general_group)
         self.library_edit = QLineEdit()
         general_form.addRow("漫画库路径", self._path_row(self.library_edit, self._choose_library))
-        layout.addWidget(general_group)
 
         tools_group = QGroupBox("外部工具")
         tools_group.setObjectName("SettingsGroup")
@@ -96,7 +88,6 @@ class SettingsPage(QWidget):
             self._tool_edits[name] = edit
             self._tool_status[name] = status
             tools_form.addRow(name, self._tool_row(name, edit, status))
-        layout.addWidget(tools_group)
 
         status_group = QGroupBox("网络与画廊状态")
         status_group.setObjectName("SettingsGroup")
@@ -147,11 +138,63 @@ class SettingsPage(QWidget):
         credential_buttons.addWidget(clear_button)
         credential_buttons.addStretch(1)
         status_form.addRow("凭据", credential_buttons)
-        layout.addWidget(status_group)
 
+        settings_shell = QFrame()
+        settings_shell.setObjectName("SettingsShell")
+        shell_layout = QHBoxLayout(settings_shell)
+        shell_layout.setContentsMargins(0, 0, 0, 0)
+        shell_layout.setSpacing(14)
+        self.category_list = QListWidget()
+        self.category_list.setObjectName("SettingsNavigation")
+        self.category_list.setFixedWidth(176)
+        self.category_list.setSpacing(2)
+        for label in ("常规", "外部工具", "画廊与网络"):
+            item = QListWidgetItem(label)
+            item.setSizeHint(QSize(0, 42))
+            self.category_list.addItem(item)
+        self.category_stack = QStackedWidget()
+        self.category_stack.setObjectName("SettingsStack")
+        self.category_stack.addWidget(self._category_page(general_group))
+        self.category_stack.addWidget(self._category_page(tools_group, self.detect_button))
+        self.category_stack.addWidget(self._category_page(
+            status_group,
+            description="请求限制用于降低对远程站点的压力；连续批次达到设定值后会按批次暂停秒数等待。",
+        ))
+        self.category_list.currentRowChanged.connect(self.category_stack.setCurrentIndex)
+        self.category_list.setCurrentRow(0)
+        shell_layout.addWidget(self.category_list)
+        shell_layout.addWidget(self.category_stack, 1)
+        outer_layout.addWidget(settings_shell, 1)
+
+    @staticmethod
+    def _category_page(
+        group: QGroupBox,
+        action: QPushButton | None = None,
+        description: str = "",
+    ) -> QScrollArea:
+        scroll = QScrollArea()
+        scroll.setObjectName("SettingsScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        content = QWidget()
+        content.setObjectName("SettingsContent")
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 4, 0)
+        layout.setSpacing(12)
+        if description:
+            hint = QLabel(description)
+            hint.setObjectName("SettingsHint")
+            hint.setWordWrap(True)
+            layout.addWidget(hint)
+        if action is not None:
+            action_row = QHBoxLayout()
+            action_row.addStretch(1)
+            action_row.addWidget(action)
+            layout.addLayout(action_row)
+        layout.addWidget(group)
         layout.addStretch(1)
         scroll.setWidget(content)
-        outer_layout.addWidget(scroll)
+        return scroll
 
     def _path_row(self, edit: QLineEdit, callback: Callable[[], None]) -> QWidget:
         widget = QWidget()

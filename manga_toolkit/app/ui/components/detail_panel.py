@@ -8,8 +8,8 @@ class DetailPanel(QFrame):
     def __init__(self, empty_text: str = "选择一行查看详情") -> None:
         super().__init__()
         self.setObjectName("Panel")
-        self.setMinimumWidth(280)
-        self.setMaximumWidth(380)
+        self.setMinimumWidth(240)
+        self.setMaximumWidth(420)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         scroll = QScrollArea()
@@ -44,6 +44,7 @@ class DetailPanel(QFrame):
             name = QLabel(label)
             name.setObjectName("FieldLabel")
             data = QLabel(value or "—")
+            data.setObjectName("FieldValue")
             data.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             data.setWordWrap(True)
             self._layout.addWidget(name)

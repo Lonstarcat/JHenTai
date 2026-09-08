@@ -150,6 +150,7 @@ class GalleryStatusPage(QWidget):
         filters.add_control(self.filter_combo)
         filters.add_control(self.mode_combo)
         filters.add_control(self.force_refresh)
+        filters.bind_model(self._proxy)
         layout.addWidget(filters)
 
         actions = QFrame()

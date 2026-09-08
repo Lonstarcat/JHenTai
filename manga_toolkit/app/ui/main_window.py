@@ -4,7 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import QSignalBlocker
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtGui import QCloseEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -64,9 +64,11 @@ class MainWindow(QMainWindow):
     ) -> None:
         super().__init__()
         self._database = database
+        self._sidebar_user_compact = False
+        self._width_class = "wide"
         self.setWindowTitle("Emangato")
         self.resize(1440, 900)
-        self.setMinimumSize(1280, 720)
+        self.setMinimumSize(960, 680)
         self._settings_service = settings_service
         self._theme_manager = theme_manager
         settings = settings_service.load()
@@ -105,8 +107,8 @@ class MainWindow(QMainWindow):
         self.sidebar_toggle.setFixedSize(36, 34)
         self.sidebar_toggle.setToolTip("折叠或展开导航")
         self.sidebar_toggle.clicked.connect(self._toggle_sidebar)
-        page_context = QLabel("当前漫画库")
-        page_context.setObjectName("SecondaryText")
+        self.page_context = QLabel("当前漫画库")
+        self.page_context.setObjectName("SecondaryText")
         self.library_label = QLabel(settings.library_path or "未选择漫画库")
         self.library_label.setObjectName("PathLabel")
         self.library_label.setToolTip(settings.library_path)
@@ -132,7 +134,7 @@ class MainWindow(QMainWindow):
         self.advanced_mode_label.setObjectName("ModeLabel")
         header_layout.addWidget(self.sidebar_toggle)
         header_layout.addSpacing(8)
-        header_layout.addWidget(page_context)
+        header_layout.addWidget(self.page_context)
         header_layout.addWidget(self.library_label, 1)
         header_layout.addWidget(self.summary_label)
         header_layout.addSpacing(8)
@@ -163,6 +165,7 @@ class MainWindow(QMainWindow):
         body_layout.addWidget(self.pages, 1)
         root_layout.addWidget(body, 1)
         self.sidebar.set_current_index(0)
+        self._apply_width_class(self.width())
 
     def _connect_signals(self) -> None:
         self.sidebar.current_changed.connect(self.pages.setCurrentIndex)
@@ -190,7 +193,35 @@ class MainWindow(QMainWindow):
                 break
 
     def _toggle_sidebar(self) -> None:
-        self.sidebar.setVisible(not self.sidebar.isVisible())
+        if self._width_class == "compact":
+            self.sidebar.setVisible(not self.sidebar.isVisible())
+            return
+        self._sidebar_user_compact = not self.sidebar.is_compact
+        self.sidebar.set_compact(self._sidebar_user_compact)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if hasattr(self, "sidebar"):
+            self._apply_width_class(event.size().width())
+
+    def _apply_width_class(self, width: int) -> None:
+        width_class = "wide" if width >= 1280 else "medium" if width >= 1050 else "compact"
+        if width_class == self._width_class and width_class != "compact":
+            return
+        self._width_class = width_class
+        if width_class != "compact":
+            self.sidebar.setVisible(True)
+        automatic_compact = width_class == "compact"
+        self.sidebar.set_compact(automatic_compact or self._sidebar_user_compact)
+        show_captions = width_class != "compact"
+        self.page_context.setVisible(show_captions)
+        self.summary_label.setVisible(show_captions)
+        self.dashboard.set_width_class(width_class)
+        margin = 28 if width_class == "wide" else 22 if width_class == "medium" else 18
+        for index in range(self.pages.count()):
+            page_layout = QWidget.layout(self.pages.widget(index))
+            if page_layout is not None:
+                page_layout.setContentsMargins(margin, 24, margin, 24)
 
     def _on_settings_saved(self, settings: AppSettings) -> None:
         self.library_label.setText(settings.library_path or "未选择漫画库")

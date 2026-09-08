@@ -112,6 +112,7 @@ class LibraryScanPage(QWidget):
         filters.add_control(type_combo)
         filters.add_control(unicode_combo)
         filters.add_control(storage_combo)
+        filters.bind_model(self._proxy)
         layout.addWidget(filters)
 
         self.result_stack = QStackedWidget()
