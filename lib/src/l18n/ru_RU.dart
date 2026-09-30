@@ -579,6 +579,8 @@ class ru_RU {
       'tapZoneActionPrevPage': 'Предыдущая страница',
       'tapZoneActionNextPage': 'Следующая страница',
       'tapZoneActionToggleMenu': 'Показать/скрыть меню',
+      'tapZoneActionFlipLeft': 'Листать влево',
+      'tapZoneActionFlipRight': 'Листать вправо',
       'tapZoneLeftColumnRatio': 'Ширина левого столбца',
       'tapZoneMiddleColumnRatio': 'Ширина среднего столбца',
       'tapZoneRightColumnRatio': 'Ширина правого столбца',
@@ -920,6 +922,9 @@ class ru_RU {
       'checkInSuccessHint': 'Got GP: %s, current total GP: %s.',
       'pauseDownloadByInvalidArchiveBotKey':
           'Archive bot settings is invalid, download paused',
+      'archiveBotNotConfigured': 'Архивный бот не настроен, перейти к настройкам?',
+      'getBotCostFailed': 'Не удалось получить стоимость бота',
+      'archiveBotShort': 'Bot',
       'chooseArchiveParseSource': 'Change Parse Source',
       'official': 'Official',
       'archiveBot': 'Archive Bot',
@@ -1020,7 +1025,7 @@ class ru_RU {
       /// tag dialog actions
       'tagActionAccurate': 'Точно',
       'tagActionInaccurate': 'Неточно',
-      'tagActionFollow': 'Отслеживать',
+      'tagActionFollow': 'Отслеживать тег',
       'tagActionHide': 'Скрыть тег',
       'tagActionTagSets': 'Управление наборами тегов',
       'tagActionVoteUpTooltip':

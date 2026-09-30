@@ -565,6 +565,8 @@ class en_US {
       'tapZoneActionPrevPage': 'Previous Page',
       'tapZoneActionNextPage': 'Next Page',
       'tapZoneActionToggleMenu': 'Toggle Menu',
+      'tapZoneActionFlipLeft': 'Flip Left',
+      'tapZoneActionFlipRight': 'Flip Right',
       'tapZoneLeftColumnRatio': 'Left Column Width',
       'tapZoneMiddleColumnRatio': 'Middle Column Width',
       'tapZoneRightColumnRatio': 'Right Column Width',
@@ -912,6 +914,9 @@ class en_US {
       'checkInSuccessHint': 'Got GP: %s, current total GP: %s.',
       'pauseDownloadByInvalidArchiveBotKey':
           'Archive bot settings is invalid, download paused',
+      'archiveBotNotConfigured': 'Archive bot is not configured, go to settings?',
+      'getBotCostFailed': 'Failed to get bot cost',
+      'archiveBotShort': 'Bot',
       'chooseArchiveParseSource': 'Change Parse Source',
       'official': 'Official',
       'archiveBot': 'Archive Bot',
@@ -1011,7 +1016,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       /// tag dialog actions
       'tagActionAccurate': 'Accurate',
       'tagActionInaccurate': 'Inaccurate',
-      'tagActionFollow': 'Follow',
+      'tagActionFollow': 'Follow Tag',
       'tagActionHide': 'Hide Tag',
       'tagActionTagSets': 'Manage Tag Sets',
       'tagActionVoteUpTooltip':

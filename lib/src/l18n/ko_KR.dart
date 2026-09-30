@@ -549,6 +549,8 @@ class ko_KR {
       'tapZoneActionPrevPage': 'Previous Page',
       'tapZoneActionNextPage': 'Next Page',
       'tapZoneActionToggleMenu': 'Toggle Menu',
+      'tapZoneActionFlipLeft': '왼쪽으로 넘기기',
+      'tapZoneActionFlipRight': '오른쪽으로 넘기기',
       'tapZoneLeftColumnRatio': 'Left Column Width',
       'tapZoneMiddleColumnRatio': 'Middle Column Width',
       'tapZoneRightColumnRatio': 'Right Column Width',
@@ -868,6 +870,9 @@ class ko_KR {
       'checkInSuccessHint': 'Got GP: %s, current total GP: %s.',
       'pauseDownloadByInvalidArchiveBotKey':
           'Archive bot settings is invalid, download paused',
+      'archiveBotNotConfigured': '아카이브 봇이 설정되지 않았습니다. 설정으로 이동할까요?',
+      'getBotCostFailed': '봇 비용 조회 실패',
+      'archiveBotShort': 'Bot',
       'chooseArchiveParseSource': 'Change Parse Source',
       'official': 'Official',
       'archiveBot': 'Archive Bot',
@@ -967,7 +972,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       /// tag dialog actions
       'tagActionAccurate': 'Accurate',
       'tagActionInaccurate': 'Inaccurate',
-      'tagActionFollow': 'Follow',
+      'tagActionFollow': 'Follow Tag',
       'tagActionHide': 'Hide Tag',
       'tagActionTagSets': 'Manage Tag Sets',
       'tagActionVoteUpTooltip':
