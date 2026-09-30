@@ -1,1 +1,0 @@
-"""Emangato application package."""
