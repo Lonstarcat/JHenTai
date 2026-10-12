@@ -3,6 +3,8 @@ import 'dart:core';
 class zh_TW {
   static Map<String, String> keys() {
     return {
+      'showTagIcons': '顯示標籤圖片圖示',
+      'showTagIconsHint': '在詳情和畫廊列表中顯示翻譯資料的圖片圖示。關閉後保留原有 Emoji；圖片會從外部網站載入。',
       /// common
       'yes': '是',
       'no': '否',

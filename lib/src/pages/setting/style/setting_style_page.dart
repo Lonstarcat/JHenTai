@@ -22,6 +22,12 @@ class SettingStylePage extends StatelessWidget {
             _buildBrightness(),
             _buildThemeColor(),
             _buildListMode(),
+            SwitchListTile(
+              title: Text('showTagIcons'.tr),
+              subtitle: Text('showTagIconsHint'.tr),
+              value: styleSetting.showTagIcons.value,
+              onChanged: styleSetting.saveShowTagIcons,
+            ),
             if (styleSetting.isInWaterFlowListMode) _buildCrossAxisCountInWaterFallFlow().fadeIn(),
             _buildPageListMode(),
             _buildCrossAxisCountInGridDownloadPageForGroup(),

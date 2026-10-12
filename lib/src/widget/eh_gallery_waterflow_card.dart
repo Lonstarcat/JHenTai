@@ -18,6 +18,7 @@ import '../model/gallery_tag.dart';
 import 'eh_gallery_category_tag.dart';
 import 'eh_gallery_list_card_.dart';
 import 'eh_image.dart';
+import 'eh_tag_label.dart';
 
 class EHGalleryWaterFlowCard extends StatelessWidget {
   final Gallery gallery;
@@ -201,7 +202,8 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
       allowHalfRating: true,
       itemSize: 11,
       ignoreGestures: true,
-      itemBuilder: (context, _) => Icon(Icons.star, color: gallery.hasRated ? UIConfig.galleryRatingStarRatedColor(context) : UIConfig.galleryRatingStarColor),
+      itemBuilder: (context, _) =>
+          Icon(Icons.star, color: gallery.hasRated ? UIConfig.galleryRatingStarRatedColor(context) : UIConfig.galleryRatingStarColor),
       onRatingUpdate: (_) {},
     );
   }
@@ -281,16 +283,16 @@ class WaterFallFlowTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Text(
-        galleryTag.tagData.tagName ?? galleryTag.tagData.key,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: UIConfig.waterFallFlowCardTagTextSize,
-          height: 1,
-          color: galleryTag.color ?? UIConfig.ehTagTextColor(context),
-        ),
-      ),
+      child: Obx(() => EHTagLabel(
+            tagData: galleryTag.tagData,
+            showRichContent: styleSetting.showTagIcons.value,
+            maxIconSize: 12,
+            style: TextStyle(
+              fontSize: UIConfig.waterFallFlowCardTagTextSize,
+              height: 1,
+              color: galleryTag.color ?? UIConfig.ehTagTextColor(context),
+            ),
+          )),
     );
   }
 }

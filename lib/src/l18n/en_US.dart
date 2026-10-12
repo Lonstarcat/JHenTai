@@ -3,6 +3,8 @@ import 'dart:core';
 class en_US {
   static Map<String, String> keys() {
     return {
+      'showTagIcons': 'Show tag image icons',
+      'showTagIconsHint': 'Show images from tag translations in details and gallery lists. Emoji are kept when disabled; images are loaded from external sites.',
       /// common
       'yes': 'Yes',
       'no': 'No',

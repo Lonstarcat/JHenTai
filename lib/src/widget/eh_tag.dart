@@ -1,10 +1,13 @@
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:simple_animations/animation_controller_extension/animation_controller_extension.dart';
 import 'package:simple_animations/animation_mixin/animation_mixin.dart';
 
 import '../model/gallery_tag.dart';
+import '../setting/style_setting.dart';
+import 'eh_tag_label.dart';
 
 class EHTag extends StatefulWidget {
   final GalleryTag tag;
@@ -14,6 +17,7 @@ class EHTag extends StatefulWidget {
   final ValueChanged<GalleryTag>? onLongPress;
   final bool showTagStatus;
   final bool inDeleteMode;
+  final bool useRichLabel;
 
   const EHTag({
     Key? key,
@@ -24,6 +28,7 @@ class EHTag extends StatefulWidget {
     this.onLongPress,
     this.showTagStatus = false,
     this.inDeleteMode = false,
+    this.useRichLabel = false,
   }) : super(key: key);
 
   @override
@@ -58,26 +63,27 @@ class _EHTagState extends State<EHTag> with AnimationMixin {
 
   @override
   Widget build(BuildContext context) {
-    Widget child = Text(
-      (widget.tag.tagData.tagName ?? widget.tag.tagData.key) +
-          (widget.tag.voteStatus == EHTagVoteStatus.up
+    Widget buildLabel(bool rich) => EHTagLabel(
+          tagData: widget.tag.tagData,
+          showRichContent: rich,
+          suffix: (widget.tag.voteStatus == EHTagVoteStatus.up
               ? '↑'
               : widget.tag.voteStatus == EHTagVoteStatus.down
                   ? '↓'
                   : ''),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontSize: 12,
-        height: 1,
-        color: widget.tag.color ?? (widget.addNameSpaceColor ? UIConfig.tagNameSpaceTextColor : UIConfig.ehTagTextColor(context)),
-      ),
-    );
+          style: TextStyle(
+            fontSize: 12,
+            height: 1,
+            color: widget.tag.color ?? (widget.addNameSpaceColor ? UIConfig.tagNameSpaceTextColor : UIConfig.ehTagTextColor(context)),
+          ),
+        );
+
+    Widget child = widget.useRichLabel ? Obx(() => buildLabel(styleSetting.showTagIcons.value)) : buildLabel(false);
 
     child = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        child,
+        Flexible(child: child),
         AnimatedSwitcher(
           duration: UIConfig.ehTagAnimationDuration,
           child: inDeleteMode
@@ -123,7 +129,9 @@ class _EHTagState extends State<EHTag> with AnimationMixin {
       decoration: BoxDecoration(
         color: widget.tag.backgroundColor ??
             (widget.addNameSpaceColor
-                ? UIConfig.zhTagNameSpaceColor[widget.tag.tagData.key] ?? UIConfig.tagNameSpaceColor[widget.tag.tagData.key] ?? UIConfig.tagNameSpaceColor['default']
+                ? UIConfig.zhTagNameSpaceColor[widget.tag.tagData.key] ??
+                    UIConfig.tagNameSpaceColor[widget.tag.tagData.key] ??
+                    UIConfig.tagNameSpaceColor['default']
                 : UIConfig.ehTagBackGroundColor(context)),
         borderRadius: BorderRadius.circular(8),
       ),

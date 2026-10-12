@@ -232,6 +232,7 @@ mixin SearchPageMixin<L extends SearchPageLogicMixin, S extends SearchPageStateM
                 }
               },
         child: EHTag(
+          useRichLabel: false,
           tag: GalleryTag(
             tagData: TagData(
               namespace: '',

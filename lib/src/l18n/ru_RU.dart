@@ -3,6 +3,8 @@ import 'dart:core';
 class ru_RU {
   static Map<String, String> keys() {
     return {
+      'showTagIcons': 'Показывать изображения в тегах',
+      'showTagIconsHint': 'Изображения из переводов в деталях и списках. При отключении эмодзи сохраняются; изображения загружаются с внешних сайтов.',
       /// common
       'yes': 'Да',
       'no': 'Нет',

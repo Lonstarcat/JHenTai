@@ -3,6 +3,8 @@ import 'dart:core';
 class ko_KR {
   static Map<String, String> keys() {
     return {
+      'showTagIcons': '태그 이미지 아이콘 표시',
+      'showTagIconsHint': '상세 화면과 갤러리 목록에 번역 데이터의 이미지를 표시합니다. 꺼도 이모지는 유지됩니다. 이미지는 외부 사이트에서 불러옵니다.',
       /// common
       'yes': '예',
       'no': '아니요',

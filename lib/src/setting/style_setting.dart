@@ -23,6 +23,7 @@ class StyleSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCircl
   RxnInt crossAxisCountInDetailPage = RxnInt(null);
   RxMap<String, ListMode> pageListMode = <String, ListMode>{}.obs;
   RxBool moveCover2RightSide = false.obs;
+  RxBool showTagIcons = false.obs;
   Rx<LayoutMode> layout = PlatformDispatcher.instance.views.first.physicalSize.width / PlatformDispatcher.instance.views.first.devicePixelRatio < 600
       ? LayoutMode.mobileV2.obs
       : GetPlatform.isDesktop
@@ -72,6 +73,7 @@ class StyleSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCircl
     crossAxisCountInDetailPage.value = map['crossAxisCountInDetailPage'];
     pageListMode.value = Map.from(map['pageListMode']?.map((route, listModeIndex) => MapEntry(route, ListMode.values[listModeIndex])) ?? {});
     moveCover2RightSide.value = map['moveCover2RightSide'] ?? moveCover2RightSide.value;
+    showTagIcons.value = map['showTagIcons'] is bool ? map['showTagIcons'] : false;
     layout.value = LayoutMode.values[map['layout'] ?? layout.value.index];
 
     /// old layout has been removed in v5.0.0
@@ -98,6 +100,7 @@ class StyleSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCircl
       'crossAxisCountInDetailPage': crossAxisCountInDetailPage.value,
       'pageListMode': pageListMode.map((route, listMode) => MapEntry(route, listMode.index)),
       'moveCover2RightSide': moveCover2RightSide.value,
+      'showTagIcons': showTagIcons.value,
       'layout': layout.value.index,
     });
   }
@@ -115,6 +118,11 @@ class StyleSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCircl
   Future<void> saveThemeMode(ThemeMode themeMode) async {
     log.debug('saveThemeMode:${themeMode.name}');
     this.themeMode.value = themeMode;
+    await saveBeanConfig();
+  }
+
+  Future<void> saveShowTagIcons(bool value) async {
+    showTagIcons.value = value;
     await saveBeanConfig();
   }
 

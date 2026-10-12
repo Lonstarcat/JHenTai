@@ -3,6 +3,8 @@ import 'dart:core';
 class pt_BR {
   static Map<String, String> keys() {
     return {
+      'showTagIcons': 'Mostrar ícones de imagem nas tags',
+      'showTagIconsHint': 'Mostra imagens das traduções nos detalhes e listas. Emojis permanecem ao desativar; imagens são carregadas de sites externos.',
       /// common
       'yes': 'Sim',
       'no': 'Não',

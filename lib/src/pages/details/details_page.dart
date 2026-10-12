@@ -1314,6 +1314,7 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
             onSecondaryTap: logic.showTagDialog,
             onLongPress: logic.showTagDialog,
             showTagStatus: preferenceSetting.showGalleryTagVoteStatus.isTrue,
+            useRichLabel: true,
           ),
         )
         .toList();
