@@ -121,7 +121,7 @@ class EHCommentDialogState extends State<EHCommentDialog> {
     }
 
     if (errMsg == null) {
-      toast('success'.tr);
+      toast('success'.tr, level: NotificationLevel.success);
       backRoute(result: true);
       return;
     }

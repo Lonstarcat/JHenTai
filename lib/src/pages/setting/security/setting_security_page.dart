@@ -45,7 +45,7 @@ class SettingSecurityPage extends StatelessWidget {
 
           if (password != null) {
             securitySetting.savePassword(password);
-            toast('success'.tr);
+            toast('success'.tr, level: NotificationLevel.success);
           } else {
             return;
           }

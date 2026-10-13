@@ -121,7 +121,7 @@ class TagSearchOrderOptimizationService with JHLifeCircleBeanErrorCatch implemen
     List<int> bytes = await extractGZipArchive(savePath);
     if (bytes.isEmpty) {
       log.error('Extract tag order optimization data failed');
-      toast('internalError'.tr);
+      toast('internalError'.tr, level: NotificationLevel.error);
       loadingState.value = LoadingState.error;
       await localConfigService.write(configKey: ConfigEnum.tagSearchOrderOptimizationServiceLoadingState, value: loadingState.value.index.toString());
       return;
@@ -138,7 +138,7 @@ class TagSearchOrderOptimizationService with JHLifeCircleBeanErrorCatch implemen
       );
     } on Exception catch (e) {
       log.error('Parse tag order optimization data failed', e);
-      toast('internalError'.tr);
+      toast('internalError'.tr, level: NotificationLevel.error);
       loadingState.value = LoadingState.error;
       await localConfigService.write(configKey: ConfigEnum.tagSearchOrderOptimizationServiceLoadingState, value: loadingState.value.index.toString());
       return;
@@ -146,7 +146,7 @@ class TagSearchOrderOptimizationService with JHLifeCircleBeanErrorCatch implemen
 
     if (rows.length < 2) {
       log.error('Parse tag order optimization data failed, rows length: ${rows.length}');
-      toast('internalError'.tr);
+      toast('internalError'.tr, level: NotificationLevel.error);
       loadingState.value = LoadingState.error;
       await localConfigService.write(configKey: ConfigEnum.tagSearchOrderOptimizationServiceLoadingState, value: loadingState.value.index.toString());
       return;

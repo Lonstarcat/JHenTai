@@ -553,6 +553,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
 
     toast(
       operation.isDelete ? 'removeFavoriteSuccess'.tr : 'favoriteGallerySuccess'.tr,
+      level: NotificationLevel.success,
       isCenter: false,
     );
   }
@@ -632,7 +633,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
 
     updateGlobalGalleryStatus();
 
-    toast('ratingSuccess'.tr, isCenter: false);
+    toast('ratingSuccess'.tr, isCenter: false, level: NotificationLevel.success);
   }
 
   Future<void> handleTapArchive(BuildContext context) async {
@@ -842,7 +843,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
 
     if (GetPlatform.isDesktop) {
       await FlutterClipboard.copy(state.galleryUrl.url);
-      toast('hasCopiedToClipboard'.tr);
+      toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success);
       return;
     }
 
@@ -950,7 +951,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
       snack('addTagFailed'.tr, errMsg!, isShort: true);
       return;
     } else {
-      toast('addTagSuccess'.tr);
+      toast('addTagSuccess'.tr, level: NotificationLevel.success);
       removeCache();
     }
   }
@@ -994,7 +995,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
 
     state.galleryDetails!.comments = await localBlockRuleService.executeRules(state.galleryDetails!.comments);
     updateSafely([detailsId]);
-    toast('success'.tr);
+    toast('success'.tr, level: NotificationLevel.success);
   }
 
   Future<void> blockUploader(String uploader) async {
@@ -1007,7 +1008,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
         expression: uploader,
       ),
     );
-    toast('success'.tr);
+    toast('success'.tr, level: NotificationLevel.success);
   }
 
   Future<void> blockTitle(String title) async {
@@ -1029,9 +1030,9 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
       if (!result.success) {
         snack('configureBlockRuleFailed'.tr, result.msg ?? '');
       } else if (result.inserted) {
-        toast('success'.tr);
+        toast('success'.tr, level: NotificationLevel.success);
       } else {
-        toast('blockRuleAlreadyExists'.tr);
+        toast('blockRuleAlreadyExists'.tr, level: NotificationLevel.warning);
       }
     } catch (e, stack) {
       log.error('Block title failed, expression:$expression', e, stack);
@@ -1042,7 +1043,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
   Future<void> handleResetReadProgress() async {
     await readProgressService.deleteReadProgress(state.galleryUrl.gid.toString());
     updateSafely([readButtonId]);
-    toast('success'.tr);
+    toast('success'.tr, level: NotificationLevel.success);
   }
 
   Future<void> blockGallery() async {
@@ -1055,7 +1056,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
         expression: state.galleryUrl.gid.toString(),
       ),
     );
-    toast('blockGallerySuccess'.tr);
+    toast('blockGallerySuccess'.tr, level: NotificationLevel.success);
   }
 
   Future<void> goToReadPage([int? forceIndex]) async {

@@ -12,6 +12,8 @@ import '../routes/routes.dart';
 import '../setting/security_setting.dart';
 import '../setting/style_setting.dart';
 import '../service/log.dart';
+import '../service/notification_manager.dart';
+import 'notification_overlay.dart';
 import '../utils/route_util.dart';
 
 typedef DidChangePlatformBrightnessCallback = void Function();
@@ -59,6 +61,8 @@ class AppManager extends StatefulWidget {
 }
 
 class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
+  // Keep the same host/queue when the secure blur reparents app content.
+  final GlobalKey _notificationHostKey = GlobalKey();
   late final AppLifecycleListener _listener;
   DateTime? lastInactiveTime;
   bool inBlur = false;
@@ -124,6 +128,7 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final appContent = NotificationOverlay(key: _notificationHostKey, child: widget.child);
     return ScrollConfiguration(
       behavior: UIConfig.scrollBehaviourWithScrollBar,
       child: inBlur
@@ -131,9 +136,9 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
               blur: 100,
               blurColor: GetPlatform.isAndroid ? Colors.white : Colors.grey.shade600,
               colorOpacity: 1,
-              child: widget.child,
+              child: appContent,
             )
-          : widget.child,
+          : appContent,
     );
   }
 
@@ -155,6 +160,7 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
   }
 
   void _onInactive() {
+    notificationManager.setSuppressed('background', true);
     log.debug('App is hidden');
 
     if (securitySetting.enableAuthOnResume.isTrue) {
@@ -167,6 +173,7 @@ class _AppManagerState extends State<AppManager> with WidgetsBindingObserver {
   }
 
   void _onResume() {
+    notificationManager.setSuppressed('background', false);
     log.debug('App is shown');
 
     if (!inBlur) {

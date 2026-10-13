@@ -73,6 +73,6 @@ class _LogPageState extends State<LogPage> {
       return;
     }
     await FlutterClipboard.copy(logText);
-    toast('hasCopiedToClipboard'.tr);
+    toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success);
   }
 }

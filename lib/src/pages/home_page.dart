@@ -52,7 +52,6 @@ class _HomePageState extends State<HomePage> with LoginRequiredMixin, WindowList
   @override
   void initState() {
     super.initState();
-    initToast(context);
     _initSharingIntent();
     _handleUrlInClipBoard();
 
@@ -206,6 +205,7 @@ class _HomePageState extends State<HomePage> with LoginRequiredMixin, WindowList
       snack(
         'galleryUrlDetected'.tr,
         '${'galleryUrlDetectedHint'.tr}: ${galleryUrl.url}',
+        level: NotificationLevel.info,
         onPressed: () {
           if (!galleryUrl.isEH && !userSetting.hasLoggedIn()) {
             showLoginToast();
@@ -224,6 +224,7 @@ class _HomePageState extends State<HomePage> with LoginRequiredMixin, WindowList
       snack(
         'galleryUrlDetected'.tr,
         '${'galleryUrlDetectedHint'.tr}: ${galleryImagePageUrl.url}',
+        level: NotificationLevel.info,
         onPressed: () {
           if (!galleryImagePageUrl.isEH && !userSetting.hasLoggedIn()) {
             showLoginToast();

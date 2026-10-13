@@ -53,7 +53,7 @@ class SettingPerformancePage extends StatelessWidget {
                 return;
               }
               performanceSetting.setMaxGalleryNum4Animation(value);
-              toast('saveSuccess'.tr);
+              toast('saveSuccess'.tr, level: NotificationLevel.success);
             },
             icon: Icon(Icons.check, color: UIConfig.resumePauseButtonColor(context)),
           ),

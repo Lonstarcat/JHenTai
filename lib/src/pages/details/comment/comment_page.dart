@@ -197,6 +197,6 @@ class _CommentPageState extends State<CommentPage> with LoginRequiredMixin {
     comments = await localBlockRuleService.executeRules(comments);
 
     setState(() {});
-    toast('success'.tr);
+    toast('success'.tr, level: NotificationLevel.success);
   }
 }

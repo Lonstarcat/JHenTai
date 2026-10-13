@@ -206,7 +206,9 @@ class BackgroundTaskService
       _favoriteCompletionPending = _favoriteFailCount == 0
           ? '${'batchFavoriteCompleted'.tr}: ${'success'.tr} $_favoriteSuccessCount'
           : '${'batchFavoritePartialFailed'.tr}: ${'success'.tr} $_favoriteSuccessCount, ${'failed'.tr} $_favoriteFailCount';
-      toast(_favoriteCompletionPending!, isShort: false);
+      showNotifier(_favoriteCompletionPending!, _favoriteFailCount == 0
+          ? NotificationLevel.success
+          : _favoriteSuccessCount == 0 ? NotificationLevel.error : NotificationLevel.warning);
       if (userSetting.hasLoggedIn()) {
         unawaited(favoriteSetting.fetchDataFromEH());
       }
@@ -214,7 +216,7 @@ class BackgroundTaskService
       _favoriteStatus = BackgroundTaskStatus.failed;
       _favoriteCompletionPending = '${'batchFavoriteFailed'.tr}: $e';
       log.error('Batch favorite queue failed', e, stack);
-      toast(_favoriteCompletionPending!, isShort: false);
+      showNotifier(_favoriteCompletionPending!, NotificationLevel.error);
     } finally {
       _favoriteCurrentTitle = '';
       await _refreshNotification(force: true);

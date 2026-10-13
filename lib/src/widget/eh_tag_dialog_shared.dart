@@ -49,7 +49,7 @@ mixin EHTagVoteLogicMixin<T extends StatefulWidget> on State<T> implements Login
 
   @override
   void showLoginToast() {
-    toast('needLoginToOperate'.tr);
+    toast('needLoginToOperate'.tr, level: NotificationLevel.warning);
   }
 
   TagData get tagData;
@@ -180,7 +180,7 @@ mixin EHTagVoteLogicMixin<T extends StatefulWidget> on State<T> implements Login
     });
 
     if (success) {
-      toast('success'.tr);
+      toast('success'.tr, level: NotificationLevel.success);
       return true;
     } else {
       snack('voteTagFailed'.tr, errMsg!, isShort: true);
@@ -312,7 +312,7 @@ mixin EHTagVoteLogicMixin<T extends StatefulWidget> on State<T> implements Login
       addHiddenTagState = LoadingState.idle;
     });
 
-    toast('success'.tr);
+    toast('success'.tr, level: NotificationLevel.success);
   }
 
   Future<void> doDeleteWatchedTag({required int tagSetNo, required bool watch}) async {
@@ -364,7 +364,7 @@ mixin EHTagVoteLogicMixin<T extends StatefulWidget> on State<T> implements Login
       addHiddenTagState = LoadingState.idle;
     });
 
-    toast('deleteTagSuccess'.tr);
+    toast('deleteTagSuccess'.tr, level: NotificationLevel.success);
   }
 
   Future<void> doAddNewTagSet(int tagSetNumber, bool watch, {int? previousTagSetNo}) async {
@@ -457,7 +457,7 @@ class EHTagDialogHeader extends StatelessWidget {
               children: [
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => FlutterClipboard.copy('${tagData.namespace}:"${tagData.key}"').then((_) => toast('hasCopiedToClipboard'.tr)),
+                  onTap: () => FlutterClipboard.copy('${tagData.namespace}:"${tagData.key}"').then((_) => toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success)),
                   child: Text(
                     '${tagData.namespace}:${tagData.key}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

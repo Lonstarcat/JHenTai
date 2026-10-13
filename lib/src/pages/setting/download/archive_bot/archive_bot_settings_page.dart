@@ -180,7 +180,7 @@ class _ArchiveBotSettingsPageState extends State<ArchiveBotSettingsPage> {
           _checkinState = LoadingState.success;
           _balance.value = checkInVO.currentGP;
         });
-        snack('checkInSuccess'.tr, 'checkInSuccessHint'.trArgs([checkInVO.getGP.toString(), checkInVO.currentGP.toString()]));
+        snack('checkInSuccess'.tr, 'checkInSuccessHint'.trArgs([checkInVO.getGP.toString(), checkInVO.currentGP.toString()]), level: NotificationLevel.success);
       } else {
         snack('checkInFailed'.tr, response.errorMessage);
         setStateSafely(() => _checkinState = LoadingState.error);

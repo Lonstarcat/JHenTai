@@ -124,7 +124,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
       value: downloadSetting.downloadOriginalImageByDefault.value,
       onChanged: (value) {
         if (!userSetting.hasLoggedIn()) {
-          toast('needLoginToOperate'.tr);
+          toast('needLoginToOperate'.tr, level: NotificationLevel.warning);
           return;
         }
         downloadSetting.saveDownloadOriginalImageByDefault(value);
@@ -375,7 +375,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
       } on Exception catch (e) {
         log.error('Copy files failed!', e);
         log.uploadError(e, extraInfos: {'oldDownloadPath': oldDownloadPath, 'newDownloadPath': newDownloadPath});
-        toast('internalError'.tr);
+        toast('internalError'.tr, level: NotificationLevel.error);
       }
 
       downloadSetting.saveDownloadPath(newDownloadPath);
@@ -387,7 +387,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     } on Exception catch (e) {
       log.error('_handleChangeDownloadPath failed!', e);
       log.uploadError(e);
-      toast('internalError'.tr);
+      toast('internalError'.tr, level: NotificationLevel.error);
     } finally {
       setState(() => changeDownloadPathState = LoadingState.idle);
     }

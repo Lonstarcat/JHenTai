@@ -54,7 +54,7 @@ class _Item extends StatelessWidget {
       borderRadius: UIConfig.galleryDetailDialogItemBorderRadius,
       onTap: () {
         if (!isEmptyOrNull(value)) {
-          FlutterClipboard.copy(value!).then((value) => toast('hasCopiedToClipboard'.tr));
+          FlutterClipboard.copy(value!).then((value) => toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success));
         }
       },
       child: Ink(

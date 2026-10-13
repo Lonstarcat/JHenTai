@@ -1,45 +1,9 @@
-import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'notifier_util.dart';
+export 'notifier_util.dart';
 
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:jhentai/src/setting/style_setting.dart';
-import 'package:jhentai/src/utils/screen_size_util.dart';
-
-import '../config/ui_config.dart';
-
-void snack(
-  String title,
-  String message, {
-  bool isShort = true,
-  VoidCallback? onPressed,
-}) async {
-  ScaffoldMessenger.of(Get.context!).hideCurrentSnackBar();
-  ScaffoldMessenger.of(Get.context!).showSnackBar(
-    SnackBar(
-      content: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          if (onPressed != null) {
-            onPressed();
-            ScaffoldMessenger.of(Get.context!).hideCurrentSnackBar();
-          }
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontSize: 18)),
-            Text(message, style: const TextStyle(fontSize: 12)).marginOnly(top: 6),
-          ],
-        ),
-      ),
-      showCloseIcon: onPressed == null,
-      action: onPressed == null ? null : SnackBarAction(label: '->', onPressed: onPressed),
-      duration: Duration(milliseconds: isShort ? 3000 : 5000),
-
-      /// Flutter 3.38 起带 action 的 SnackBar 默认不再自动消失，用 persist 恢复按 duration 自动消失
-      persist: false,
-      behavior: styleSetting.isInMobileLayout ? null : SnackBarBehavior.floating,
-      width: styleSetting.isInMobileLayout ? null : max(fullScreenWidth / 2, UIConfig.snackWidth),
-    ),
-  );
+/// Most legacy snacks are failures; informational callers explicitly opt in.
+void snack(String title, String message,
+    {bool isShort = true, VoidCallback? onPressed, NotificationLevel level = NotificationLevel.error}) {
+  showNotifier(message, level, title: title, action: onPressed, actionLabel: '→');
 }

@@ -145,7 +145,7 @@ class _TorrentList extends StatelessWidget {
       trailing: IconButton(
         icon: Icon(Icons.attach_file_outlined, size: 16, color: UIConfig.resumePauseButtonColor(context)),
         padding: EdgeInsets.zero,
-        onPressed: () => FlutterClipboard.copy(torrent.magnetUrl).then((_) => toast('hasCopiedToClipboard'.tr)),
+        onPressed: () => FlutterClipboard.copy(torrent.magnetUrl).then((_) => toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success)),
       ),
     );
   }

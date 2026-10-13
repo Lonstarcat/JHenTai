@@ -75,7 +75,7 @@ class _CookiePageState extends State<CookiePage> {
 
   Future<void> _copyCookie(Cookie cookie) async {
     await FlutterClipboard.copy(CookieUtil.parse2String([cookie]));
-    toast('hasCopiedToClipboard'.tr);
+    toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success);
   }
 
   Future<void> _copyCookies() async {
@@ -88,7 +88,7 @@ class _CookiePageState extends State<CookiePage> {
             .toList(),
       ),
     );
-    toast('hasCopiedToClipboard'.tr);
+    toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success);
   }
 
   Future<void> _refreshIgneousCookie() async {
@@ -146,7 +146,7 @@ class _CookiePageState extends State<CookiePage> {
         }
 
         ehRequest.storeEHCookies([Cookie(name, value)]);
-        toast('success'.tr);
+        toast('success'.tr, level: NotificationLevel.success);
         setStateSafely(() {
           _refreshIgneousState = LoadingState.success;
         });

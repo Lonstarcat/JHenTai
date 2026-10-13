@@ -74,7 +74,7 @@ abstract class BasePageLogic extends GetxController with Scroll2TopLogicMixin {
       if (autoLoadNeedLogin && !userSetting.hasLoggedIn()) {
         state.loadingState = LoadingState.noData;
         updateSafely([bodyId]);
-        Get.engine.addPostFrameCallback((_) => toast('needLoginToOperate'.tr));
+        Get.engine.addPostFrameCallback((_) => toast('needLoginToOperate'.tr, level: NotificationLevel.warning));
         return;
       }
 

@@ -39,7 +39,7 @@ class SettingMouseWheelPage extends StatelessWidget {
                           return;
                         }
                         mouseSetting.saveWheelScrollSpeed(value);
-                        toast('saveSuccess'.tr);
+                        toast('saveSuccess'.tr, level: NotificationLevel.success);
                       },
                     ),
                   ),
@@ -51,7 +51,7 @@ class SettingMouseWheelPage extends StatelessWidget {
                         return;
                       }
                       mouseSetting.saveWheelScrollSpeed(value);
-                      toast('saveSuccess'.tr);
+                      toast('saveSuccess'.tr, level: NotificationLevel.success);
                     },
                   ),
                 ],

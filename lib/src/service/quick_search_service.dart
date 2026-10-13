@@ -45,7 +45,7 @@ class QuickSearchService extends GetxController with JHLifeCircleBeanWithConfigS
 
   Future<void> addQuickSearch(String name, SearchConfig searchConfig) async {
     if (quickSearchConfigs.containsKey(name)) {
-      toast('sameNameExists'.tr, isShort: false);
+      toast('sameNameExists'.tr, isShort: false, level: NotificationLevel.warning);
       return;
     }
 
@@ -63,7 +63,7 @@ class QuickSearchService extends GetxController with JHLifeCircleBeanWithConfigS
     await saveBeanConfig();
     updateSafely();
     
-    toast('saveSuccess'.tr);
+    toast('saveSuccess'.tr, level: NotificationLevel.success);
   }
 
   Future<void> removeQuickSearch(String name) async {
@@ -104,7 +104,7 @@ class QuickSearchService extends GetxController with JHLifeCircleBeanWithConfigS
     SearchConfig searchConfig = result['searchConfig'];
 
     if (oldConfig.key != quickSearchName && quickSearchConfigs.containsKey(quickSearchName)) {
-      toast('sameNameExists'.tr);
+      toast('sameNameExists'.tr, level: NotificationLevel.warning);
       return;
     }
 
@@ -123,7 +123,7 @@ class QuickSearchService extends GetxController with JHLifeCircleBeanWithConfigS
     await saveBeanConfig();
     updateSafely();
     
-    toast('updateSuccess'.tr);
+    toast('updateSuccess'.tr, level: NotificationLevel.success);
   }
 }
 

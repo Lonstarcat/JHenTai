@@ -317,7 +317,7 @@ class SettingReadPage extends StatelessWidget {
                 return;
               }
               readSetting.saveMaxImageKilobyte(value);
-              toast('saveSuccess'.tr);
+              toast('saveSuccess'.tr, level: NotificationLevel.success);
             },
             icon: Icon(Icons.check, color: UIConfig.resumePauseButtonColor(context)),
           ),
@@ -442,7 +442,7 @@ class SettingReadPage extends StatelessWidget {
       return;
     }
     readSetting.saveImageRegionWidthRatio(value);
-    toast('saveSuccess'.tr);
+    toast('saveSuccess'.tr, level: NotificationLevel.success);
   }
 
   Widget _buildPortraitImageRegionWidthRatio(BuildContext context) {
@@ -481,7 +481,7 @@ class SettingReadPage extends StatelessWidget {
       return;
     }
     readSetting.savePortraitImageRegionWidthRatio(value);
-    toast('saveSuccess'.tr);
+    toast('saveSuccess'.tr, level: NotificationLevel.success);
   }
 
   Widget _buildLandscapeImageRegionWidthRatio(BuildContext context) {
@@ -520,7 +520,7 @@ class SettingReadPage extends StatelessWidget {
       return;
     }
     readSetting.saveLandscapeImageRegionWidthRatio(value);
-    toast('saveSuccess'.tr);
+    toast('saveSuccess'.tr, level: NotificationLevel.success);
   }
 
   Widget _buildUseThirdPartyViewer() {

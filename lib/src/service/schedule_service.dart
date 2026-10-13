@@ -213,6 +213,7 @@ class ScheduleService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBea
       snack(
         'dawnOfaNewDay'.tr,
         eventInfo.dawnInfo!,
+        level: NotificationLevel.info,
         isShort: false,
       );
     }
@@ -222,6 +223,7 @@ class ScheduleService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBea
       snack(
         'encounterMonster'.tr,
         'encounterMonsterHint'.tr,
+        level: NotificationLevel.info,
         onPressed: () => launchUrlString(eventInfo.hvUrl!, mode: LaunchMode.externalApplication),
         isShort: false,
       );
@@ -245,7 +247,7 @@ class ScheduleService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBea
       log.debug('Auto Checkin response: $response');
       if (response.isSuccess) {
         final checkInVO = archiveBotSetting.botType.value.parseCheckIn(response.data);
-        snack('checkInSuccess'.tr, 'checkInSuccessHint'.trArgs([checkInVO.getGP.toString(), checkInVO.currentGP.toString()]));
+        snack('checkInSuccess'.tr, 'checkInSuccessHint'.trArgs([checkInVO.getGP.toString(), checkInVO.currentGP.toString()]), level: NotificationLevel.success);
       }
     } on DioException catch (e) {
       log.error('Failed to auto checkin', e.errorMsg, e.stackTrace);

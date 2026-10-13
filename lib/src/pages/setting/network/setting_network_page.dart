@@ -125,7 +125,7 @@ class SettingNetworkPage extends StatelessWidget {
           );
           if (result != null) {
             await onSave(result);
-            toast('saveSuccess'.tr);
+            toast('saveSuccess'.tr, level: NotificationLevel.success);
           }
         },
       ),

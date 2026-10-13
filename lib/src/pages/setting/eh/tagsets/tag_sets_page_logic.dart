@@ -271,7 +271,7 @@ class TagSetsLogic extends GetxController with Scroll2TopLogicMixin {
     state.tags[tagIndex] = tag;
     state.updateTagState = LoadingState.idle;
 
-    toast('success'.tr);
+    toast('success'.tr, level: NotificationLevel.success);
     updateSafely(['$tagId::${tag.tagId}']);
 
     myTagsSetting.refreshOnlineTagSets(state.currentTagSetNo);

@@ -29,7 +29,7 @@ class _SettingProxyPageState extends State<SettingProxyPage> {
             icon: const Icon(Icons.save),
             onPressed: () {
               networkSetting.saveProxy(proxyType, proxyAddress, proxyUsername, proxyPassword);
-              toast('success'.tr);
+              toast('success'.tr, level: NotificationLevel.success);
             },
           ),
         ],

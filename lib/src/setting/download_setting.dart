@@ -231,7 +231,7 @@ class DownloadSetting with JHLifeCircleBeanWithConfigStorage implements JHLifeCi
       await Directory(defaultExtraGalleryScanPath).create(recursive: true);
       await Directory(singleImageSavePath.value).create(recursive: true);
     } on Exception catch (e) {
-      toast('brokenDownloadPathHint'.tr);
+      toast('brokenDownloadPathHint'.tr, level: NotificationLevel.warning);
       log.error(e);
       log.uploadError(
         e,

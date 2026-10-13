@@ -84,7 +84,7 @@ class _SettingThemeColorPageState extends State<SettingThemeColorPage> {
                     }
 
                     setState(() {});
-                    toast('success'.tr);
+                    toast('success'.tr, level: NotificationLevel.success);
                   },
                 ),
               ],

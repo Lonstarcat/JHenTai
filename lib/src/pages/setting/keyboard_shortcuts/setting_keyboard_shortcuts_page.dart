@@ -287,7 +287,7 @@ class _SettingKeyboardShortcutsPageState extends State<SettingKeyboardShortcutsP
     }
 
     await keyboardShortcutSetting.bind(action, slot, newBinding);
-    toast('saveSuccess'.tr);
+    toast('saveSuccess'.tr, level: NotificationLevel.success);
   }
 
   Future<void> _commitMouseCapture(ReadActionBinding mouseBinding) async {
@@ -311,7 +311,7 @@ class _SettingKeyboardShortcutsPageState extends State<SettingKeyboardShortcutsP
     }
 
     await keyboardShortcutSetting.bind(action, slot, mouseBinding);
-    toast('saveSuccess'.tr);
+    toast('saveSuccess'.tr, level: NotificationLevel.success);
   }
 
   Future<void> _clearBinding(ReadAction action, int slot) async {
@@ -321,7 +321,7 @@ class _SettingKeyboardShortcutsPageState extends State<SettingKeyboardShortcutsP
   Future<void> _resetAll() async {
     _cancelCapture();
     await keyboardShortcutSetting.resetAndSave();
-    toast('resetSuccess'.tr);
+    toast('resetSuccess'.tr, level: NotificationLevel.success);
   }
 
   // ---------------------------------------------------------------------------

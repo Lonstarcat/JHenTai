@@ -137,7 +137,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
   Future<void> _handlePasswordLogin() async {
     if (state.userName == null || state.password == null || state.userName!.isEmpty || state.password!.isEmpty) {
-      toast('userNameOrPasswordMismatch'.tr);
+      toast('userNameOrPasswordMismatch'.tr, level: NotificationLevel.error);
       return;
     }
 
@@ -202,13 +202,13 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
     state.loginState = LoadingState.success;
     update([loadingStateId]);
 
-    toast('loginSuccess'.tr);
+    toast('loginSuccess'.tr, level: NotificationLevel.success);
     backRoute(currentRoute: Routes.login);
   }
 
   Future<void> _handleCookieLoginNormal() async {
     if (isEmptyOrNull(state.ipbMemberId) || isEmptyOrNull(state.ipbPassHash)) {
-      toast('cookieIsBlack'.tr);
+      toast('cookieIsBlack'.tr, level: NotificationLevel.warning);
       return;
     }
 
@@ -284,13 +284,13 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       nickName: userInfo['nickName'],
     );
 
-    toast('loginSuccess'.tr);
+    toast('loginSuccess'.tr, level: NotificationLevel.success);
     backRoute(currentRoute: Routes.login);
   }
 
   Future<void> _handleCookieLoginViaWebview() async {
     if (isEmptyOrNull(state.ipbMemberId) || isEmptyOrNull(state.ipbPassHash)) {
-      toast('cookieIsBlack'.tr);
+      toast('cookieIsBlack'.tr, level: NotificationLevel.warning);
       return;
     }
 
@@ -304,7 +304,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
     if (GetPlatform.isWindows || GetPlatform.isLinux) {
       if (!await WebviewWindow.isWebviewAvailable()) {
-        toast('webLoginIsDisabled'.tr);
+        toast('webLoginIsDisabled'.tr, level: NotificationLevel.warning);
         return;
       }
 
@@ -422,7 +422,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
     log.info('Login success by web via webview.');
     state.loginState = LoadingState.success;
     update([loadingStateId]);
-    toast('loginSuccess'.tr);
+    toast('loginSuccess'.tr, level: NotificationLevel.success);
     webview.close();
 
     untilRoute(
@@ -485,7 +485,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
     log.info('Login success by web via webview.');
     state.loginState = LoadingState.success;
     update([loadingStateId]);
-    toast('loginSuccess'.tr);
+    toast('loginSuccess'.tr, level: NotificationLevel.success);
     untilRoute(
       currentRoute: Routes.webview,
       predicate: (route) => route.settings.name == Routes.settingAccount || route.settings.name == Routes.home,
@@ -494,7 +494,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
   Future<void> _handleCookieLoginWithoutVerification() async {
     if (isEmptyOrNull(state.ipbMemberId) || isEmptyOrNull(state.ipbPassHash)) {
-      toast('cookieIsBlack'.tr);
+      toast('cookieIsBlack'.tr, level: NotificationLevel.warning);
       return;
     }
 
@@ -530,14 +530,14 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       nickName: null,
     );
 
-    toast('loginSuccess'.tr);
+    toast('loginSuccess'.tr, level: NotificationLevel.success);
     backRoute(currentRoute: Routes.login);
   }
 
   Future<void> handleWebLogin() async {
     if (GetPlatform.isWindows || GetPlatform.isLinux) {
       if (!await WebviewWindow.isWebviewAvailable()) {
-        toast('webLoginIsDisabled'.tr);
+        toast('webLoginIsDisabled'.tr, level: NotificationLevel.warning);
         return;
       }
       Webview webview = await WebviewWindow.create(
@@ -589,7 +589,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       userSetting.saveUserInfo(userName: 'EHUser'.tr, ipbMemberId: ipbMemberId, ipbPassHash: ipbPassHash);
 
       webview.close();
-      toast('loginSuccess'.tr);
+      toast('loginSuccess'.tr, level: NotificationLevel.success);
       untilRoute(
         currentRoute: Routes.login,
         predicate: (route) => route.settings.name == Routes.settingAccount || route.settings.name == Routes.blank || route.settings.name == Routes.home,
@@ -633,7 +633,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       /// temporary name
       userSetting.saveUserInfo(userName: 'EHUser'.tr, ipbMemberId: ipbMemberId, ipbPassHash: ipbPassHash);
 
-      toast('loginSuccess'.tr);
+      toast('loginSuccess'.tr, level: NotificationLevel.success);
       untilRoute(
         currentRoute: Routes.webview,
         predicate: (route) => route.settings.name == Routes.settingAccount || route.settings.name == Routes.home,

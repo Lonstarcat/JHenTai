@@ -59,7 +59,7 @@ class SettingSuperResolutionPage extends StatelessWidget {
         } on Exception catch (e) {
           log.error('Pick executable file path failed', e);
           log.uploadError(e);
-          toast('internalError'.tr);
+          toast('internalError'.tr, level: NotificationLevel.error);
         }
 
         if (result == null) {

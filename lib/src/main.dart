@@ -53,6 +53,8 @@ import 'package:jhentai/src/setting/style_setting.dart';
 import 'package:jhentai/src/setting/super_resolution_setting.dart';
 import 'package:jhentai/src/setting/user_setting.dart';
 import 'package:jhentai/src/widget/app_manager.dart';
+import 'package:jhentai/src/widget/notification_overlay.dart';
+import 'package:jhentai/src/service/notification_manager.dart';
 
 import 'config/theme_config.dart';
 import 'network/archive_bot_request.dart';
@@ -154,7 +156,7 @@ class MyApp extends StatelessWidget {
 
       getPages: Routes.pages,
       initialRoute: securitySetting.enablePasswordAuth.isTrue || securitySetting.enableBiometricAuth.isTrue ? Routes.lock : Routes.home,
-      navigatorObservers: [GetXRouterObserver()],
+      navigatorObservers: [GetXRouterObserver(), NotificationPrivacyObserver(manager: notificationManager, lockRoute: Routes.lock)],
       builder: (context, child) => AppManager(child: child!),
 
       /// enable swipe back feature

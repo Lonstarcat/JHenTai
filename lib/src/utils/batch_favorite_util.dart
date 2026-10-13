@@ -14,11 +14,11 @@ Future<bool> chooseAndStartBatchFavorite(
     return false;
   }
   if (!userSetting.hasLoggedIn()) {
-    toast('needLoginToOperate'.tr);
+    toast('needLoginToOperate'.tr, level: NotificationLevel.warning);
     return false;
   }
   if (backgroundTaskService.isFavoriteTaskActive) {
-    toast('batchFavoriteAlreadyRunning'.tr);
+    toast('batchFavoriteAlreadyRunning'.tr, level: NotificationLevel.warning);
     return false;
   }
 
@@ -30,7 +30,7 @@ Future<bool> chooseAndStartBatchFavorite(
     log.error('Load favorite folders for batch favorite failed', e, stack);
   }
   if (!favoriteSetting.inited) {
-    toast('favoriteFolderLoadFailed'.tr, isShort: false);
+    toast('favoriteFolderLoadFailed'.tr, isShort: false, level: NotificationLevel.error);
     return false;
   }
 
@@ -50,7 +50,7 @@ Future<bool> chooseAndStartBatchFavorite(
     note: operation.note,
   );
   if (!started) {
-    toast('batchFavoriteAlreadyRunning'.tr);
+    toast('batchFavoriteAlreadyRunning'.tr, level: NotificationLevel.warning);
     return false;
   }
   toast('batchFavoriteStartedInBackground'.tr, isShort: false);

@@ -14,6 +14,6 @@ mixin LoginRequiredMixin {
   }
 
   showLoginToast() {
-    toast('needLoginToOperate'.tr);
+    toast('needLoginToOperate'.tr, level: NotificationLevel.warning);
   }
 }

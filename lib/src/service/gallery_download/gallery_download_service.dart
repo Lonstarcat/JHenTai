@@ -1551,7 +1551,7 @@ class GalleryDownloadService extends GetxController with GridBasePageServiceMixi
     try {
       io.Directory(downloadSetting.downloadPath.value).createSync(recursive: true);
     } on Exception catch (e) {
-      toast('brokenDownloadPathHint'.tr);
+      toast('brokenDownloadPathHint'.tr, level: NotificationLevel.warning);
       log.error(e);
       log.uploadError(
         e,

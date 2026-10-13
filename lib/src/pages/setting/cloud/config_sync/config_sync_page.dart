@@ -135,7 +135,7 @@ class _ConfigSyncPageState extends State<ConfigSyncPage> {
           text: 'copyShareCode'.tr,
           onTap: () {
             Clipboard.setData(ClipboardData(text: config.shareCode));
-            toast('hasCopiedToClipboard'.tr);
+            toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success);
           },
         ),
         EHContextMenuAction(
@@ -180,16 +180,16 @@ class _ConfigSyncPageState extends State<ConfigSyncPage> {
       await file.create(recursive: true);
     }
     await file.writeAsString(config.config);
-    toast('success'.tr);
+    toast('success'.tr, level: NotificationLevel.success);
   }
 
   Future<void> _importConfig(CloudConfig config) async {
     try {
       await cloudConfigService.importConfig(config);
-      toast('success'.tr);
+      toast('success'.tr, level: NotificationLevel.success);
     } on Exception catch (e) {
       log.error('importConfig error: $e');
-      toast('failed'.tr);
+      toast('failed'.tr, level: NotificationLevel.error);
     }
   }
 
@@ -219,7 +219,7 @@ class _ConfigSyncPageState extends State<ConfigSyncPage> {
       return;
     }
 
-    toast('success'.tr);
+    toast('success'.tr, level: NotificationLevel.success);
     _loadingState = LoadingState.success;
 
     _refresh();
@@ -260,7 +260,7 @@ class _ConfigSyncPageState extends State<ConfigSyncPage> {
       return;
     }
 
-    toast('success'.tr);
+    toast('success'.tr, level: NotificationLevel.success);
     _loadingState = LoadingState.success;
 
     _refresh();

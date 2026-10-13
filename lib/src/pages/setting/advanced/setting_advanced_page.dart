@@ -156,7 +156,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
       subtitle: Text('longPress2Clear'.tr),
       onLongPress: () async {
         await ehRequest.removeAllCache();
-        toast('clearSuccess'.tr, isCenter: false);
+        toast('clearSuccess'.tr, isCenter: false, level: NotificationLevel.success);
       },
     );
   }
@@ -199,7 +199,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
         } on Exception catch (e) {
           log.error(e);
           log.uploadError(e);
-          toast('error'.tr);
+          toast('error'.tr, level: NotificationLevel.error);
         }
       },
     );
@@ -286,7 +286,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
     await log.clear();
     await _loadingLogSize();
 
-    toast('clearSuccess'.tr, isCenter: false);
+    toast('clearSuccess'.tr, isCenter: false, level: NotificationLevel.success);
   }
 
   Future<void> _getImagesCacheSize() async {
@@ -330,7 +330,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
     await clearDiskCachedImages();
     await _getImagesCacheSize();
 
-    toast('clearSuccess'.tr, isCenter: false);
+    toast('clearSuccess'.tr, isCenter: false, level: NotificationLevel.success);
   }
 
   Future<void> _importData(BuildContext context) async {
@@ -368,11 +368,11 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
         await cloudConfigService.importConfig(config);
       }
 
-      toast('success'.tr);
+      toast('success'.tr, level: NotificationLevel.success);
       setStateSafely(() => _importDataLoadingState = LoadingState.success);
     } catch (e, s) {
       log.error('Import data failed', e, s);
-      toast('internalError'.tr);
+      toast('internalError'.tr, level: NotificationLevel.error);
       setStateSafely(() => _importDataLoadingState = LoadingState.error);
       return;
     }
@@ -419,12 +419,12 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
       );
       if (savedPath != null) {
         log.info('Export data to $savedPath success');
-        toast('success'.tr);
+        toast('success'.tr, level: NotificationLevel.success);
         setStateSafely(() => _exportDataLoadingState = LoadingState.success);
       }
     } on Exception catch (e) {
       log.error('Export data failed', e);
-      toast('internalError'.tr);
+      toast('internalError'.tr, level: NotificationLevel.error);
       setStateSafely(() => _exportDataLoadingState = LoadingState.error);
     }
   }
@@ -445,7 +445,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
       );
     } on Exception catch (e) {
       log.error('Select save path for exporting data failed', e);
-      toast('internalError'.tr);
+      toast('internalError'.tr, level: NotificationLevel.error);
       setStateSafely(() => _exportDataLoadingState = LoadingState.error);
       return;
     }
@@ -469,11 +469,11 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
       }
       await file.writeAsString(await isolateService.jsonEncodeAsync(uploadConfigs));
       log.info('Export data to $savedPath success');
-      toast('success'.tr);
+      toast('success'.tr, level: NotificationLevel.success);
       setStateSafely(() => _exportDataLoadingState = LoadingState.success);
     } on Exception catch (e) {
       log.error('Export data failed', e);
-      toast('internalError'.tr);
+      toast('internalError'.tr, level: NotificationLevel.error);
       setStateSafely(() => _exportDataLoadingState = LoadingState.error);
       file.delete().ignore();
     }

@@ -17,7 +17,7 @@ void openThirdPartyViewer(String dirPath) {
     workingDirectory: dirname(viewerPath),
     runInShell: true,
   ).catchError((e) {
-    toast('internalError'.tr + e.toString());
+    toast('internalError'.tr + e.toString(), level: NotificationLevel.error);
     log.error(e);
     log.uploadError(
       e,
@@ -25,7 +25,7 @@ void openThirdPartyViewer(String dirPath) {
     );
   }).then((result) {
     if (!isEmptyOrNull(result.stderr)) {
-      toast('internalError'.tr + result.stderr);
+      toast('internalError'.tr + result.stderr, level: NotificationLevel.error);
       log.error(result.stderr);
       log.uploadError(
         Exception('Process Error'),

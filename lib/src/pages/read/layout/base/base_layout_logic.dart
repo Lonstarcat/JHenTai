@@ -506,33 +506,33 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
         await file.create(recursive: true);
         await file.writeAsBytes(data);
         await Pasteboard.writeFiles([file.path]);
-        toast('hasCopiedToClipboard'.tr);
+        toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success);
       } catch (e) {
         log.error('Copy online image to clipboard failed: $e');
-        toast('failed'.tr);
+        toast('failed'.tr, level: NotificationLevel.error);
         file.delete().ignore();
       }
     } else {
       await Pasteboard.writeImage(data);
-      toast('hasCopiedToClipboard'.tr);
+      toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success);
     }
   }
 
   /// Copy a downloaded-mode image file to clipboard.
   void copyDownloadedImageFile(int index) {
     if (GetPlatform.isDesktop) {
-      Pasteboard.writeFiles([_getDownloadedImageAbsolutePath(index)]).then((_) => toast('hasCopiedToClipboard'.tr));
+      Pasteboard.writeFiles([_getDownloadedImageAbsolutePath(index)]).then((_) => toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success));
     } else {
-      Pasteboard.writeImage(File(_getDownloadedImageAbsolutePath(index)).readAsBytesSync()).then((_) => toast('hasCopiedToClipboard'.tr));
+      Pasteboard.writeImage(File(_getDownloadedImageAbsolutePath(index)).readAsBytesSync()).then((_) => toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success));
     }
   }
 
   /// Copy an archive-mode image file to clipboard.
   void copyArchiveImageFile(int index) {
     if (GetPlatform.isDesktop) {
-      Pasteboard.writeFiles([_getArchiveImageAbsolutePath(index)]).then((_) => toast('hasCopiedToClipboard'.tr));
+      Pasteboard.writeFiles([_getArchiveImageAbsolutePath(index)]).then((_) => toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success));
     } else {
-      Pasteboard.writeImage(File(_getArchiveImageAbsolutePath(index)).readAsBytesSync()).then((_) => toast('hasCopiedToClipboard'.tr));
+      Pasteboard.writeImage(File(_getArchiveImageAbsolutePath(index)).readAsBytesSync()).then((_) => toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success));
     }
   }
 
@@ -559,10 +559,10 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
       try {
         await file.create(recursive: true);
         await file.writeAsBytes(data);
-        toast('saveSuccess'.tr);
+        toast('saveSuccess'.tr, level: NotificationLevel.success);
       } catch (e) {
         log.error('Save online image failed: $e');
-        toast('saveFailed'.tr);
+        toast('saveFailed'.tr, level: NotificationLevel.error);
         file.delete().ignore();
         return;
       }
@@ -572,10 +572,10 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
         await file.create(recursive: true);
         await file.writeAsBytes(data);
         bool success = await _saveFile2Album(file.path, fileName);
-        toast(success ? 'saveSuccess'.tr : 'saveFailed'.tr);
+        showNotifier(success ? 'saveSuccess'.tr : 'saveFailed'.tr, success ? NotificationLevel.success : NotificationLevel.error);
       } catch (e) {
         log.error('Save online image failed: $e');
-        toast('saveFailed'.tr);
+        toast('saveFailed'.tr, level: NotificationLevel.error);
         file.delete().ignore();
         return;
       }
@@ -615,10 +615,10 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
 
       if (exception != null) {
         if (exception.operation == EHImageExceptionAfterOperation.pause) {
-          toast(exception.message, isShort: false);
+          toast(exception.message, isShort: false, level: NotificationLevel.warning);
           return;
         } else if (exception.operation == EHImageExceptionAfterOperation.pauseAll) {
-          toast(exception.message, isShort: false);
+          toast(exception.message, isShort: false, level: NotificationLevel.warning);
           return;
         } else if (exception.operation == EHImageExceptionAfterOperation.reParse) {
           GalleryImage image;
@@ -626,7 +626,7 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
             image = await readPageLogic.requestImage(index, true, null);
           } catch (e) {
             log.error('Save original image failed: $e');
-            toast('saveFailed'.tr);
+            toast('saveFailed'.tr, level: NotificationLevel.error);
             return;
           }
 
@@ -635,7 +635,7 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
           return saveOriginalOnlineImage(index);
         }
       } else {
-        toast('saveFailed'.tr, isShort: false);
+        toast('saveFailed'.tr, isShort: false, level: NotificationLevel.error);
         return;
       }
     }
@@ -643,14 +643,14 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
     try {
       if (GetPlatform.isDesktop) {
         await file.copy(join(downloadSetting.singleImageSavePath.value, fileName));
-        toast('saveSuccess'.tr);
+        toast('saveSuccess'.tr, level: NotificationLevel.success);
       } else {
         bool success = await _saveFile2Album(downloadPath, fileName);
-        toast(success ? 'saveSuccess'.tr : 'saveFailed'.tr);
+        showNotifier(success ? 'saveSuccess'.tr : 'saveFailed'.tr, success ? NotificationLevel.success : NotificationLevel.error);
       }
     } catch (e) {
       log.error('Save original online image failed: $e');
-      toast('saveFailed'.tr);
+      toast('saveFailed'.tr, level: NotificationLevel.error);
     } finally {
       file.delete().ignore();
     }
@@ -667,9 +667,9 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
     }
 
     if (GetPlatform.isDesktop) {
-      image.copy(join(downloadSetting.singleImageSavePath.value, fileName)).then((_) => toast('success'.tr));
+      _notifyImageSaveResult(image.copy(join(downloadSetting.singleImageSavePath.value, fileName)).then((_) => true));
     } else {
-      _saveFile2Album(filePath, fileName).then((_) => toast('success'.tr));
+      _notifyImageSaveResult(_saveFile2Album(filePath, fileName));
     }
   }
 
@@ -684,9 +684,20 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
     }
 
     if (GetPlatform.isDesktop) {
-      image.copy(join(downloadSetting.singleImageSavePath.value, fileName)).then((_) => toast('success'.tr));
+      _notifyImageSaveResult(image.copy(join(downloadSetting.singleImageSavePath.value, fileName)).then((_) => true));
     } else {
-      _saveFile2Album(filePath, fileName).then((_) => toast('success'.tr));
+      _notifyImageSaveResult(_saveFile2Album(filePath, fileName));
+    }
+  }
+
+  Future<void> _notifyImageSaveResult(Future<bool> operation) async {
+    try {
+      final success = await operation;
+      showNotifier(success ? 'saveSuccess'.tr : 'saveFailed'.tr,
+          success ? NotificationLevel.success : NotificationLevel.error);
+    } catch (error, stack) {
+      log.error('Save image failed', error, stack);
+      showNotifier('saveFailed'.tr, NotificationLevel.error);
     }
   }
 
@@ -703,11 +714,11 @@ abstract class BaseLayoutLogic extends GetxController with GetTickerProviderStat
     }
 
     if (pageUrl == null) {
-      toast('failed'.tr);
+      toast('failed'.tr, level: NotificationLevel.error);
       return;
     }
 
-    FlutterClipboard.copy(pageUrl).then((_) => toast('hasCopiedToClipboard'.tr));
+    FlutterClipboard.copy(pageUrl).then((_) => toast('hasCopiedToClipboard'.tr, level: NotificationLevel.success));
   }
 
   /// Compute image container size when we haven't parsed image's size

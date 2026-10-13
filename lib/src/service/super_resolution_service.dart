@@ -100,7 +100,7 @@ class SuperResolutionService extends GetxController with JHLifeCircleBeanErrorCa
     } else if (GetPlatform.isLinux) {
       downloadUrl = model.linuxDownloadUrl;
     } else {
-      toast('error'.tr);
+      toast('error'.tr, level: NotificationLevel.error);
       return;
     }
 
@@ -139,7 +139,7 @@ class SuperResolutionService extends GetxController with JHLifeCircleBeanErrorCa
     if (!success) {
       log.error('Unpacking Super-resolution model error!');
       log.uploadError(Exception('Unpacking Super-resolution model error!'));
-      toast('internalError'.tr);
+      toast('internalError'.tr, level: NotificationLevel.error);
       downloadState = LoadingState.error;
       updateSafely([downloadId]);
       return;
@@ -155,7 +155,7 @@ class SuperResolutionService extends GetxController with JHLifeCircleBeanErrorCa
     } else if (GetPlatform.isLinux) {
       dirPath = join(extractPath, model.linuxModelExtractPath);
     } else {
-      toast('error'.tr);
+      toast('error'.tr, level: NotificationLevel.error);
       return;
     }
 
@@ -169,13 +169,13 @@ class SuperResolutionService extends GetxController with JHLifeCircleBeanErrorCa
     if (type == SuperResolutionType.gallery) {
       GalleryDownloadInfo? galleryDownloadInfo = galleryDownloadService.galleryDownloadInfos[gid];
       if (galleryDownloadInfo?.downloadProgress.downloadStatus != DownloadStatus.downloaded) {
-        toast('requireDownloadComplete'.tr);
+        toast('requireDownloadComplete'.tr, level: NotificationLevel.warning);
         return false;
       }
     } else {
       ArchiveDownloadInfo? archiveDownloadInfo = archiveDownloadService.archiveDownloadInfos[gid];
       if (archiveDownloadInfo?.archiveStatus != ArchiveStatus.completed) {
-        toast('requireDownloadComplete'.tr);
+        toast('requireDownloadComplete'.tr, level: NotificationLevel.warning);
         return true;
       }
     }
@@ -366,13 +366,13 @@ class SuperResolutionService extends GetxController with JHLifeCircleBeanErrorCa
     try {
       process = await _callProcess(rawImage);
     } on Exception catch (e) {
-      toast('internalError'.tr + e.toString(), isShort: false);
+      toast('internalError'.tr + e.toString(), isShort: false, level: NotificationLevel.error);
       log.error(e);
       log.uploadError(e, extraInfos: {'rawImage': rawImage});
 
       return false;
     } on Error catch (e) {
-      toast('internalError'.tr + e.toString(), isShort: false);
+      toast('internalError'.tr + e.toString(), isShort: false, level: NotificationLevel.error);
       log.error(e);
       log.uploadError(e, extraInfos: {'rawImage': rawImage});
 
@@ -393,7 +393,7 @@ class SuperResolutionService extends GetxController with JHLifeCircleBeanErrorCa
     }
 
     if (exitCode != 0) {
-      toast('${'internalError'.tr} exitCode:$exitCode', isShort: false);
+      toast('${'internalError'.tr} exitCode:$exitCode', isShort: false, level: NotificationLevel.error);
       log.error('${'internalError'.tr} exitCode:$exitCode');
       log.uploadError(
         Exception('Process Error'),
