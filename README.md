@@ -196,8 +196,6 @@ mush thanks to these projects and people🙇‍
 | **Combined Query** | `+A +B\|C -D` | Combine multiple conditions using spaces. |
 | **Case-Insensitive** | Click **Aa** → **aa** | Toggle case-insensitive search. Results refresh automatically. |
 
----
-
 ## Translation
 
 > [languageCode](https://github.com/unicode-org/cldr/blob/master/common/validity/language.xml)
