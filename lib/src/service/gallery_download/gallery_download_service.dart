@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../utils/download_order_persistence_util.dart';
 import 'dart:convert';
 import 'dart:core';
 import 'dart:io' as io;
@@ -729,21 +730,27 @@ class GalleryDownloadService extends GetxController with GridBasePageServiceMixi
     return _deleteGroup(group);
   }
 
-  Future<void> updateGalleryOrder(List<GalleryDownloadInfo> galleries) async {
-    await appDb.transaction(() async {
-      for (GalleryDownloadInfo gallery in galleries) {
-        await _updateGalleryInDatabase(
-          GalleryDownloadedCompanion(gid: Value(gallery.gid), sortOrder: Value(gallery.sortOrder)),
-        );
+  final DownloadOrderWriter _orderWriter = DownloadOrderWriter();
+
+  Future<void> updateGalleryOrder(List<GalleryDownloadInfo> galleries) => _orderWriter.save(
+    {for (final gallery in galleries) gallery.gid: gallery.sortOrder}, (orders) async {
+      await appDb.transaction(() async {
+        for (final entry in orders.entries) {
+          if (!galleryDownloadInfos.containsKey(entry.key)) {
+            continue;
+          }
+          await _updateGalleryInDatabase(GalleryDownloadedCompanion(
+            gid: Value(entry.key), sortOrder: Value(entry.value)));
+        }
+      });
+      _invalidateGalleriesCache();
+      for (final gid in orders.keys) {
+        final gallery = galleryDownloadInfos[gid];
+        if (gallery != null) {
+          _saveGalleryMetadataInDisk(gallery);
+        }
       }
     });
-
-    _invalidateGalleriesCache();
-
-    for (GalleryDownloadInfo gallery in galleries) {
-      _saveGalleryMetadataInDisk(gallery);
-    }
-  }
 
   Future<void> updateGroupOrder(int beforeIndex, int afterIndex) async {
     if (afterIndex == allGroups.length - 1) {

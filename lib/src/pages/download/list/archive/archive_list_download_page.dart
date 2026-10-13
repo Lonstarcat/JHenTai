@@ -28,7 +28,7 @@ import '../../download_base_page.dart';
 import '../../mixin/archive/archive_download_page_mixin.dart';
 import '../../mixin/basic/multi_select/multi_select_download_page_mixin.dart';
 import '../../widget/download_page_more_menu.dart';
-import '../widget/download_reorder_widgets.dart';
+import '../widget/download_reorder_view.dart';
 import 'archive_list_download_page_logic.dart';
 import 'archive_list_download_page_state.dart';
 
@@ -157,34 +157,18 @@ class ArchiveListDownloadPage extends StatelessWidget
 
   Widget _buildReorderableList(BuildContext context) {
     final List<String> groups = List.of(archiveDownloadService.allGroups);
-    return ReorderableListView.builder(
-      scrollController: state.scrollController,
-      buildDefaultDragHandles: false,
-      itemCount: groups.length,
-      onReorderStart: (_) => logic.handleGroupReorderStart(),
-      onReorderItem: (oldIndex, newIndex) =>
-          logic.saveGroupOrderAfterReordered(groups, oldIndex, newIndex),
-      itemBuilder: (context, index) {
-        final String group = groups[index];
-        final List<ArchiveDownloadedData> archives =
-            logic.reorderArchivesInGroup(group);
-        return DownloadReorderGroupSection<ArchiveDownloadedData>(
-          key: ValueKey('group_$group'),
-          groupIndex: index,
-          groupName: group,
-          isOpen: state.displayGroups.contains(group),
-          items: archives,
-          itemKey: (archive) => ValueKey('drag_${archive.gid}'),
-          onToggle: () => logic.toggleDisplayGroups(group),
-          onGroupHandlePointerDown: logic.handleGroupReorderStart,
-          onReorderItems: (oldIndex, newIndex) =>
-              logic.saveArchiveOrderAfterReordered(
-                  group, archives, oldIndex, newIndex),
-          itemBuilder: (context, archive) => AbsorbPointer(
-            child: _buildCard(context, archive).marginAll(5),
-          ),
-        );
-      },
+    return DownloadReorderView<ArchiveDownloadedData>(
+      controller: state.scrollController,
+      groups: groups,
+      items: logic.buildReorderSnapshot(),
+      expandedGroups: Set.of(state.displayGroups),
+      itemKey: (archive) => ValueKey('drag_${archive.gid}'),
+      onToggleGroup: logic.toggleDisplayGroups,
+      onReorderGroups: logic.saveGroupOrderAfterReordered,
+      onReorderItems: logic.saveArchiveOrderAfterReordered,
+      itemBuilder: (context, archive) => AbsorbPointer(
+        child: _buildCard(context, archive).marginAll(5),
+      ),
     );
   }
 

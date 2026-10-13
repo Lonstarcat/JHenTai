@@ -150,16 +150,16 @@ class _NotificationCardState extends State<NotificationCard> with TickerProvider
             return IgnorePointer(
                 ignoring: widget.entry.exiting,
                 child: Align(
-                  alignment: Alignment.topRight,
+                  alignment: Alignment.bottomRight,
                   widthFactor: 1,
                   heightFactor: value,
                   child: Opacity(
                       opacity: value * dragOpacity,
                       child: Transform.translate(
-                        offset: Offset(_drag.value, -16 * (1 - value)),
+                        offset: Offset(_drag.value, 16 * (1 - value)),
                         child: Transform.scale(
                             scale: .94 + .06 * value,
-                            alignment: Alignment.topRight,
+                            alignment: Alignment.bottomRight,
                             child: Padding(padding: const EdgeInsets.only(bottom: 8), child: child)),
                       )),
                 ));

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/src/simple/get_state.dart';
 import 'package:jhentai/src/widget/fade_slide_widget.dart';
+import 'package:jhentai/src/widget/notification_overlay.dart';
 
 import 'multi_select_download_page_logic_mixin.dart';
 import 'multi_select_download_page_state_mixin.dart';
@@ -15,7 +16,8 @@ mixin MultiSelectDownloadPageMixin on StatelessWidget {
       id: multiSelectDownloadPageLogic.bottomAppbarId,
       init: multiSelectDownloadPageLogic,
       global: false,
-      builder: (_) => FadeSlideWidget(
+      builder: (_) => NotificationBottomBar(
+          child: FadeSlideWidget(
         show: multiSelectDownloadPageState.inMultiSelectMode,
         axis: Axis.vertical,
         child: BottomAppBar(
@@ -23,7 +25,7 @@ mixin MultiSelectDownloadPageMixin on StatelessWidget {
             children: buildBottomAppBarButtons(),
           ),
         ),
-      ),
+      )),
     );
   }
 

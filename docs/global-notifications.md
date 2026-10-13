@@ -10,12 +10,21 @@ Reference: https://github.com/chen08209/FlClash/blob/main/lib/manager/status_man
   Optional title/action/actionLabel preserve existing actionable messages.
 - `NotificationManager` owns an immutable ValueNotifier snapshot, a bounded
   Queue (100 waiting items), deduplication, priority and lifecycle timers.
-- The root `NotificationOverlay` wraps the app in a transparent Stack. Desktop
+- The root `NotificationOverlay` wraps the app in a transparent Stack, aligned
+  to the bottom-right. Desktop
   shows four cards; mobile/tablet and narrow windows show two. SafeArea/keyboard
-  constraints and vertical scrolling keep short windows usable.
+  constraints and bottom-anchored vertical scrolling keep short windows usable.
+  Cards stay above the keyboard and bottom safe area.
+- `NotificationBottomBar` marks navigation, download multi-select and theme
+  controls. While messages exist, actual rendered frames measure visible bars
+  in overlay coordinates and place cards above them. Nested bars are not blindly
+  summed; hidden/offstage controls and bars outside the notification column are
+  ignored. No polling timer or forced idle frames; overlay listeners are removed
+  on disposal. Tests for height changes, hidden/nested bars and desktop panes
+  are supplied but not run for this build at the user's request.
 - `NotificationCard` uses the current ColorScheme, max width 500, min height 52,
   light shadows, close/action buttons and bidirectional horizontal dismissal.
-- Entrance: 450ms, opacity 0..1, Y -16..0, scale .94..1. Exit: 300ms fade and
+- Entrance: 450ms, opacity 0..1, Y +16..0, scale .94..1. Exit: 300ms fade and
   height collapse. Cards retain their slot until the exit finishes.
 
 ## Queue behavior
@@ -46,6 +55,9 @@ Native Android download/archive/favorite notifications and channels are unchange
 No dependency, database migration, search/API or signing changes are required.
 
 ## Verification and manual handoff
+
+For the bottom-position adjustment, widget expectations are updated but not run;
+only a local macOS Release is built, with behavioral testing left to the user.
 
 Per the user's request, only the new manager/overlay targeted tests and analyzer
 are run before local release builds, not a full regression or broad manual QA.

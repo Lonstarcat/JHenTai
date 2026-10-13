@@ -8,6 +8,7 @@ import 'package:jhentai/src/pages/setting/style/theme_color/preview_page/detail_
 import 'package:jhentai/src/setting/style_setting.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 import 'package:jhentai/src/utils/toast_util.dart';
+import 'package:jhentai/src/widget/notification_overlay.dart';
 
 class SettingThemeColorPage extends StatefulWidget {
   const SettingThemeColorPage({Key? key}) : super(key: key);
@@ -36,7 +37,8 @@ class _SettingThemeColorPageState extends State<SettingThemeColorPage> {
   }
 
   Widget _buildBottomAppBar() {
-    return BottomAppBar(
+    return NotificationBottomBar(
+        child: BottomAppBar(
       height: 150,
       child: Column(
         children: [
@@ -47,7 +49,8 @@ class _SettingThemeColorPageState extends State<SettingThemeColorPage> {
                 IconButton(
                   icon: Icon(selectedBrightness == Brightness.light ? Icons.sunny : Icons.nightlight),
                   onPressed: () {
-                    setState(() => selectedBrightness = selectedBrightness == Brightness.light ? Brightness.dark : Brightness.light);
+                    setState(() => selectedBrightness =
+                        selectedBrightness == Brightness.light ? Brightness.dark : Brightness.light);
                   },
                 ),
                 IconButton(
@@ -56,14 +59,20 @@ class _SettingThemeColorPageState extends State<SettingThemeColorPage> {
                     height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: selectedBrightness == Brightness.light ? styleSetting.lightThemeColor.value : styleSetting.darkThemeColor.value,
+                      color: selectedBrightness == Brightness.light
+                          ? styleSetting.lightThemeColor.value
+                          : styleSetting.darkThemeColor.value,
                     ),
                   ),
                   onPressed: () async {
                     Color? newColor = await Get.dialog(
                       _ColorSettingDialog(
-                        initialColor: selectedBrightness == Brightness.light ? styleSetting.lightThemeColor.value : styleSetting.darkThemeColor.value,
-                        resetColor: selectedBrightness == Brightness.light ? UIConfig.defaultLightThemeColor : UIConfig.defaultDarkThemeColor,
+                        initialColor: selectedBrightness == Brightness.light
+                            ? styleSetting.lightThemeColor.value
+                            : styleSetting.darkThemeColor.value,
+                        resetColor: selectedBrightness == Brightness.light
+                            ? UIConfig.defaultLightThemeColor
+                            : UIConfig.defaultDarkThemeColor,
                       ),
                     );
 
@@ -73,10 +82,12 @@ class _SettingThemeColorPageState extends State<SettingThemeColorPage> {
 
                     if (selectedBrightness == Brightness.light) {
                       styleSetting.saveLightThemeColor(newColor);
-                      Get.rootController.theme = ThemeConfig.theme(styleSetting.lightThemeColor.value, Brightness.light);
+                      Get.rootController.theme =
+                          ThemeConfig.theme(styleSetting.lightThemeColor.value, Brightness.light);
                     } else {
                       styleSetting.saveDarkThemeColor(newColor);
-                      Get.rootController.darkTheme = ThemeConfig.theme(styleSetting.darkThemeColor.value, Brightness.dark);
+                      Get.rootController.darkTheme =
+                          ThemeConfig.theme(styleSetting.darkThemeColor.value, Brightness.dark);
                     }
 
                     if (selectedBrightness == styleSetting.currentBrightness()) {
@@ -93,7 +104,7 @@ class _SettingThemeColorPageState extends State<SettingThemeColorPage> {
           Text('themeColorSettingHint'.tr),
         ],
       ),
-    );
+    ));
   }
 }
 

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import '../../../../utils/download_order_persistence_util.dart';
+import '../../../../service/log.dart';
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -113,6 +115,17 @@ class ArchiveListDownloadPageLogic extends GetxController
             archiveDownloadService.archiveDownloadInfos[archive.gid]!.group ==
             group)
         .toList();
+  }
+
+  Map<String, List<ArchiveDownloadedData>> buildReorderSnapshot() {
+    final Map<String, List<ArchiveDownloadedData>> byGroup = {};
+    for (final archive in sortedArchives) {
+      final info = archiveDownloadService.archiveDownloadInfos[archive.gid];
+      if (info != null) {
+        (byGroup[info.group] ??= []).add(archive);
+      }
+    }
+    return byGroup;
   }
 
   @override
@@ -236,20 +249,26 @@ class ArchiveListDownloadPageLogic extends GetxController
   ) async {
     if (oldIndex == newIndex ||
         archives.any((archive) =>
-            archiveDownloadService.archiveDownloadInfos[archive.gid]!.group !=
+            archiveDownloadService.archiveDownloadInfos[archive.gid]?.group !=
             group)) {
       return;
     }
 
     final List<ArchiveDownloadedData> reordered =
         reorderDownloadList(archives, oldIndex, newIndex);
-    for (int i = 0; i < reordered.length; i++) {
-      archiveDownloadService.archiveDownloadInfos[reordered[i].gid]!.sortOrder =
-          i;
+    final changed = changedDownloadOrders(reordered, (item) => item.gid,
+      (item) => archiveDownloadService.archiveDownloadInfos[item.gid]!.sortOrder);
+    for (final entry in changed.entries) {
+      archiveDownloadService.archiveDownloadInfos[entry.key]!.sortOrder = entry.value;
     }
     state.sortBy = SortBy.manual;
     updateSafely([bodyId]);
-    await archiveDownloadService.batchUpdateArchiveInDatabase(reordered);
+    try {
+      await archiveDownloadService.updateArchiveOrder(changed);
+    } catch (error, stack) {
+      log.error('Save archive list order failed', error, stack);
+      toast('saveFailed'.tr, level: NotificationLevel.error);
+    }
   }
 
   Future<void> toggleDisplayGroups(String groupName) async {

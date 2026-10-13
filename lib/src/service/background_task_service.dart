@@ -739,6 +739,7 @@ class BackgroundTaskService
       'max': max,
       'progress': current,
       'indeterminate': ongoing && max <= 0,
+      'showProgress': ongoing && primary != null,
       'ongoing': ongoing,
       'paused': paused ?? _globallyPaused,
       'showAction': showAction,

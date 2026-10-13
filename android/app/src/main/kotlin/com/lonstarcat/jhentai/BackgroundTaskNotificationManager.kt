@@ -65,6 +65,9 @@ class BackgroundTaskNotificationManager(private val context: Context) {
         val max = (args["max"] as? Number)?.toInt()?.coerceAtLeast(0) ?: 0
         val indeterminate = args["indeterminate"] as? Boolean ?: (max <= 0)
         val ongoing = args["ongoing"] as? Boolean ?: true
+        // Terminal updates must hide the custom bar; max == 0 can also mean
+        // an active task whose total is not yet known.
+        val showProgress = ongoing && (args["showProgress"] as? Boolean ?: ongoing)
         val paused = args["paused"] as? Boolean ?: false
         val showAction = args["showAction"] as? Boolean ?: true
         val pauseLabel = args["pauseLabel"] as? String ?: "Pause"
@@ -113,6 +116,7 @@ class BackgroundTaskNotificationManager(private val context: Context) {
             max = max,
             progress = progress,
             indeterminate = indeterminate,
+            showProgress = showProgress,
             showAction = showAction,
             actionLabel = actionLabel,
             contentIntent = contentIntent,
@@ -153,6 +157,7 @@ class BackgroundTaskNotificationManager(private val context: Context) {
         max: Int,
         progress: Int,
         indeterminate: Boolean,
+        showProgress: Boolean,
         showAction: Boolean,
         actionLabel: String,
         contentIntent: PendingIntent,
@@ -164,7 +169,10 @@ class BackgroundTaskNotificationManager(private val context: Context) {
         setViewVisibility(R.id.background_task_speed, if (speed.isEmpty()) View.GONE else View.VISIBLE)
         setTextViewText(R.id.background_task_lines, lines.take(4).joinToString("\n"))
         setViewVisibility(R.id.background_task_lines, if (lines.size > 1) View.VISIBLE else View.GONE)
-        setProgressBar(R.id.background_task_progress, max.coerceAtLeast(1), progress.coerceAtMost(max.coerceAtLeast(1)), indeterminate)
+        setViewVisibility(R.id.background_task_progress, if (showProgress) View.VISIBLE else View.GONE)
+        if (showProgress) {
+            setProgressBar(R.id.background_task_progress, max.coerceAtLeast(1), progress.coerceAtMost(max.coerceAtLeast(1)), indeterminate)
+        }
         setTextViewText(R.id.background_task_action, actionLabel)
         setViewVisibility(R.id.background_task_action, if (showAction) View.VISIBLE else View.GONE)
         setViewVisibility(R.id.background_task_action_divider, if (showAction) View.VISIBLE else View.GONE)

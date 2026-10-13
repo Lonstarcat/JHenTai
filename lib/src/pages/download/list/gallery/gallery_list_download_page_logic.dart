@@ -1,4 +1,6 @@
 import 'dart:convert';
+import '../../../../utils/download_order_persistence_util.dart';
+import '../../../../service/log.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -100,6 +102,14 @@ class GalleryListDownloadPageLogic extends GetxController
 
   List<GalleryDownloadInfo> reorderGalleriesInGroup(String group) {
     return sortedGalleries.where((gallery) => gallery.group == group).toList();
+  }
+
+  Map<String, List<GalleryDownloadInfo>> buildReorderSnapshot() {
+    final Map<String, List<GalleryDownloadInfo>> byGroup = {};
+    for (final gallery in sortedGalleries) {
+      (byGroup[gallery.group] ??= []).add(gallery);
+    }
+    return byGroup;
   }
 
   @override
@@ -212,12 +222,20 @@ class GalleryListDownloadPageLogic extends GetxController
 
     final List<GalleryDownloadInfo> reordered =
         reorderDownloadList(galleries, oldIndex, newIndex);
-    for (int i = 0; i < reordered.length; i++) {
-      reordered[i].sortOrder = i;
+    final changed = changedDownloadOrders(reordered, (item) => item.gid, (item) => item.sortOrder);
+    for (final gallery in reordered) {
+      if (changed.containsKey(gallery.gid)) {
+        gallery.sortOrder = changed[gallery.gid]!;
+      }
     }
     state.sortBy = SortBy.manual;
     updateSafely([bodyId]);
-    await downloadService.updateGalleryOrder(reordered);
+    try {
+      await downloadService.updateGalleryOrder(reordered.where((item) => changed.containsKey(item.gid)).toList());
+    } catch (error, stack) {
+      log.error('Save gallery list order failed', error, stack);
+      toast('saveFailed'.tr, level: NotificationLevel.error);
+    }
   }
 
   Future<void> toggleDisplayGroups(String groupName) async {

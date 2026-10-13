@@ -7,35 +7,41 @@ import 'package:jhentai/src/widget/notification_card.dart';
 import 'package:jhentai/src/widget/notification_overlay.dart';
 
 Widget host(NotificationManager manager,
-        {Brightness brightness = Brightness.light, TargetPlatform platform = TargetPlatform.macOS, Widget? body}) =>
+        {Brightness brightness = Brightness.light,
+        TargetPlatform platform = TargetPlatform.macOS,
+        Widget? body,
+        Widget? bottomBar}) =>
     MaterialApp(
-        theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple, brightness: brightness), platform: platform),
+        theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple, brightness: brightness), platform: platform),
         builder: (context, child) => NotificationOverlay(manager: manager, child: child!),
-        home: Scaffold(body: body ?? const SizedBox.expand()));
+        home: Scaffold(body: body ?? const SizedBox.expand(), bottomNavigationBar: bottomBar));
 
 void main() {
   late NotificationManager manager;
   setUp(() => manager = NotificationManager());
   tearDown(() => manager.dispose());
 
-  testWidgets('top-right, exact entrance/exit, fixed bounds and background taps pass through', (tester) async {
+  testWidgets('bottom-right, exact entrance/exit, fixed bounds and background taps pass through', (tester) async {
     await tester.binding.setSurfaceSize(const Size(1200, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     int taps = 0;
-    await tester.pumpWidget(host(manager, body: Center(child: TextButton(onPressed: () => taps++, child: const Text('page button')))));
+    await tester.pumpWidget(
+        host(manager, body: Center(child: TextButton(onPressed: () => taps++, child: const Text('page button')))));
     manager.show('Saved', NotificationLevel.success);
     await tester.pump();
     final card = find.byType(NotificationCard);
     final opacity = find.descendant(of: card, matching: find.byType(Opacity));
     expect(tester.widget<Opacity>(opacity).opacity, 0);
-    final transforms = tester.widgetList<Transform>(find.descendant(of: card, matching: find.byType(Transform))).toList();
-    expect(transforms[0].transform.storage[13], -16);
+    final transforms =
+        tester.widgetList<Transform>(find.descendant(of: card, matching: find.byType(Transform))).toList();
+    expect(transforms[0].transform.storage[13], 16);
     expect(transforms[1].transform.storage[0], closeTo(.94, .001));
     await tester.pump(const Duration(milliseconds: 450));
     expect(tester.widget<Opacity>(opacity).opacity, 1);
     final rect = tester.getRect(card);
     expect(rect.right, closeTo(1188, 1));
-    expect(rect.top, closeTo(12, 1));
+    expect(rect.bottom, closeTo(788, 1));
     expect(rect.width, lessThanOrEqualTo(500));
     expect(rect.height, greaterThanOrEqualTo(52));
     await tester.tap(find.text('page button'));
@@ -46,6 +52,66 @@ void main() {
     expect(tester.widget<Opacity>(opacity).opacity, lessThan(1));
     await tester.pump(const Duration(milliseconds: 150));
     expect(card, findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('cards follow actual bottom bar height and release hidden bars', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const barKey = ValueKey('bottom-bar');
+    Widget bar(double height, {bool hidden = false}) => Offstage(
+        offstage: hidden,
+        child: NotificationBottomBar(
+            child: SizedBox(key: barKey, height: height, child: const ColoredBox(color: Colors.blue))));
+    await tester.pumpWidget(host(manager, bottomBar: bar(80)));
+    manager.show('above bottom controls', NotificationLevel.warning);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pump();
+    final card = find.byType(NotificationCard);
+    expect(tester.getRect(card).bottom, lessThan(tester.getRect(find.byKey(barKey)).top));
+    await tester.pumpWidget(host(manager, bottomBar: bar(150)));
+    await tester.pump();
+    expect(tester.getRect(card).bottom, lessThan(tester.getRect(find.byKey(barKey)).top));
+    await tester.pumpWidget(host(manager, bottomBar: bar(150, hidden: true)));
+    await tester.pump();
+    expect(tester.getRect(card).bottom, closeTo(788, 1));
+    await tester.pumpWidget(const SizedBox());
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('nested download controls reserve combined screen space', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const innerKey = ValueKey('download-actions');
+    await tester.pumpWidget(host(manager,
+        body: const Scaffold(
+            body: SizedBox.expand(),
+            bottomNavigationBar: NotificationBottomBar(child: SizedBox(key: innerKey, height: 56))),
+        bottomBar: const NotificationBottomBar(child: SizedBox(height: 80))));
+    manager.show('download selection result', NotificationLevel.warning);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pump();
+    expect(tester.getRect(find.byType(NotificationCard)).bottom, lessThan(tester.getRect(find.byKey(innerKey)).top));
+    await tester.pumpWidget(const SizedBox());
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('left-pane bottom controls do not lift right-pane notifications', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(host(manager,
+        body: const Row(children: [
+          Expanded(child: Scaffold(bottomNavigationBar: NotificationBottomBar(child: SizedBox(height: 80)))),
+          Expanded(child: SizedBox.expand()),
+        ])));
+    manager.show('right pane message', NotificationLevel.warning);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pump();
+    expect(tester.getRect(find.byType(NotificationCard)).bottom, closeTo(788, 1));
     await tester.pumpWidget(const SizedBox());
     expect(tester.takeException(), isNull);
   });
@@ -99,12 +165,12 @@ void main() {
     manager.show('private title', NotificationLevel.info);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 450));
-    nav.currentState!.push(
-        MaterialPageRoute<void>(settings: const RouteSettings(name: '/details'), builder: (_) => const Scaffold(body: Text('details'))));
+    nav.currentState!.push(MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/details'), builder: (_) => const Scaffold(body: Text('details'))));
     await tester.pumpAndSettle();
     expect(find.text('private title'), findsOneWidget);
-    nav.currentState!
-        .push(MaterialPageRoute<void>(settings: const RouteSettings(name: '/lock'), builder: (_) => const Scaffold(body: Text('locked'))));
+    nav.currentState!.push(MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/lock'), builder: (_) => const Scaffold(body: Text('locked'))));
     await tester.pumpAndSettle();
     expect(find.text('private title'), findsNothing);
     expect(manager.suppressed.value, isTrue);

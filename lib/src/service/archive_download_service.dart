@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../utils/download_order_persistence_util.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -388,6 +389,27 @@ class ArchiveDownloadService extends GetxController with GridBasePageServiceMixi
       await _updateArchiveInfoInDisk(archive.gid);
     }
   }
+
+  final DownloadOrderWriter _orderWriter = DownloadOrderWriter();
+
+  /// Order-only updates cannot overwrite a concurrent download status/group.
+  Future<void> updateArchiveOrder(Map<int, int> values) => _orderWriter.save(values, (orders) async {
+    await appDb.transaction(() async {
+      for (final entry in orders.entries) {
+        if (!archiveDownloadInfos.containsKey(entry.key)) {
+          continue;
+        }
+        await ArchiveDao.updateArchive(ArchiveDownloadedCompanion(
+          gid: Value(entry.key), sortOrder: Value(entry.value)));
+      }
+    });
+    _sortArchives();
+    for (final gid in orders.keys) {
+      if (archiveDownloadInfos.containsKey(gid)) {
+        await _updateArchiveInfoInDisk(gid);
+      }
+    }
+  });
 
   /// Use meta in each archive folder to restore download tasks, then sync to database.
   /// this is used after re-install app, or share download folder to another user.

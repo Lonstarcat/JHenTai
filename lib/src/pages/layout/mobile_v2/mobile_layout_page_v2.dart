@@ -19,6 +19,7 @@ import 'package:jhentai/src/widget/will_pop_interceptor.dart';
 import '../../../network/eh_request.dart';
 import '../../../setting/preference_setting.dart';
 import '../../../widget/eh_alert_dialog.dart';
+import '../../../widget/notification_overlay.dart';
 import 'notification/tap_tab_bat_button_notification.dart';
 
 class MobileLayoutPageV2 extends StatelessWidget {
@@ -65,12 +66,14 @@ class MobileLayoutPageV2 extends StatelessWidget {
                     scrollCacheExtent: ScrollCacheExtent.pixels(1000),
                     itemBuilder: (context, index) => ListTile(
                       dense: true,
-                      title: Text(state.icons[index].name.name.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      title: Text(state.icons[index].name.name.tr,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       selected: state.selectedDrawerTabIndex == index,
                       selectedTileColor: UIConfig.mobileDrawerSelectedTileColor(context),
                       leading: state.icons[index].unselectedIcon,
                       shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadiusDirectional.only(topEnd: Radius.circular(32), bottomEnd: Radius.circular(32)),
+                        borderRadius:
+                            BorderRadiusDirectional.only(topEnd: Radius.circular(32), bottomEnd: Radius.circular(32)),
                       ),
                       onTap: () => logic.handleTapTabBarButton(index),
                     ).marginOnly(right: 8, top: 2),
@@ -93,7 +96,8 @@ class MobileLayoutPageV2 extends StatelessWidget {
       id: logic.bottomNavigationBarId,
       builder: (_) => Theme(
         data: Theme.of(context).copyWith(splashColor: Colors.transparent),
-        child: NavigationBar(
+        child: NotificationBottomBar(
+            child: NavigationBar(
           selectedIndex: state.selectedNavigationIndex,
           onDestinationSelected: logic.handleTapNavigationBarButton,
           destinations: [
@@ -101,7 +105,7 @@ class MobileLayoutPageV2 extends StatelessWidget {
             NavigationDestination(icon: const Icon(Icons.download), label: 'download'.tr),
             NavigationDestination(icon: const Icon(Icons.settings), label: 'setting'.tr),
           ],
-        ),
+        )),
       ),
     );
   }
@@ -161,9 +165,11 @@ class EHUserAvatar extends StatelessWidget {
             child: CircleAvatar(
               radius: 32,
               backgroundColor: UIConfig.loginAvatarBackGroundColor(context),
-              foregroundImage: userSetting.avatarImgUrl.value != null ? ExtendedNetworkImageProvider(userSetting.avatarImgUrl.value!, cache: true) : null,
-              child:
-                  Icon(userSetting.hasLoggedIn() ? Icons.face_retouching_natural : Icons.face, color: UIConfig.loginAvatarForeGroundColor(context), size: 32),
+              foregroundImage: userSetting.avatarImgUrl.value != null
+                  ? ExtendedNetworkImageProvider(userSetting.avatarImgUrl.value!, cache: true)
+                  : null,
+              child: Icon(userSetting.hasLoggedIn() ? Icons.face_retouching_natural : Icons.face,
+                  color: UIConfig.loginAvatarForeGroundColor(context), size: 32),
             ),
           ),
           title: Text(userSetting.nickName.value ?? userSetting.userName.value ?? 'tap2Login'.tr),
@@ -172,7 +178,7 @@ class EHUserAvatar extends StatelessWidget {
               toRoute(Routes.login);
               return;
             }
-            bool? result = await Get.dialog( EHDialog(title: '${'logout'.tr} ?'));
+            bool? result = await Get.dialog(EHDialog(title: '${'logout'.tr} ?'));
             if (result == true) {
               await ehRequest.requestLogout();
             }

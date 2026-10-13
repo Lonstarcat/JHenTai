@@ -102,16 +102,12 @@ class DownloadReorderHint extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline,
-              size: 20, color: colorScheme.onPrimaryContainer),
+          Icon(Icons.info_outline, size: 20, color: colorScheme.onPrimaryContainer),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               'sortGroupsHint'.tr,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: colorScheme.onPrimaryContainer),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onPrimaryContainer),
             ),
           ),
         ],
@@ -129,6 +125,7 @@ class DownloadReorderGroupTile extends StatelessWidget {
     required this.isOpen,
     required this.onTap,
     this.onHandlePointerDown,
+    this.onHandlePointerEvent,
   });
 
   final int index;
@@ -137,6 +134,7 @@ class DownloadReorderGroupTile extends StatelessWidget {
   final bool isOpen;
   final VoidCallback onTap;
   final VoidCallback? onHandlePointerDown;
+  final void Function(PointerDownEvent event)? onHandlePointerEvent;
 
   @override
   Widget build(BuildContext context) {
@@ -168,24 +166,19 @@ class DownloadReorderGroupTile extends StatelessWidget {
                     groupName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'downloadItemCount'.trParams({'count': itemCount.toString()}),
                   maxLines: 1,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
-                _GroupReorderHandle(
+                _OptionalGroupReorderHandle(
                   index: index,
                   onPointerDown: onHandlePointerDown ?? () {},
+                  onPointerEvent: onHandlePointerEvent,
                   child: MouseRegion(
                     cursor: SystemMouseCursors.grab,
                     child: Tooltip(
@@ -193,8 +186,7 @@ class DownloadReorderGroupTile extends StatelessWidget {
                       child: SizedBox(
                         width: 48,
                         height: UIConfig.groupListHeight,
-                        child: Icon(Icons.drag_indicator,
-                            color: colorScheme.onSurfaceVariant),
+                        child: Icon(Icons.drag_indicator, color: colorScheme.onSurfaceVariant),
                       ),
                     ),
                   ),
@@ -206,6 +198,19 @@ class DownloadReorderGroupTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _OptionalGroupReorderHandle extends StatelessWidget {
+  const _OptionalGroupReorderHandle(
+      {required this.index, required this.onPointerDown, required this.child, this.onPointerEvent});
+  final int index;
+  final VoidCallback onPointerDown;
+  final void Function(PointerDownEvent)? onPointerEvent;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => onPointerEvent == null
+      ? _GroupReorderHandle(index: index, onPointerDown: onPointerDown, child: child)
+      : Listener(onPointerDown: onPointerEvent, child: child);
 }
 
 class DownloadReorderGroupSection<T> extends StatelessWidget {
@@ -272,24 +277,20 @@ class DownloadReorderItemList<T> extends StatefulWidget {
   final Widget Function(BuildContext context, T item) itemBuilder;
 
   @override
-  State<DownloadReorderItemList<T>> createState() =>
-      _DownloadReorderItemListState<T>();
+  State<DownloadReorderItemList<T>> createState() => _DownloadReorderItemListState<T>();
 }
 
-class _DownloadReorderItemListState<T>
-    extends State<DownloadReorderItemList<T>> {
+class _DownloadReorderItemListState<T> extends State<DownloadReorderItemList<T>> {
   final GlobalKey _boundaryKey = GlobalKey();
   bool _pointerOutsideGroup = false;
 
   void _handlePointerMove(PointerMoveEvent event) {
     final BuildContext? boundaryContext = _boundaryKey.currentContext;
-    final RenderBox? renderBox =
-        boundaryContext?.findRenderObject() as RenderBox?;
+    final RenderBox? renderBox = boundaryContext?.findRenderObject() as RenderBox?;
     if (renderBox == null || !renderBox.hasSize) {
       return;
     }
-    final Rect groupBounds =
-        renderBox.localToGlobal(Offset.zero) & renderBox.size;
+    final Rect groupBounds = renderBox.localToGlobal(Offset.zero) & renderBox.size;
     _pointerOutsideGroup = !groupBounds.contains(event.position);
   }
 
@@ -356,8 +357,7 @@ class DownloadReorderBackTile extends StatelessWidget {
             child: Row(
               children: [
                 const SizedBox(width: 14),
-                Icon(Icons.arrow_back,
-                    size: 20, color: colorScheme.onSecondaryContainer),
+                Icon(Icons.arrow_back, size: 20, color: colorScheme.onSecondaryContainer),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -368,8 +368,7 @@ class DownloadReorderBackTile extends StatelessWidget {
                         ),
                   ),
                 ),
-                Icon(Icons.folder_outlined,
-                    size: 20, color: colorScheme.onSecondaryContainer),
+                Icon(Icons.folder_outlined, size: 20, color: colorScheme.onSecondaryContainer),
                 const SizedBox(width: 14),
               ],
             ),
@@ -385,10 +384,12 @@ class DownloadReorderItem extends StatelessWidget {
     super.key,
     required this.index,
     required this.child,
+    this.enabled = true,
   });
 
   final int index;
   final Widget child;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -397,16 +398,17 @@ class DownloadReorderItem extends StatelessWidget {
       child: child,
     );
 
-    if (defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS) {
+    if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) {
       return ReorderableDelayedDragStartListener(
         index: index,
+        enabled: enabled,
         child: draggableChild,
       );
     }
 
     return ReorderableDragStartListener(
       index: index,
+      enabled: enabled,
       child: draggableChild,
     );
   }

@@ -27,7 +27,7 @@ import '../../mixin/basic/multi_select/multi_select_download_page_state_mixin.da
 import '../../mixin/gallery/gallery_download_page_logic_mixin.dart';
 import '../../mixin/gallery/gallery_download_page_state_mixin.dart';
 import '../../widget/download_page_more_menu.dart';
-import '../widget/download_reorder_widgets.dart';
+import '../widget/download_reorder_view.dart';
 import 'gallery_list_download_page_logic.dart';
 import 'gallery_list_download_page_state.dart';
 
@@ -161,34 +161,18 @@ class GalleryListDownloadPage extends StatelessWidget
 
   Widget _buildReorderableList(BuildContext context) {
     final List<String> groups = List.of(logic.downloadService.allGroups);
-    return ReorderableListView.builder(
-      scrollController: state.scrollController,
-      buildDefaultDragHandles: false,
-      itemCount: groups.length,
-      onReorderStart: (_) => logic.handleGroupReorderStart(),
-      onReorderItem: (oldIndex, newIndex) =>
-          logic.saveGroupOrderAfterReordered(groups, oldIndex, newIndex),
-      itemBuilder: (context, index) {
-        final String group = groups[index];
-        final List<GalleryDownloadInfo> galleries =
-            logic.reorderGalleriesInGroup(group);
-        return DownloadReorderGroupSection<GalleryDownloadInfo>(
-          key: ValueKey('group_$group'),
-          groupIndex: index,
-          groupName: group,
-          isOpen: state.displayGroups.contains(group),
-          items: galleries,
-          itemKey: (gallery) => ValueKey('drag_${gallery.gid}'),
-          onToggle: () => logic.toggleDisplayGroups(group),
-          onGroupHandlePointerDown: logic.handleGroupReorderStart,
-          onReorderItems: (oldIndex, newIndex) =>
-              logic.saveGalleryOrderAfterReordered(
-                  group, galleries, oldIndex, newIndex),
-          itemBuilder: (context, gallery) => AbsorbPointer(
-            child: _buildCard(context, gallery).marginAll(5),
-          ),
-        );
-      },
+    return DownloadReorderView<GalleryDownloadInfo>(
+      controller: state.scrollController,
+      groups: groups,
+      items: logic.buildReorderSnapshot(),
+      expandedGroups: Set.of(state.displayGroups),
+      itemKey: (gallery) => ValueKey('drag_${gallery.gid}'),
+      onToggleGroup: logic.toggleDisplayGroups,
+      onReorderGroups: logic.saveGroupOrderAfterReordered,
+      onReorderItems: logic.saveGalleryOrderAfterReordered,
+      itemBuilder: (context, gallery) => AbsorbPointer(
+        child: _buildCard(context, gallery).marginAll(5),
+      ),
     );
   }
 
