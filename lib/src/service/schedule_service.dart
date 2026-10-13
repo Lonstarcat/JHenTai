@@ -26,6 +26,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:retry/retry.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
+import '../consts/app_identity.dart';
 import '../database/database.dart';
 import '../enum/config_enum.dart';
 import '../model/archive_bot_response/archive_bot_response.dart';
@@ -66,7 +67,7 @@ class ScheduleService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBea
       return;
     }
 
-    String url = 'https://api.github.com/repos/jiangtian616/JHenTai/releases';
+    String url = AppIdentity.releasesApi;
     String latestVersion;
 
     try {

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:volume_button_override/volume_button_override.dart';
 
+import '../consts/app_identity.dart';
 import 'jh_service.dart';
 import 'log.dart';
 
@@ -32,7 +33,7 @@ class VolumeService extends GetxService with WidgetsBindingObserver, JHLifeCircl
     WidgetsBinding.instance.addObserver(this);
 
     if (GetPlatform.isAndroid) {
-      _methodChannel = const MethodChannel('top.jtmonster.jhentai.volume.event.intercept');
+      _methodChannel = const MethodChannel(AppIdentity.volumeChannel);
     }
   }
 

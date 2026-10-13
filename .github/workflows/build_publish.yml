@@ -183,8 +183,8 @@ jobs:
           chmod 0755 DEBIAN/postinst
           chmod 0755 DEBIAN/postrm
 
-          cp ../../../linux/assets/top.jtmonster.jhentai.desktop usr/share/applications
-          cp ../../../assets/icon/JHenTai_512.png usr/share/icons/hicolor/512x512/apps/top.jtmonster.jhentai.png
+          cp ../../../linux/assets/com.lonstarcat.jhentai.desktop usr/share/applications
+          cp ../../../assets/icon/JHenTai_512.png usr/share/icons/hicolor/512x512/apps/com.lonstarcat.jhentai.png
 
           sed -i "/^Version: /s/Version: .*/Version: ${{ steps.get_version.outputs.version }}/" DEBIAN/control
           if [ "${{ steps.get_version.outputs.arch }}" = "arm64" ]; then
@@ -210,8 +210,8 @@ jobs:
           cp -r x64/release/bundle/* AppDir
           mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps/
           mkdir -p AppDir/usr/share/applications
-          cp ../../linux/assets/top.jtmonster.jhentai.desktop AppDir/usr/share/applications
-          cp ../../assets/icon/JHenTai_512.png AppDir/usr/share/icons/hicolor/512x512/apps/top.jtmonster.jhentai.png
+          cp ../../linux/assets/com.lonstarcat.jhentai.desktop AppDir/usr/share/applications
+          cp ../../assets/icon/JHenTai_512.png AppDir/usr/share/icons/hicolor/512x512/apps/com.lonstarcat.jhentai.png
           
           wget -O appimage-builder https://github.com/AppImageCrafters/appimage-builder/releases/download/v1.1.0/appimage-builder-1.1.0-x86_64.AppImage
           chmod +x appimage-builder

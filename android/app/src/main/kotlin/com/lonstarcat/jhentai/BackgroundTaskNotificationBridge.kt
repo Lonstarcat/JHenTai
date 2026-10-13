@@ -1,4 +1,4 @@
-package top.jtmonster.jhentai
+package com.lonstarcat.jhentai
 
 import android.os.Handler
 import android.os.Looper

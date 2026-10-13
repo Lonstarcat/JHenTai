@@ -20,6 +20,7 @@ import 'package:jhentai/src/widget/loading_state_indicator.dart';
 import 'package:path/path.dart';
 
 import '../../../config/ui_config.dart';
+import '../../../consts/app_identity.dart';
 import '../../../enum/config_type_enum.dart';
 import '../../../routes/routes.dart';
 import '../../../service/isolate_service.dart';
@@ -194,7 +195,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
         try {
           await const AndroidIntent(
             action: 'android.settings.APP_OPEN_BY_DEFAULT_SETTINGS',
-            data: 'package:top.jtmonster.jhentai',
+            data: 'package:${AppIdentity.packageName}',
           ).launch();
         } on Exception catch (e) {
           log.error(e);

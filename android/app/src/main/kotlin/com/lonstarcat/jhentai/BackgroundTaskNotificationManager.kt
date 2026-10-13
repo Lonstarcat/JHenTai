@@ -1,4 +1,4 @@
-package top.jtmonster.jhentai
+package com.lonstarcat.jhentai
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -18,7 +18,7 @@ class BackgroundTaskNotificationManager(private val context: Context) {
     companion object {
         const val CHANNEL_ID = "jhentai_background_tasks"
         const val NOTIFICATION_ID = 328
-        const val ACTION_TOGGLE_PAUSE = "top.jtmonster.jhentai.action.TOGGLE_BACKGROUND_TASKS"
+        const val ACTION_TOGGLE_PAUSE = "com.lonstarcat.jhentai.action.TOGGLE_BACKGROUND_TASKS"
         const val EXTRA_OPEN_TASK = "jhentai_open_background_task"
         const val EXTRA_TASK_TYPE = "jhentai_task_type"
     }

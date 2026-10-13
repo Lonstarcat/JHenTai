@@ -4,6 +4,7 @@ import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
+import '../../../consts/app_identity.dart';
 class SettingAboutPage extends StatefulWidget {
   const SettingAboutPage({Key? key}) : super(key: key);
 
@@ -18,7 +19,7 @@ class _SettingAboutPageState extends State<SettingAboutPage> {
   String buildNumber = '';
   String author = '酱天小禽兽(JTMonster)';
   String telegram = 'https://t.me/+PindoE9yvIpmOWI9';
-  String gitRepo = 'https://github.com/jiangtian616/JHenTai';
+  String gitRepo = AppIdentity.repository;
   String helpPage = 'https://github.com/jiangtian616/JHenTai/wiki';
 
   @override

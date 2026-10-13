@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../utils/app_data_directory_util.dart';
 import 'jh_service.dart';
 
 PathService pathService = PathService();
@@ -29,10 +29,18 @@ class PathService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
   Future<void> doInitBean() async {
     await Future.wait([
       getTemporaryDirectory().then((value) => tempDir = value),
-      getApplicationDocumentsDirectory().then((value) => appDocDir = value).catchError((error) => null),
-      getApplicationSupportDirectory().then((value) => appSupportDir = value).catchError((error) => null),
-      getExternalStorageDirectory().then((value) => externalStorageDir = value).catchError((error) => null),
-      getDownloadsDirectory().then((value) => systemDownloadDir = value).catchError((error) => null),
+      getApplicationDocumentsDirectory()
+          .then((value) => appDocDir = value)
+          .catchError((error) => null),
+      getApplicationSupportDirectory()
+          .then((value) => appSupportDir = value)
+          .catchError((error) => null),
+      getExternalStorageDirectory()
+          .then((value) => externalStorageDir = value)
+          .catchError((error) => null),
+      getDownloadsDirectory()
+          .then((value) => systemDownloadDir = value)
+          .catchError((error) => null),
     ]);
   }
 
@@ -40,15 +48,12 @@ class PathService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
   Future<void> doAfterBeanReady() async {}
 
   Directory getVisibleDir() {
-    if (Platform.isAndroid && externalStorageDir != null) {
-      return externalStorageDir!;
-    }
-    if (GetPlatform.isWindows && appSupportDir != null) {
-      return appSupportDir!;
-    }
-    if (GetPlatform.isLinux && appSupportDir != null) {
-      return appSupportDir!;
-    }
-    return appDocDir ?? appSupportDir ?? systemDownloadDir!;
+    return selectAppDataDirectory(
+      platform: Platform.operatingSystem,
+      appDocumentsDirectory: appDocDir,
+      appSupportDirectory: appSupportDir,
+      externalStorageDirectory: externalStorageDir,
+      downloadsDirectory: systemDownloadDir,
+    );
   }
 }

@@ -8,7 +8,7 @@
 PRODUCT_NAME = jhentai
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = top.jtmonster.jhentai
+PRODUCT_BUNDLE_IDENTIFIER = com.lonstarcat.jhentai
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2022 top.jtmonster. All rights reserved.

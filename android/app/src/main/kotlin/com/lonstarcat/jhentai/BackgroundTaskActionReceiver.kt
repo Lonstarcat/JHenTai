@@ -1,4 +1,4 @@
-package top.jtmonster.jhentai
+package com.lonstarcat.jhentai
 
 import android.content.BroadcastReceiver
 import android.content.Context

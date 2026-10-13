@@ -1,4 +1,4 @@
-package top.jtmonster.jhentai
+package com.lonstarcat.jhentai
 
 import android.Manifest
 import android.content.Intent
@@ -30,7 +30,7 @@ class MainActivity : FlutterFragmentActivity() {
 
         volumeMethodChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "top.jtmonster.jhentai.volume.event.intercept"
+            "com.lonstarcat.jhentai.volume.event.intercept"
         )
 
         volumeMethodChannel.setMethodCallHandler { call, result ->
@@ -48,7 +48,7 @@ class MainActivity : FlutterFragmentActivity() {
         backgroundTaskNotificationManager = BackgroundTaskNotificationManager(applicationContext)
         backgroundTaskMethodChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "top.jtmonster.jhentai.background_tasks"
+            "com.lonstarcat.jhentai.background_tasks"
         )
         BackgroundTaskNotificationBridge.attach(backgroundTaskMethodChannel)
         backgroundTaskMethodChannel.setMethodCallHandler { call, result ->

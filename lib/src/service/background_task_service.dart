@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import '../consts/app_identity.dart';
 import '../database/database.dart';
 import '../model/background_task_info.dart';
 import '../network/eh_request.dart';
@@ -28,7 +29,7 @@ class BackgroundTaskService
     with JHLifeCircleBeanErrorCatch
     implements JHLifeCircleBean {
   static const MethodChannel _channel =
-      MethodChannel('top.jtmonster.jhentai.background_tasks');
+      MethodChannel(AppIdentity.backgroundTasksChannel);
   static const Duration _refreshInterval = Duration(seconds: 1);
   static const Duration _favoriteInterval = Duration(seconds: 3);
 
