@@ -21,6 +21,9 @@ import '../../../../utils/route_util.dart';
 import '../../../../utils/toast_util.dart';
 import '../../../../utils/convert_util.dart';
 import '../../../../utils/batch_favorite_util.dart';
+import '../../../../utils/batch_update_util.dart';
+import '../../../../model/download_batch_update.dart';
+import '../../../../model/download_multi_select_toolbar.dart';
 import '../../../../widget/eh_alert_dialog.dart';
 import '../../../../widget/eh_context_menu.dart';
 import '../../../../widget/eh_download_dialog.dart';
@@ -398,6 +401,14 @@ mixin GalleryDownloadPageLogicMixin on GetxController
     if (await chooseAndStartBatchFavorite(items)) {
       exitSelectMode();
     }
+  }
+
+  Future<void> handleBatchUpdate() async {
+    final items = multiSelectDownloadPageState.selectedGids.map((gid) => downloadService.galleryDownloadInfos[gid])
+      .whereType<GalleryDownloadInfo>().map((item) => BatchUpdateSource(
+        kind: DownloadToolbarKind.gallery, gid: item.gid, title: item.title, galleryUrl: item.galleryUrl,
+        group: item.group, original: item.downloadOriginalImage)).toList();
+    await batchUpdateFlow.open(items, DownloadToolbarKind.gallery);
   }
 
   Future<void> handleMultiChangeGroup() async {

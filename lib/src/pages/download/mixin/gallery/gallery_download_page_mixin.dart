@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:jhentai/src/pages/download/mixin/basic/multi_select/multi_select_download_page_mixin.dart';
 import 'package:jhentai/src/pages/download/mixin/gallery/gallery_download_page_state_mixin.dart';
 import 'package:jhentai/src/service/gallery_download/gallery_download_service.dart';
+import 'package:jhentai/src/model/download_multi_select_toolbar.dart';
 
 import '../../../../mixin/scroll_to_top_logic_mixin.dart';
 import '../../../../mixin/scroll_to_top_page_mixin.dart';
@@ -57,34 +58,22 @@ mixin GalleryDownloadPageMixin on StatelessWidget
   }
 
   @override
-  List<Widget> buildBottomAppBarButtons() {
-    return [
-      IconButton(
-          icon: const Icon(Icons.done_all),
-          onPressed: galleryDownloadPageLogic.selectAllItem),
-      IconButton(
-          icon: const Icon(Icons.play_arrow),
-          onPressed: galleryDownloadPageLogic.handleMultiResumeTasks),
-      IconButton(
-          icon: const Icon(Icons.pause),
-          onPressed: galleryDownloadPageLogic.handleMultiPauseTasks),
-      IconButton(
-        tooltip: 'batchFavorite'.tr,
-        icon: const Icon(Icons.favorite_outline),
-        onPressed: multiSelectDownloadPageState.selectedGids.isEmpty
-            ? null
-            : galleryDownloadPageLogic.handleMultiFavoriteItems,
-      ),
-      IconButton(
-          icon: const Icon(Icons.bookmark),
-          onPressed: galleryDownloadPageLogic.handleMultiChangeGroup),
-      IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: galleryDownloadPageLogic.handleMultiDelete),
-      const Expanded(child: SizedBox()),
-      IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: multiSelectDownloadPageLogic.exitSelectMode),
-    ];
-  }
+  DownloadToolbarKind get toolbarKind => DownloadToolbarKind.gallery;
+
+  @override
+  Map<DownloadToolbarAction, VoidCallback> buildToolbarCallbacks() => {
+        DownloadToolbarAction.selectAll: galleryDownloadPageLogic.selectAllItem,
+        DownloadToolbarAction.resume:
+            galleryDownloadPageLogic.handleMultiResumeTasks,
+        DownloadToolbarAction.pause:
+            galleryDownloadPageLogic.handleMultiPauseTasks,
+        DownloadToolbarAction.batchUpdate:
+            galleryDownloadPageLogic.handleBatchUpdate,
+        DownloadToolbarAction.favorite:
+            galleryDownloadPageLogic.handleMultiFavoriteItems,
+        DownloadToolbarAction.changeGroup:
+            galleryDownloadPageLogic.handleMultiChangeGroup,
+        DownloadToolbarAction.delete:
+            galleryDownloadPageLogic.handleMultiDelete,
+      };
 }

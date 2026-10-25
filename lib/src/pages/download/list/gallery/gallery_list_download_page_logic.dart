@@ -309,8 +309,9 @@ class GalleryListDownloadPageLogic extends GetxController
 
     multiSelectDownloadPageState.selectedGids
         .addAll(galleries.map((gallery) => gallery.gid));
-    updateSafely(multiSelectDownloadPageState.selectedGids
-        .map((gid) => '$itemCardId::$gid')
-        .toList());
+    updateSafely([
+      bottomAppbarId,
+      ...multiSelectDownloadPageState.selectedGids.map((gid) => '$itemCardId::$gid'),
+    ]);
   }
 }

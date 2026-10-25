@@ -1,6 +1,5 @@
 import 'package:flutter/rendering.dart';
 import 'package:collection/collection.dart';
-import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
@@ -17,6 +16,7 @@ import 'package:jhentai/src/utils/route_util.dart';
 import 'package:jhentai/src/widget/will_pop_interceptor.dart';
 
 import '../../../network/eh_request.dart';
+import '../../../service/forum_profile_service.dart';
 import '../../../setting/preference_setting.dart';
 import '../../../widget/eh_alert_dialog.dart';
 import '../../../widget/notification_overlay.dart';
@@ -163,16 +163,22 @@ class EHUserAvatar extends StatelessWidget {
         () => ListTile(
           leading: GestureDetector(
             child: CircleAvatar(
+              key: ValueKey('avatar:${userSetting.ipbMemberId.value}:${userSetting.profileGeneration}'),
               radius: 32,
               backgroundColor: UIConfig.loginAvatarBackGroundColor(context),
-              foregroundImage: userSetting.avatarImgUrl.value != null
-                  ? ExtendedNetworkImageProvider(userSetting.avatarImgUrl.value!, cache: true)
+              foregroundImage: userSetting.hasLoggedIn() && userSetting.avatarOwnerMemberId == userSetting.ipbMemberId.value && userSetting.avatarBytes.value != null
+                  ? MemoryImage(userSetting.avatarBytes.value!)
                   : null,
+              onForegroundImageError: userSetting.avatarBytes.value == null ? null : (_, __) {},
               child: Icon(userSetting.hasLoggedIn() ? Icons.face_retouching_natural : Icons.face,
                   color: UIConfig.loginAvatarForeGroundColor(context), size: 32),
             ),
           ),
           title: Text(userSetting.nickName.value ?? userSetting.userName.value ?? 'tap2Login'.tr),
+          trailing: forumProfileService.needsVerification
+              ? IconButton(icon: const Icon(Icons.verified_user_outlined), tooltip: 'forumAvatarVerification'.tr,
+                  onPressed: forumProfileService.verifyCurrentSession)
+              : null,
           onTap: () async {
             if (!userSetting.hasLoggedIn()) {
               toRoute(Routes.login);

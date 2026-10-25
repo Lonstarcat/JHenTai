@@ -8,13 +8,17 @@ import 'package:get/get.dart';
 import '../consts/app_identity.dart';
 import '../database/database.dart';
 import '../model/background_task_info.dart';
+import '../model/download_batch_update.dart';
 import '../network/eh_request.dart';
 import '../setting/favorite_setting.dart';
 import '../setting/user_setting.dart';
 import '../utils/byte_util.dart';
 import '../utils/background_task_control_util.dart';
+import '../utils/background_notification_selector.dart';
+import '../utils/notification_progress_util.dart';
 import '../utils/toast_util.dart';
 import 'archive_download_service.dart';
+import 'batch_update_background_bridge.dart';
 import 'download_task_navigation_service.dart';
 import 'gallery_download/gallery_download_service.dart';
 import 'jh_service.dart';
@@ -40,6 +44,8 @@ class BackgroundTaskService
   bool _controlActionInFlight = false;
   bool _globallyPaused = false;
   bool _snapshotInitialized = false;
+  final BatchUpdateNotificationControl _batchControl = BatchUpdateNotificationControl();
+  BatchUpdateBackgroundSnapshot? get _batchSnapshot => batchUpdateBackgroundSnapshot.value;
 
   final Set<int> _galleryPausedByNotification = <int>{};
   final Set<int> _archivePausedByNotification = <int>{};
@@ -49,6 +55,7 @@ class BackgroundTaskService
       <int, ArchiveStatus>{};
   BackgroundTaskType? _preferredTaskType;
   int? _preferredTaskGid;
+  final BackgroundNotificationSelector _notificationSelector = BackgroundNotificationSelector();
 
   List<BackgroundFavoriteItem> _favoriteItems = const [];
   int _favoriteIndex = 0;
@@ -277,6 +284,10 @@ class BackgroundTaskService
 
   Future<void> _pauseRunningTasksFromNotification() async {
     _pruneNotificationControlledTasks();
+    _batchControl.pause(_batchSnapshot);
+    // Publish the batch gate before awaiting download pauses, so checking and
+    // pending registration cannot race ahead during notification control.
+    _globallyPaused = _globallyPaused || _batchControl.isPaused(_batchSnapshot);
     _galleryPausedByNotification.addAll(
       galleryDownloadService.galleryDownloadInfos.values
           .where((item) =>
@@ -314,7 +325,7 @@ class BackgroundTaskService
     );
     _globallyPaused = _galleryPausedByNotification.isNotEmpty ||
         _archivePausedByNotification.isNotEmpty ||
-        pauseFavorite;
+        pauseFavorite || _batchControl.isPaused(_batchSnapshot);
   }
 
   Future<void> _resumeTasksPausedByNotification() async {
@@ -322,6 +333,7 @@ class BackgroundTaskService
     final List<int> archiveGids = _archivePausedByNotification.toList();
     _galleryPausedByNotification.clear();
     _archivePausedByNotification.clear();
+    _batchControl.resume();
     _globallyPaused = false;
     resumeFavoriteTask();
 
@@ -343,6 +355,7 @@ class BackgroundTaskService
   }
 
   void _pruneNotificationControlledTasks() {
+    _batchControl.prune(_batchSnapshot);
     _galleryPausedByNotification.removeWhere((gid) {
       final DownloadStatus? status = galleryDownloadService
           .galleryDownloadInfos[gid]?.downloadProgress.downloadStatus;
@@ -359,7 +372,8 @@ class BackgroundTaskService
     });
     _globallyPaused = _galleryPausedByNotification.isNotEmpty ||
         _archivePausedByNotification.isNotEmpty ||
-        _favoriteStatus == BackgroundTaskStatus.paused;
+        _favoriteStatus == BackgroundTaskStatus.paused ||
+        _batchControl.isPaused(_batchSnapshot);
   }
 
   bool _hasRunningTasks() {
@@ -373,7 +387,9 @@ class BackgroundTaskService
     final bool favoriteRunning =
         _favoriteStatus == BackgroundTaskStatus.running ||
             _favoriteStatus == BackgroundTaskStatus.waiting;
-    return galleryRunning || archiveRunning || favoriteRunning;
+    final batchRunning = _batchSnapshot?.executing == true &&
+        !_batchControl.isPaused(_batchSnapshot);
+    return galleryRunning || archiveRunning || favoriteRunning || batchRunning;
   }
 
   bool _shouldShowResumeAction() => _globallyPaused && !_hasRunningTasks();
@@ -387,30 +403,6 @@ class BackgroundTaskService
               _galleryPausedByNotification.contains(item.gid) &&
               item.downloadProgress.downloadStatus == DownloadStatus.paused);
     }).toList();
-    items.sort((a, b) {
-      if (_preferredTaskType == BackgroundTaskType.download) {
-        if (a.gid == _preferredTaskGid) {
-          return -1;
-        }
-        if (b.gid == _preferredTaskGid) {
-          return 1;
-        }
-      }
-      final int running = (b.downloadProgress.downloadStatus ==
-                  DownloadStatus.downloading
-              ? 1
-              : 0)
-          .compareTo(
-              a.downloadProgress.downloadStatus == DownloadStatus.downloading
-                  ? 1
-                  : 0);
-      if (running != 0) {
-        return running;
-      }
-      final int speed = b.speedComputer.speedBytesPerSecond
-          .compareTo(a.speedComputer.speedBytesPerSecond);
-      return speed != 0 ? speed : a.priority.compareTo(b.priority);
-    });
     return items;
   }
 
@@ -428,32 +420,6 @@ class BackgroundTaskService
               _archivePausedByNotification.contains(archive.gid) &&
               status == ArchiveStatus.paused);
     }).toList();
-    items.sort((a, b) {
-      if (_preferredTaskType == BackgroundTaskType.archiveDownload) {
-        if (a.gid == _preferredTaskGid) {
-          return -1;
-        }
-        if (b.gid == _preferredTaskGid) {
-          return 1;
-        }
-      }
-      final ArchiveStatus aStatus =
-          archiveDownloadService.archiveDownloadInfos[a.gid]!.archiveStatus;
-      final ArchiveStatus bStatus =
-          archiveDownloadService.archiveDownloadInfos[b.gid]!.archiveStatus;
-      final int running = (bStatus == ArchiveStatus.paused ? 0 : 1)
-          .compareTo(aStatus == ArchiveStatus.paused ? 0 : 1);
-      if (running != 0) {
-        return running;
-      }
-      final double aSpeed = archiveDownloadService
-              .archiveDownloadInfos[a.gid]?.speedComputer.speedBytesPerSecond ??
-          0;
-      final double bSpeed = archiveDownloadService
-              .archiveDownloadInfos[b.gid]?.speedComputer.speedBytesPerSecond ??
-          0;
-      return bSpeed.compareTo(aSpeed);
-    });
     return items;
   }
 
@@ -593,11 +559,22 @@ class BackgroundTaskService
       lines.add(_favoriteCompletionPending!);
       _favoriteCompletionPending = null;
     }
+    final batch = _batchSnapshot;
+    if (_batchControl.consumeCompletion(batch)) {
+      lines.add('${'batchUpdate'.tr} · ${batch!.phaseKey.tr} · '
+          '${'batchUpdateSubmitted'.tr} ${batch.submitted} · '
+          '${'batchUpdateFailed'.tr} ${batch.failed} · '
+          '${'batchUpdateStopped'.tr} ${batch.stopped}');
+    }
     return lines;
   }
 
-  Future<void> _refreshNotification({bool force = false}) async {
-    if (!Platform.isAndroid || _refreshing) {
+  @visibleForTesting
+  Future<void> refreshNotificationForTesting() =>
+      _refreshNotification(allowNonAndroid: true);
+
+  Future<void> _refreshNotification({bool force = false, bool allowNonAndroid = false}) async {
+    if ((!Platform.isAndroid && !allowNonAndroid) || _refreshing) {
       return;
     }
     _refreshing = true;
@@ -607,14 +584,58 @@ class BackgroundTaskService
       final List<GalleryDownloadInfo> galleryItems = _activeGalleryDownloads();
       final List<ArchiveDownloadedData> archiveItems =
           _activeArchiveDownloads();
-      final BackgroundTaskInfo? download =
-          galleryItems.isEmpty ? null : _galleryTaskInfo(galleryItems.first);
-      final BackgroundTaskInfo? archive =
-          archiveItems.isEmpty ? null : _archiveTaskInfo(archiveItems.first);
       final BackgroundTaskInfo? favorite = _favoriteTaskInfo();
+      final batchSnapshot = _batchSnapshot;
+      final batch = batchSnapshot?.taskInfo(
+          paused: _batchControl.isPaused(batchSnapshot),
+          fallbackTitle: 'batchUpdate'.tr);
+      final candidates = <NotificationTaskCandidate>[
+        for (final item in galleryItems)
+          NotificationTaskCandidate(
+            task: _galleryTaskInfo(item),
+            stage: item.downloadProgress.downloadStatus == DownloadStatus.paused
+                ? NotificationTaskStage.paused
+                : NotificationTaskStage.working,
+            canTransfer: true,
+            transferredBytes: item.speedComputer.downloadedBytes,
+            priority: item.priority,
+          ),
+        for (final item in archiveItems)
+          NotificationTaskCandidate(
+            task: _archiveTaskInfo(item),
+            stage: switch (archiveDownloadService.archiveDownloadInfos[item.gid]!.archiveStatus) {
+              ArchiveStatus.paused => NotificationTaskStage.paused,
+              ArchiveStatus.waitingIsolate => NotificationTaskStage.waiting,
+              ArchiveStatus.downloading => NotificationTaskStage.transferring,
+              _ => NotificationTaskStage.working,
+            },
+            canTransfer: archiveDownloadService.archiveDownloadInfos[item.gid]!.archiveStatus == ArchiveStatus.downloading,
+            transferredBytes: archiveDownloadService.archiveDownloadInfos[item.gid]!.speedComputer.downloadedBytes,
+          ),
+        for (final task in [favorite, batch])
+          if (task != null)
+            NotificationTaskCandidate(
+              task: task,
+              stage: switch (task.status) {
+                BackgroundTaskStatus.paused => NotificationTaskStage.paused,
+                BackgroundTaskStatus.waiting => NotificationTaskStage.waiting,
+                _ => NotificationTaskStage.working,
+              },
+            ),
+      ];
+      final selected = _notificationSelector.select(candidates,
+          preferredId: switch (_preferredTaskType) {
+            BackgroundTaskType.download => 'download:$_preferredTaskGid',
+            BackgroundTaskType.archiveDownload => 'archive:$_preferredTaskGid',
+            BackgroundTaskType.favorite => favorite?.id,
+            BackgroundTaskType.batchUpdate => batch?.id,
+            _ => null,
+          });
+      final download = selected.where((item) => item.type == BackgroundTaskType.download).firstOrNull;
+      final archive = selected.where((item) => item.type == BackgroundTaskType.archiveDownload).firstOrNull;
       final int taskCount = galleryItems.length +
           archiveItems.length +
-          (favorite == null ? 0 : 1);
+          (favorite == null ? 0 : 1) + (batch == null ? 0 : 1);
 
       if (taskCount == 0) {
         if (terminalLines.isNotEmpty) {
@@ -655,26 +676,26 @@ class BackgroundTaskService
           '${'batchFavorite'.tr} ($_favoriteTagName): ${favorite.title} · ${favorite.current}/${favorite.total} · ${'success'.tr} ${favorite.successCount} · ${'failed'.tr} ${favorite.failCount}',
         );
       }
+      if (batch != null) {
+        lines.add('${'batchUpdate'.tr}: ${batch.title} · ${_batchDetail(batchSnapshot!)}');
+      }
 
-      final BackgroundTaskInfo primary = switch (_preferredTaskType) {
-        BackgroundTaskType.archiveDownload when archive != null => archive,
-        BackgroundTaskType.favorite when favorite != null => favorite,
-        BackgroundTaskType.download when download != null => download,
-        _ => download ?? archive ?? favorite!,
-      };
+      final BackgroundTaskInfo primary = selected.first;
       final bool showResumeAction = _shouldShowResumeAction();
       final String content = taskCount == 1
           ? lines.first
-          : '${'runningBackgroundTasks'.tr}: $taskCount · ${'download'.tr} ${galleryItems.length} · ${'archive'.tr} ${archiveItems.length} · ${'favorite'.tr} ${favorite == null ? 0 : 1}';
+          : '${'runningBackgroundTasks'.tr}: $taskCount · ${'download'.tr} ${galleryItems.length} · ${'archive'.tr} ${archiveItems.length} · ${'favorite'.tr} ${favorite == null ? 0 : 1} · ${'batchUpdate'.tr} ${batch == null ? 0 : 1}';
       await _showNativeNotification(
         title: showResumeAction
             ? 'backgroundTasksPaused'.tr
+            : taskCount == 1 && batchSnapshot?.phase == BatchUpdatePhase.review
+                ? 'batchUpdateWaitingConfirmation'.tr
             : 'backgroundTasksRunning'.tr,
         content: content,
         lines: lines,
         primary: primary,
         ongoing: true,
-        showAction: true,
+        showAction: _hasRunningTasks() || showResumeAction,
         paused: showResumeAction,
       );
     } catch (e, stack) {
@@ -692,7 +713,8 @@ class BackgroundTaskService
     return '${byte2String(bytesPerSecond)}/s';
   }
 
-  String _primaryDetail(BackgroundTaskInfo? primary, String fallback) {
+  String _primaryDetail(BackgroundTaskInfo? primary, String fallback,
+      BatchUpdateBackgroundSnapshot? batchSnapshot) {
     if (primary == null) {
       return fallback;
     }
@@ -703,11 +725,18 @@ class BackgroundTaskService
         '${'archive'.tr} · ${byte2String(primary.current.toDouble())} / ${primary.total > 0 ? byte2String(primary.total.toDouble()) : '?'}',
       BackgroundTaskType.favorite =>
         '${'batchFavorite'.tr} · ${primary.current} / ${primary.total} · ${'success'.tr} ${primary.successCount} · ${'failed'.tr} ${primary.failCount}',
+      BackgroundTaskType.batchUpdate => '${'batchUpdate'.tr} · ${_batchDetail(batchSnapshot!)}',
     };
   }
 
+  String _batchDetail(BatchUpdateBackgroundSnapshot snapshot) =>
+      snapshot.phase == BatchUpdatePhase.review
+          ? '${snapshot.phaseKey.tr} · ${'batchUpdateAvailable'.tr} ${snapshot.available}'
+          : '${snapshot.phaseKey.tr} ${snapshot.current} / ${snapshot.total}';
+
   String _primarySpeed(BackgroundTaskInfo? primary) {
-    if (primary == null || primary.type == BackgroundTaskType.favorite) {
+    if (primary == null || primary.type == BackgroundTaskType.favorite ||
+        primary.type == BackgroundTaskType.batchUpdate) {
       return '';
     }
     final String speed = _formatSpeed(primary.speedBytesPerSecond);
@@ -723,23 +752,27 @@ class BackgroundTaskService
     required bool showAction,
     bool? paused,
   }) async {
+    final batchSnapshot = _batchSnapshot;
     if (!_permissionRequested) {
       _permissionRequested = true;
       await _channel.invokeMethod<bool>('requestPermission');
     }
-    final int max = primary?.total ?? 0;
-    final int current = primary?.current ?? 0;
+    final scaled = notificationProgress(
+      current: primary?.current ?? 0,
+      total: primary?.total ?? 0,
+    );
     final bool? shown = await _channel.invokeMethod<bool>('show', {
       'title': title,
       'content': content,
       'lines': lines,
       'primaryTitle': primary?.title ?? title,
-      'primaryDetail': _primaryDetail(primary, content),
+      'primaryDetail': _primaryDetail(primary, content, batchSnapshot),
       'speedText': _primarySpeed(primary),
-      'max': max,
-      'progress': current,
-      'indeterminate': ongoing && max <= 0,
-      'showProgress': ongoing && primary != null,
+      'max': scaled.max,
+      'progress': scaled.progress,
+      'indeterminate': ongoing && scaled.indeterminate,
+      'showProgress': ongoing && primary != null &&
+          (primary.type != BackgroundTaskType.batchUpdate || batchSnapshot?.executing == true),
       'ongoing': ongoing,
       'paused': paused ?? _globallyPaused,
       'showAction': showAction,
@@ -748,6 +781,7 @@ class BackgroundTaskService
       'taskType': switch (primary?.type) {
         BackgroundTaskType.archiveDownload => 'archive',
         BackgroundTaskType.favorite => 'favorite',
+        BackgroundTaskType.batchUpdate => batchSnapshot!.taskType,
         _ => 'download',
       },
     });

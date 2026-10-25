@@ -1,9 +1,15 @@
 import 'package:flutter/foundation.dart';
+import '../model/download_multi_select_toolbar.dart';
 
 class DownloadTaskNavigationTarget {
   final String taskType;
 
   const DownloadTaskNavigationTarget({required this.taskType});
+  DownloadToolbarKind? get batchUpdateKind => switch (taskType) {
+        'batchGalleryUpdate' => DownloadToolbarKind.gallery,
+        'batchArchiveUpdate' => DownloadToolbarKind.archive,
+        _ => null,
+      };
 }
 
 /// A lightweight bridge used when an Android notification opens an existing

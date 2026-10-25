@@ -214,7 +214,7 @@ class ScheduleService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBea
       snack(
         'dawnOfaNewDay'.tr,
         eventInfo.dawnInfo!,
-        level: NotificationLevel.info,
+        level: NotificationLevel.success,
         isShort: false,
       );
     }

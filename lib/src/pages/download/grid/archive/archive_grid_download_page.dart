@@ -2,6 +2,9 @@ import 'dart:math';
 
 import 'package:blur/blur.dart';
 import 'package:flutter/material.dart';
+import 'package:jhentai/src/utils/gallery_badge_util.dart';
+import 'package:jhentai/src/model/download_multi_select_toolbar.dart';
+import 'package:jhentai/src/utils/batch_update_util.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/database/database.dart';
@@ -58,12 +61,14 @@ class ArchiveGridDownloadPage extends StatelessWidget
         global: false,
         init: logic,
         id: logic.editButtonId,
-        builder: (_) => DownloadReorderModeButton(
+        builder: (_) => DownloadPageMoreMenu(
           inReorderMode: state.inEditMode,
-          onPressed: logic.toggleEditMode,
-        ),
-      ),
-      DownloadPageMoreMenu(
+          onToggleReorder: logic.toggleEditMode,
+        hasBatchUpdateTask: () =>
+            batchUpdateFlow.hasSessionFor(DownloadToolbarKind.archive),
+        batchUpdateTaskChanges: batchUpdateFlow.service,
+        onBatchUpdateTask: () =>
+            batchUpdateFlow.openExisting(DownloadToolbarKind.archive),
         switchViewIcon: Icons.view_list,
         switchViewLabel: 'switch2ListMode'.tr,
         onSwitchView: () => DownloadPageBodyTypeChangeNotification(
@@ -79,6 +84,7 @@ class ArchiveGridDownloadPage extends StatelessWidget
           logic.exitEditMode();
           toRoute(Routes.downloadSearch);
         },
+        ),
       ),
     ];
   }
@@ -191,6 +197,8 @@ class ArchiveGridDownloadPage extends StatelessWidget
               .archiveDownloadInfos[archive.gid]?.parseSource ==
           ArchiveParseSource.bot.code,
       isOriginal: archive.isOriginal,
+      hasAds: GalleryBadgeUtil.hasAdsInString(archive.tags),
+      hasAi: GalleryBadgeUtil.hasAiInString(archive.tags),
       gid: archive.gid,
       superResolutionType: SuperResolutionType.archive,
       onTapWidget: inEditMode ? null : () => logic.handleTapItem(archive),

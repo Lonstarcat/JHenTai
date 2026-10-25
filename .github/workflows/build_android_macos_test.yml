@@ -1,4 +1,4 @@
-name: Build Windows Release
+name: Build All Platforms Release
 
 on:
   push:
@@ -17,6 +17,139 @@ env:
   FLUTTER_VERSION: 3.44.8
 
 jobs:
+  android:
+    name: Android v7a / v8a / x64 Release
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Read version
+        id: version
+        run: python3 tool/ci/release.py version
+      - run: flutter pub get
+      - name: Restore signing (never print credentials)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: python3 tool/ci/release.py signing
+      - name: Build release APKs
+        run: flutter build apk --release --no-pub -t lib/src/main.dart --target-platform android-arm,android-arm64,android-x64 --split-per-abi
+      - name: Verify signature and package identity
+        run: |
+          SDK_TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          for apk in build/app/outputs/flutter-apk/*-release.apk; do
+            "$SDK_TOOLS/apksigner" verify "$apk"
+            "$SDK_TOOLS/aapt" dump badging "$apk" | grep -q "package: name='com.lonstarcat.jhentai'"
+          done
+          python3 tool/ci/release.py android
+      - name: Remove signing material
+        if: always()
+        run: python3 tool/ci/release.py clean-signing
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JHenTai-${{ steps.version.outputs.value }}-Android
+          path: build/ci-release/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  apple:
+    name: ${{ matrix.target }} Release
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [macOS, iOS]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Read version
+        id: version
+        run: python3 tool/ci/release.py version
+      - run: flutter pub get
+      - name: Prepare deployment settings
+        env:
+          APPLE_TARGET: ${{ matrix.target }}
+        run: python3 tool/ci/release.py apple-config
+      - name: Build universal macOS app (12+)
+        if: matrix.target == 'macOS'
+        run: flutter build macos --release --no-pub -t lib/src/main.dart
+      - name: Sign, verify and package macOS DMG
+        if: matrix.target == 'macOS'
+        run: python3 tool/ci/release.py macos
+      - name: Build unsigned iOS app (15+)
+        if: matrix.target == 'iOS'
+        run: flutter build ios --release --no-pub --no-codesign -t lib/src/main.dart
+      - name: Package unsigned IPA
+        if: matrix.target == 'iOS'
+        run: python3 tool/ci/release.py ios
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JHenTai-${{ steps.version.outputs.value }}-${{ matrix.target }}
+          path: |
+            build/ci-release/*.dmg
+            build/ci-release/*.ipa
+          if-no-files-found: error
+          retention-days: 7
+
+  linux:
+    name: Linux ${{ matrix.arch }} Release
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: ubuntu-22.04
+          - arch: arm64
+            os: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libblkid-dev libsecret-1-dev libayatana-appindicator3-dev libwebkit2gtk-4.1-dev
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Read version
+        id: version
+        run: python3 tool/ci/release.py version
+      - run: flutter pub get
+      - run: flutter build linux --release --no-pub -t lib/src/main.dart
+      - name: Package DEB
+        env:
+          LINUX_ARCH: ${{ matrix.arch }}
+        run: python3 tool/ci/release.py linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JHenTai-${{ steps.version.outputs.value }}-Linux-${{ matrix.arch }}
+          path: build/ci-release/*.deb
+          if-no-files-found: error
+          retention-days: 7
+
   windows:
     name: Windows x64 Release
     runs-on: windows-2022
@@ -24,6 +157,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: subosito/flutter-action@v2
         with:

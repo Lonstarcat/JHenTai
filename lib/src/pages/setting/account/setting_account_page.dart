@@ -6,6 +6,7 @@ import 'package:jhentai/src/setting/user_setting.dart';
 import '../../../routes/routes.dart';
 import '../../../utils/route_util.dart';
 import '../../../network/eh_request.dart';
+import '../../../service/forum_profile_service.dart';
 import '../../../widget/eh_alert_dialog.dart';
 
 class SettingAccountPage extends StatelessWidget {
@@ -23,6 +24,12 @@ class SettingAccountPage extends StatelessWidget {
             if (userSetting.hasLoggedIn()) ...[
               _buildLogout(context).marginOnly(bottom: 12),
               _buildCookiePage(),
+              if (forumProfileService.needsVerification)
+                ListTile(
+                  leading: const Icon(Icons.verified_user_outlined),
+                  title: Text('forumAvatarVerification'.tr),
+                  onTap: forumProfileService.verifyCurrentSession,
+                ),
             ],
           ],
         ).withListTileTheme(context),

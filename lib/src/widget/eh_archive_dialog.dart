@@ -21,6 +21,7 @@ import '../network/archive_bot_request.dart';
 import '../network/eh_request.dart';
 import '../utils/eh_spider_parser.dart';
 import '../service/log.dart';
+import '../service/archive_quote_service.dart';
 import '../utils/snack_util.dart';
 
 class EHArchiveDialog extends StatefulWidget {
@@ -237,13 +238,11 @@ class _EHArchiveDialogState extends State<EHArchiveDialog> {
       );
 
       /// same formula as the archive bot server: base cost by filesize, tripled for galleries posted more than a year ago
-      int now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-      int multiplier = now - metadata.posted > 31536000 ? 3 : 1;
-      int cost = (metadata.filesize / 1e6 * 20).toInt() + 1;
+      int cost = computeArchiveBotCost(metadata.filesize, metadata.posted, DateTime.now());
 
       setStateSafely(() {
         botCostState = LoadingState.success;
-        botCost = cost * multiplier;
+        botCost = cost;
       });
     } on DioException catch (e) {
       log.error('getBotCostFailed'.tr, e.errorMsg, e.stackTrace);
@@ -321,58 +320,17 @@ class _EHArchiveDialogState extends State<EHArchiveDialog> {
 
   bool _canDownload({required bool isOriginal}) {
     if (useBot) {
-      if (isOriginal) {
-        return true;
-      }
-      return archive.resampleSize != null;
+      return parseArchiveSizeBytes(isOriginal ? archive.originalSize : archive.resampleSize ?? '') != null;
     }
     return _canAffordDownload(isOriginal: isOriginal);
   }
 
   bool _canAffordDownload({required bool isOriginal}) {
-    if (isOriginal) {
-      if (archive.originalCost.contains('Free')) {
-        return true;
-      }
-
-      /// ex site
-      if (archive.downloadOriginalHint.contains('Insufficient Funds')) {
-        return false;
-      }
-
-      /// we can use credits to afford GP cost
-      return true;
-    } else {
-      if (archive.resampleCost == null || archive.resampleCost == 'N/A') {
-        return false;
-      }
-
-      /// ex site
-      if (archive.downloadResampleHint.contains('Insufficient Funds')) {
-        return false;
-      }
-      if (archive.resampleCost!.contains('Free')) {
-        return true;
-      }
-
-      return true;
-    }
+    return canAffordOfficialArchive(archive, isOriginal);
   }
 
   int _computeSizeInBytes({required bool isOriginal}) {
-    String sizeString = isOriginal ? archive.originalSize : archive.resampleSize!;
-
-    List<String> parts = sizeString.split(' ');
-    double number = double.parse(parts[0]);
-    String unit = parts[1];
-
-    if (unit.startsWith('K')) {
-      return (number * 1024).toInt();
-    }
-    if (unit.startsWith('M')) {
-      return (number * 1024 * 1024).toInt();
-    }
-    return (number * 1024 * 1024 * 1024).toInt();
+    return parseArchiveSizeBytes(isOriginal ? archive.originalSize : archive.resampleSize!)!;
   }
 }
 

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:animate_do/animate_do.dart';
 import 'package:blur/blur.dart';
 import 'package:flutter/material.dart';
+import 'package:jhentai/src/utils/gallery_badge_util.dart';
+import 'package:jhentai/src/widget/eh_gallery_ads_badge.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
@@ -17,7 +19,6 @@ import '../consts/locale_consts.dart';
 import '../utils/date_util.dart';
 import 'eh_image.dart';
 import 'eh_tag.dart';
-import 'eh_gallery_category_tag.dart';
 import '../service/read_progress_service.dart';
 
 typedef CardCallback = FutureOr<void> Function(Gallery gallery);
@@ -201,7 +202,12 @@ class EHGalleryListCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            EHGalleryCategoryTag(category: gallery.category),
+            EHGalleryCategoryWithAds(
+              category: gallery.category,
+              hasAds: GalleryBadgeUtil.hasAdsInMap(gallery.tags),
+              hasAi: GalleryBadgeUtil.hasAiInMap(gallery.tags),
+              useThemePrimary: true,
+            ),
             const Expanded(child: SizedBox()),
             if (gallery.pageCount != null) _buildReadingProgress(context).marginOnly(right: 8),
             if (downloaded) _buildDownloadIcon(context).marginOnly(right: 4),

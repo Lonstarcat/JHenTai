@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_state_manager/src/simple/get_state.dart';
+import 'package:get/get.dart';
+import 'package:jhentai/src/model/download_multi_select_toolbar.dart';
+import 'package:jhentai/src/setting/style_setting.dart';
+import 'package:jhentai/src/widget/download_multi_select_toolbar.dart';
 import 'package:jhentai/src/widget/fade_slide_widget.dart';
 import 'package:jhentai/src/widget/notification_overlay.dart';
 
@@ -21,13 +24,19 @@ mixin MultiSelectDownloadPageMixin on StatelessWidget {
         show: multiSelectDownloadPageState.inMultiSelectMode,
         axis: Axis.vertical,
         child: BottomAppBar(
-          child: Row(
-            children: buildBottomAppBarButtons(),
-          ),
+          child: Obx(() => DownloadMultiSelectToolbar(
+                config: styleSetting.toolbarConfig(toolbarKind).value,
+                hasSelection:
+                    multiSelectDownloadPageState.selectedGids.isNotEmpty,
+                callbacks: buildToolbarCallbacks(),
+                onClose: multiSelectDownloadPageLogic.exitSelectMode,
+              )),
         ),
       )),
     );
   }
 
-  List<Widget> buildBottomAppBarButtons();
+  DownloadToolbarKind get toolbarKind;
+
+  Map<DownloadToolbarAction, VoidCallback> buildToolbarCallbacks();
 }

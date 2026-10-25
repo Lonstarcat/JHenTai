@@ -15,6 +15,9 @@ import '../config/ui_config.dart';
 import '../consts/locale_consts.dart';
 import '../model/gallery.dart';
 import '../model/gallery_tag.dart';
+import '../utils/gallery_badge_util.dart';
+import 'eh_gallery_ads_badge.dart';
+import 'eh_cover_hero.dart';
 import 'eh_gallery_category_tag.dart';
 import 'eh_gallery_list_card_.dart';
 import 'eh_image.dart';
@@ -77,23 +80,13 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
   }
 
   Widget _buildSmallCard(BuildContext context) {
-    return Stack(
-      children: [
-        _buildCover(context),
-        Positioned(bottom: 4, right: 4, child: _buildLanguageChip()),
-      ],
-    );
+    return _buildCover(context, withLanguage: true);
   }
 
   Widget _buildMediumCard(BuildContext context) {
     return Column(
       children: [
-        Stack(
-          children: [
-            _buildCover(context),
-            Positioned(bottom: 4, right: 4, child: _buildLanguageChip()),
-          ],
-        ),
+        _buildCover(context, withLanguage: true),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -140,7 +133,17 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCover(BuildContext context) {
+  Widget _buildCoverBadges() => Positioned(
+    bottom: 4,
+    left: 4,
+    child: EHGalleryCoverBadges(
+      hasAds: GalleryBadgeUtil.hasAdsInMap(gallery.tags),
+      hasAi: GalleryBadgeUtil.hasAiInMap(gallery.tags),
+      useThemePrimary: true,
+    ),
+  );
+
+  Widget _buildCover(BuildContext context, {bool withLanguage = false}) {
     return LayoutBuilder(
       builder: (context, constraints) {
         FittedSizes fittedSizes = applyBoxFit(
@@ -155,18 +158,28 @@ class EHGalleryWaterFlowCard extends StatelessWidget {
           ),
         );
 
-        return EHImage(
+        final cover = EHImage(
           galleryImage: gallery.cover,
           containerHeight: fittedSizes.destination.height,
           containerWidth: fittedSizes.destination.width,
           containerColor: UIConfig.waterFallFlowCardBackGroundColor(context),
-          heroTag: gallery.blockedByLocalRules ? null : gallery.cover,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(listMode == ListMode.waterfallFlowBig ? 12 : 8),
             topRight: Radius.circular(listMode == ListMode.waterfallFlowBig ? 12 : 8),
             bottomLeft: Radius.circular(listMode == ListMode.waterfallFlowBig || listMode == ListMode.waterfallFlowMedium ? 0 : 8),
             bottomRight: Radius.circular(listMode == ListMode.waterfallFlowBig || listMode == ListMode.waterfallFlowMedium ? 0 : 8),
           ),
+        );
+        return EHCoverHero(
+          tag: styleSetting.isInMobileLayout && !gallery.blockedByLocalRules
+              ? gallery.cover
+              : null,
+          cover: cover,
+          overlays: [
+            _buildCoverBadges(),
+            if (withLanguage)
+              Positioned(bottom: 4, right: 4, child: _buildLanguageChip()),
+          ],
         );
       },
     );

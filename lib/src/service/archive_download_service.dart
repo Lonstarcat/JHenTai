@@ -1,9 +1,11 @@
 import 'dart:async';
+import '../model/download_batch_update.dart';
 import '../utils/download_order_persistence_util.dart';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -42,6 +44,7 @@ import '../model/gallery_detail.dart';
 import '../model/gallery_image.dart';
 import '../pages/download/grid/mixin/grid_download_page_service_mixin.dart';
 import '../utils/archive_util.dart';
+import '../utils/archive_page_poller.dart';
 import '../utils/file_util.dart';
 import '../utils/snack_util.dart';
 import 'gallery_download/download_path_resolver.dart';
@@ -52,6 +55,34 @@ import 'log.dart';
 ArchiveDownloadService archiveDownloadService = ArchiveDownloadService();
 
 class ArchiveDownloadService extends GetxController with GridBasePageServiceMixin, JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
+  ArchiveDownloadService({this.archivePageRequester, this.archiveStatusWriter, this.archivePageErrorReporter, this.archivePagePoller = const ArchivePagePoller()});
+
+  /// Small injectable boundaries keep real status transitions testable without
+  /// touching account credentials, a user's database, or paid endpoints.
+  @visibleForTesting
+  final Future<ArchiveUnlockResult> Function(ArchiveDownloadedData, CancelToken)? archivePageRequester;
+  @visibleForTesting
+  final Future<void> Function(int)? archiveStatusWriter;
+  @visibleForTesting
+  final void Function(String)? archivePageErrorReporter;
+  final ArchivePagePoller archivePagePoller;
+
+  @visibleForTesting
+  Future<void> resolveArchivePageForTesting(ArchiveDownloadedData archive) => _resolveArchivePages(archive);
+
+  Future<void> _resolveArchivePages(ArchiveDownloadedData archive) async {
+    final info = archiveDownloadInfos[archive.gid];
+    if (info == null) {
+      return;
+    }
+    final token = info.cancelToken;
+    await _unlock(archive);
+    if (!identical(archiveDownloadInfos[archive.gid], info) || !identical(info.cancelToken, token) || token.isCancelled) {
+      return;
+    }
+    await _getDownloadPageUrl(archive);
+  }
+
   static const String archiveStatusId = 'archiveStatusId';
   static const String archiveSpeedComputerId = 'archiveSpeedComputerId';
   static const String activeDownloadTaskChangedId = 'activeDownloadTaskChangedId';
@@ -119,6 +150,7 @@ class ArchiveDownloadService extends GetxController with GridBasePageServiceMixi
 
   @override
   void onClose() {
+    _batchServiceClosing = true;
     super.dispose();
 
     isolateCountListener.dispose();
@@ -130,31 +162,107 @@ class ArchiveDownloadService extends GetxController with GridBasePageServiceMixi
     return archiveDownloadInfos.containsKey(gid);
   }
 
+  final Set<int> _batchRegisteringGids = {};
+  final Set<int> _batchBoundedGids = {};
+  bool _batchServiceClosing = false;
+
+  @visibleForTesting
+  bool isBatchUpdateManaged(int gid) => _batchBoundedGids.contains(gid);
+
+  /// Registration only: no unlock/resolve (which may charge money). The batch
+  /// manager starts the pipeline only after explicit quote confirmation.
+  Future<UpdateSubmissionResult> registerArchiveUpdate(ArchiveDownloadedData archive, {required bool Function() shouldProceed}) async {
+    if (containArchive(archive.gid) || !_batchRegisteringGids.add(archive.gid)) {
+      return const UpdateSubmissionResult(UpdateSubmissionStatus.alreadyPresent);
+    }
+    try {
+      if (!shouldProceed()) {
+        return const UpdateSubmissionResult(UpdateSubmissionStatus.failed, 'batchUpdateCancelled');
+      }
+      await _ensureDownloadDirExists();
+      if (!shouldProceed()) {
+        return const UpdateSubmissionResult(UpdateSubmissionStatus.failed, 'batchUpdateCancelled');
+      }
+      if (containArchive(archive.gid)) {
+        return const UpdateSubmissionResult(UpdateSubmissionStatus.alreadyPresent);
+      }
+      final initialized = await _initArchiveInfo(archive);
+      if (initialized == null || !containArchive(archive.gid)) {
+        return const UpdateSubmissionResult(UpdateSubmissionStatus.failed, 'batchUpdateRegistrationFailed');
+      }
+      _generateComicInfoInDisk(initialized);
+      if (!shouldProceed()) {
+        await pauseDownloadArchive(initialized.gid);
+      }
+      return const UpdateSubmissionResult(UpdateSubmissionStatus.submitted);
+    } catch (error, stack) {
+      log.error('Register archive update failed: ${archive.gid}', error, stack);
+      return const UpdateSubmissionResult(UpdateSubmissionStatus.failed, 'batchUpdateRegistrationFailed');
+    } finally {
+      _batchRegisteringGids.remove(archive.gid);
+    }
+  }
+
+  Future<void> runRegisteredArchiveUpdate(int gid) async {
+    final archive = archives.firstWhereOrNull((item) => item.gid == gid);
+    final info = archiveDownloadInfos[gid];
+    if (archive == null || info == null || info.archiveStatus != ArchiveStatus.unlocking) {
+      throw StateError('batchUpdateArchiveStopped');
+    }
+    _batchBoundedGids.add(gid);
+    final ownedToken = info.cancelToken;
+    try {
+      await downloadArchive(archive, resume: true);
+      // The first pipeline may return at waitingIsolate. Own the logical task
+      // including scheduler wakeups, not just that first Future.
+      while (!_batchServiceClosing) {
+        final current = archiveDownloadInfos[gid];
+        if (current?.archiveStatus == ArchiveStatus.completed) {
+          return;
+        }
+        if (current == null || current.archiveStatus.code <= ArchiveStatus.paused.code ||
+            !identical(current.cancelToken, ownedToken)) {
+          throw StateError('batchUpdateArchiveStopped');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+      throw StateError('batchUpdateArchiveStopped');
+    } finally {
+      _batchBoundedGids.remove(gid);
+    }
+  }
+
   Future<void> downloadArchive(ArchiveDownloadedData archive, {bool resume = false, bool reParse = false}) async {
     await _ensureDownloadDirExists();
 
     if (!resume) {
-      if (archiveDownloadInfos.containsKey(archive.gid)) {
+      if (archiveDownloadInfos.containsKey(archive.gid) || !_batchRegisteringGids.add(archive.gid)) {
         return;
       }
+      final registeringGid = archive.gid;
+      try {
+        ArchiveDownloadedData? archiveWithSanitizedTitle = await _initArchiveInfo(archive);
+        if (archiveWithSanitizedTitle == null) {
+          return;
+        }
+        archive = archiveWithSanitizedTitle;
 
-      ArchiveDownloadedData? archiveWithSanitizedTitle = await _initArchiveInfo(archive);
-      if (archiveWithSanitizedTitle == null) {
-        return;
+        _generateComicInfoInDisk(archive);
+      } finally {
+        _batchRegisteringGids.remove(registeringGid);
       }
-      archive = archiveWithSanitizedTitle;
-
-      _generateComicInfoInDisk(archive);
     }
 
     log.info('Begin to handle archive: ${archive.title}, original: ${archive.isOriginal}, parseSource: ${archive.parseSource}');
 
     /// step 1: request to unlock archive: if we have unlocked before or unlock has completed,
     /// we can get [downloadPageUrl] immediately, otherwise we must wait for a second
-    await _unlock(archive);
-
-    /// step 2: circularly check if unlock has completed so that we can get [downloadPageUrl]
-    await _getDownloadPageUrl(archive);
+    final info = archiveDownloadInfos[archive.gid]!;
+    final ownedToken = info.cancelToken;
+    await _resolveArchivePages(archive);
+    if (!identical(archiveDownloadInfos[archive.gid], info) || !identical(info.cancelToken, ownedToken) || ownedToken.isCancelled) {
+      return;
+    }
 
     /// step 3: parse download url
     await _getDownloadUrl(archive, reParse: reParse);
@@ -797,7 +905,21 @@ class ArchiveDownloadService extends GetxController with GridBasePageServiceMixi
       if (currentActiveIsolateCount + archiveDownloadInfo.downloadTask!.isolateCount <= _maxIsolateCountsTotal) {
         log.download('Archive ${a.title} gain isolates.');
         await _updateArchiveStatus(a.gid, ArchiveStatus.downloading);
-        downloadArchive(a, resume: true);
+        if (_batchBoundedGids.contains(a.gid)) {
+          final ownedToken = archiveDownloadInfo.cancelToken;
+          unawaited(downloadArchive(a, resume: true).then<void>((_) {}, onError: (Object error, StackTrace stack) async {
+            log.error('Batch archive wake pipeline failed: ${a.gid}', error, stack);
+            final current = archiveDownloadInfos[a.gid];
+            if (current != null && identical(current.cancelToken, ownedToken) && current.archiveStatus != ArchiveStatus.completed) {
+              await pauseDownloadArchive(a.gid);
+              if (current.archiveStatus.code >= ArchiveStatus.downloaded.code && current.archiveStatus != ArchiveStatus.completed) {
+                await _updateArchiveStatus(a.gid, ArchiveStatus.paused);
+              }
+            }
+          }));
+        } else {
+          downloadArchive(a, resume: true);
+        }
         return;
       }
     }
@@ -832,139 +954,137 @@ class ArchiveDownloadService extends GetxController with GridBasePageServiceMixi
     return archiveDownloadInfos.containsKey(gid) && statuses.contains(archiveDownloadInfos[gid]!.archiveStatus);
   }
 
-  Future<void> _updateArchiveStatus(int gid, ArchiveStatus archiveStatus) async {
-    ArchiveDownloadInfo archiveDownloadInfo = archiveDownloadInfos[gid]!;
+  Future<void> _updateArchiveStatus(int gid, ArchiveStatus archiveStatus, {ArchiveDownloadInfo? expectedInfo, CancelToken? expectedToken}) async {
+    final archiveDownloadInfo = archiveDownloadInfos[gid];
+    bool current() => archiveDownloadInfo != null && identical(archiveDownloadInfos[gid], archiveDownloadInfo) &&
+        (expectedInfo == null || identical(archiveDownloadInfo, expectedInfo)) &&
+        (expectedToken == null || (!expectedToken.isCancelled && identical(archiveDownloadInfo.cancelToken, expectedToken)));
+    if (!current() || archiveDownloadInfo == null) {
+      return;
+    }
 
     if (archiveDownloadInfo.archiveStatus != archiveStatus) {
       archiveDownloadInfo.archiveStatus = archiveStatus;
-      await _updateArchiveInDatabase(gid);
-      update(['$archiveStatusId::$gid']);
+      if (archiveStatusWriter != null) {
+        await archiveStatusWriter!(gid);
+      } else {
+        await _updateArchiveInDatabase(gid);
+      }
+      if (current()) {
+        update(['$archiveStatusId::$gid']);
+      }
     }
   }
 
   // TASKS
 
-  Future<void> _unlock(ArchiveDownloadedData archive) async {
-    ArchiveDownloadInfo archiveDownloadInfo = archiveDownloadInfos[archive.gid]!;
+  bool _ownsArchivePage(ArchiveDownloadedData archive, ArchiveDownloadInfo info, CancelToken token, List<ArchiveStatus> statuses) {
+    return !_batchServiceClosing && !token.isCancelled &&
+        identical(archiveDownloadInfos[archive.gid], info) &&
+        identical(info.cancelToken, token) && statuses.contains(info.archiveStatus);
+  }
 
-    if (!_isTaskInStatus(archive.gid, [ArchiveStatus.unlocking])) {
+  Future<ArchiveUnlockResult> _requestArchivePage(ArchiveDownloadedData archive, CancelToken token) {
+    if (archivePageRequester != null) {
+      return archivePageRequester!(archive, token);
+    }
+    return ehRequest.requestUnlockArchive(
+      url: archive.archivePageUrl.replaceFirst('--', '-'),
+      isOriginal: archive.isOriginal,
+      cancelToken: token,
+      parser: EHSpiderParser.unlockArchivePage2DownloadArchivePageUrl,
+    );
+  }
+
+  Future<void> _resolveArchivePage(ArchiveDownloadedData archive, {required bool resolveDownloadPage}) async {
+    final info = archiveDownloadInfos[archive.gid];
+    if (info == null) {
       return;
     }
-    if (archiveDownloadInfo.downloadPageUrl != null) {
-      archiveDownloadInfo.archiveStatus = ArchiveStatus.unlocked;
+    final token = info.cancelToken;
+    final statuses = resolveDownloadPage
+        ? [ArchiveStatus.unlocked, ArchiveStatus.parsingDownloadPageUrl]
+        : [ArchiveStatus.unlocking];
+    bool owned() => _ownsArchivePage(archive, info, token, statuses);
+    if (!owned()) {
       return;
     }
-    if (archiveDownloadInfo.parseSource == ArchiveParseSource.bot.code) {
-      archiveDownloadInfo.archiveStatus = ArchiveStatus.unlocked;
+    final next = resolveDownloadPage ? ArchiveStatus.parsedDownloadPageUrl : ArchiveStatus.unlocked;
+    if (info.downloadPageUrl != null || info.parseSource == ArchiveParseSource.bot.code) {
+      await _updateArchiveStatus(archive.gid, next, expectedInfo: info, expectedToken: token);
       return;
     }
-
-    log.download('Begin to unlock archive: ${archive.title}, original: ${archive.isOriginal}');
-
-    await _updateArchiveStatus(archive.gid, ArchiveStatus.unlocking);
-
-    ArchiveUnlockResult result;
+    if (resolveDownloadPage) {
+      await _updateArchiveStatus(archive.gid, ArchiveStatus.parsingDownloadPageUrl, expectedInfo: info, expectedToken: token);
+    }
+    if (!owned()) {
+      return;
+    }
     try {
-      result = await retry(
-        () => ehRequest.requestUnlockArchive(
-          url: archive.archivePageUrl.replaceFirst('--', '-'),
-          isOriginal: archive.isOriginal,
-          cancelToken: archiveDownloadInfo.cancelToken,
-          parser: EHSpiderParser.unlockArchivePage2DownloadArchivePageUrl,
-        ),
-        retryIf: (e) => e is DioException && e.type != DioExceptionType.cancel,
-        onRetry: (e) => log.download('Request unlock archive: ${archive.title} failed, retry. Reason: ${(e as DioException).message}'),
-        maxAttempts: _maxRetryTimes,
-      );
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
+      // Both phases use the upstream unlock POST, including its form fields.
+      // Preparation checks can resubmit that form; they are not read-only GETs.
+      // Keep the bounded wait/cancellation guards without changing the request.
+      final result = resolveDownloadPage
+          ? await archivePagePoller.run(
+              query: () => _requestArchivePage(archive, token),
+              cancelToken: token,
+              isCurrent: owned,
+            )
+          : await _requestArchivePage(archive, token);
+      if (!owned()) {
         return;
       }
-      return await _unlock(archive);
-    } on EHSiteException catch (e) {
-      log.download('Unlock archive error, reason: ${e.message}');
-      snack('archiveError'.tr, e.message, isShort: true);
-
-      if (e.shouldPauseAllDownloadTasks) {
-        return await pauseAllDownloadArchive();
-      } else {
-        return await pauseDownloadArchive(archive.gid);
+      if (result.state == ArchiveUnlockState.error) {
+        await _archivePageFailed(archive.gid, result.msg);
+        return;
       }
-    }
-
-    if (result.success) {
-      log.download('Get archive download page url success: ${archive.title}');
-      archiveDownloadInfo.downloadPageUrl = result.url;
-      await _updateArchiveStatus(archive.gid, ArchiveStatus.unlocked);
-    } else {
-      log.download('Unlock archive failed. Archive: ${archive.title}, reason: ${result.msg}');
-      snack('archiveError'.tr, result.msg, isShort: true);
-      await pauseDownloadArchive(archive.gid);
+      if (result.url != null) {
+        final uri = Uri.parse(archive.archivePageUrl.replaceFirst('--', '-')).resolve(result.url!);
+        // Use platform TLS validation and never send cookies over an HTTP URL.
+        if (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+          await _archivePageFailed(archive.gid, 'archiveUnlockUnexpectedPage'.tr);
+          return;
+        }
+        info.downloadPageUrl = uri.toString();
+      }
+      await _updateArchiveStatus(archive.gid, next, expectedInfo: info, expectedToken: token);
+    } on CancelException {
+      return;
+    } on EHSiteException catch (error) {
+      if (!owned()) {
+        return;
+      }
+      await _archivePageFailed(archive.gid, error.message, pauseAll: error.shouldPauseAllDownloadTasks);
+    } on TimeoutException {
+      if (owned()) {
+        await _archivePageFailed(archive.gid, 'archiveUnlockTimeout'.tr);
+      }
+    } catch (error) {
+      if (!owned()) {
+        return;
+      }
+      // Do not log response bodies, signed download URLs, cookies or headers.
+      log.download('Archive page request failed: gid=${archive.gid}, type=${error.runtimeType}');
+      await _archivePageFailed(archive.gid, error is DioException ? 'archiveUnlockNetworkError'.tr : 'archiveUnlockUnexpectedPage'.tr);
     }
   }
 
-  Future<void> _getDownloadPageUrl(ArchiveDownloadedData archive) async {
-    ArchiveDownloadInfo archiveDownloadInfo = archiveDownloadInfos[archive.gid]!;
-    if (!_isTaskInStatus(archive.gid, [ArchiveStatus.unlocked, ArchiveStatus.parsingDownloadPageUrl])) {
-      return;
-    }
-    if (archiveDownloadInfo.downloadPageUrl != null) {
-      archiveDownloadInfo.archiveStatus = ArchiveStatus.parsedDownloadPageUrl;
-      return;
-    }
-    if (archiveDownloadInfo.parseSource == ArchiveParseSource.bot.code) {
-      archiveDownloadInfo.archiveStatus = ArchiveStatus.parsedDownloadPageUrl;
-      return;
-    }
-
-    log.download('Begin to circularly fetch archive download page url: ${archive.title}, original: ${archive.isOriginal}');
-
-    await _updateArchiveStatus(archive.gid, ArchiveStatus.parsingDownloadPageUrl);
-
-    ArchiveUnlockResult result;
-    try {
-      result = await retry(
-        () => ehRequest.requestUnlockArchive(
-          url: archive.archivePageUrl.replaceFirst('--', '-'),
-          isOriginal: archive.isOriginal,
-          cancelToken: archiveDownloadInfo.cancelToken,
-          parser: EHSpiderParser.unlockArchivePage2DownloadArchivePageUrl,
-        ),
-        retryIf: (e) => e is DioException && e.type != DioExceptionType.cancel,
-        onRetry: (e) => log.download('Request unlock archive: ${archive.title} failed, retry. Reason: ${(e as DioException).message}'),
-        maxAttempts: _maxRetryTimes,
-      );
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.cancel) {
-        return;
-      }
-      return await _unlock(archive);
-    } on EHSiteException catch (e) {
-      log.download('Parsing archive download page url failed, reason: ${e.message}');
-      snack('archiveError'.tr, e.message, isShort: true);
-
-      if (e.shouldPauseAllDownloadTasks) {
-        return pauseAllDownloadArchive();
-      } else {
-        return pauseDownloadArchive(archive.gid);
-      }
-    }
-
-    if (result.success && result.url != null) {
-      log.download('Get archive download page url success: ${archive.title}');
-      archiveDownloadInfo.downloadPageUrl = result.url;
-      await _updateArchiveStatus(archive.gid, ArchiveStatus.parsedDownloadPageUrl);
-    } else if (result.success && result.url == null) {
-      /// wait for server operation
-      await Future.delayed(const Duration(milliseconds: 1000));
-      return _getDownloadPageUrl(archive);
+  Future<void> _archivePageFailed(int gid, String message, {bool pauseAll = false}) async {
+    if (archivePageErrorReporter != null) {
+      archivePageErrorReporter!(message);
     } else {
-      log.download('Get archive download page url failed. Archive: ${archive.title}, reason: ${result.msg}');
-      snack('archiveError'.tr, result.msg, isShort: true);
-      await pauseDownloadArchive(archive.gid);
-      return;
+      snack('archiveError'.tr, message, isShort: true);
+    }
+    if (pauseAll) {
+      await pauseAllDownloadArchive();
+    } else {
+      await pauseDownloadArchive(gid);
     }
   }
+
+  Future<void> _unlock(ArchiveDownloadedData archive) => _resolveArchivePage(archive, resolveDownloadPage: false);
+
+  Future<void> _getDownloadPageUrl(ArchiveDownloadedData archive) => _resolveArchivePage(archive, resolveDownloadPage: true);
 
   Future<void> _getDownloadUrl(ArchiveDownloadedData archive, {bool reParse = false}) async {
     ArchiveDownloadInfo archiveDownloadInfo = archiveDownloadInfos[archive.gid]!;
@@ -1005,6 +1125,10 @@ class ArchiveDownloadService extends GetxController with GridBasePageServiceMixi
           return;
         }
 
+        if (_batchBoundedGids.contains(archive.gid)) {
+          await pauseDownloadArchive(archive.gid);
+          return;
+        }
         return await _getDownloadUrl(archive);
       } on EHSiteException catch (e) {
         log.download('Download error, reason: ${e.message}');
@@ -1055,6 +1179,10 @@ class ArchiveDownloadService extends GetxController with GridBasePageServiceMixi
           return;
         }
 
+        if (_batchBoundedGids.contains(archive.gid)) {
+          await pauseDownloadArchive(archive.gid);
+          return;
+        }
         return await _getDownloadUrl(archive);
       } catch (e) {
         log.download('Parse archive download url error, reason: $e');

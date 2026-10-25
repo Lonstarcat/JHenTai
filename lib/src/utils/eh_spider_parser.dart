@@ -32,8 +32,10 @@ import 'package:jhentai/src/utils/string_uril.dart';
 
 import '../config/ui_config.dart';
 import '../consts/eh_consts.dart';
+import 'forum_profile_parser.dart';
 import '../database/database.dart';
 import '../exception/eh_parse_exception.dart';
+import '../exception/eh_site_exception.dart';
 import '../model/archive_unlock_result.dart';
 import '../model/detail_page_info.dart';
 import '../model/gallery.dart';
@@ -502,18 +504,7 @@ class EHSpiderParser {
   }
 
   static Map<String, String?>? profilePage2UserInfo(Headers headers, dynamic data) {
-    Document document = parse(data as String);
-
-    /// cookie is wrong, not logged in
-    if (document.querySelector('.pcen') != null) {
-      return null;
-    }
-
-    String nickName = document.querySelector('#profilename')!.text;
-    String userName = document.querySelector('.home > b > a')!.text;
-    String? avatarImgUrl = document.querySelector('#profilename')?.nextElementSibling?.nextElementSibling?.querySelector('img')?.attributes['src'];
-
-    return {'userName': userName, 'avatarImgUrl': avatarImgUrl, 'nickName': nickName};
+    return data is String ? ForumProfileParser.parseProfile(data) : null;
   }
 
   static List<String> favoritePopup2FavoriteTagNames(Headers headers, dynamic data) {
@@ -822,13 +813,42 @@ class EHSpiderParser {
   }
 
   static ArchiveUnlockResult unlockArchivePage2DownloadArchivePageUrl(Headers headers, dynamic data) {
-    String str = data as String;
-    if (str.startsWith('You do not have enough funds to download this archive. Obtain some Credits or GP and try again.')) {
-      return ArchiveUnlockResult(success: false, msg: str);
+    final encoding = headers.value('content-encoding')?.toLowerCase();
+    if (data is! String || (encoding != null && !['gzip', 'identity'].contains(encoding))) {
+      return ArchiveUnlockResult.error('archiveUnlockUnexpectedPage'.tr);
     }
-
-    Document document = parse(str);
-    return ArchiveUnlockResult(success: true, msg: 'success', url: document.querySelector('#continue > a')?.attributes['href']);
+    final document = parse(data);
+    final text = (document.body?.text ?? '').replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+    if (headers.value('cf-mitigated') == 'challenge' ||
+        document.querySelector('#challenge-running, #challenge-stage, #challenge-form, script[src*="/cdn-cgi/challenge-platform/"]') != null ||
+        (document.querySelector('title')?.text.toLowerCase().contains('just a moment') ?? false)) {
+      throw EHSiteException(type: EHSiteExceptionType.cloudflare, message: 'cloudflare403'.tr, shouldPauseAllDownloadTasks: false);
+    }
+    if (text.contains('you do not have enough funds') || text == 'insufficient funds') {
+      return ArchiveUnlockResult.error('archiveUnlockInsufficientFunds'.tr);
+    }
+    if (document.querySelector('input[type="password"]') != null) {
+      return ArchiveUnlockResult.error('archiveUnlockLoginRequired'.tr);
+    }
+    final link = document.querySelector('#continue a[href]')?.attributes['href']?.trim();
+    if (link != null && link.isNotEmpty) {
+      final uri = Uri.tryParse(link);
+      // A relative URL is resolved against the original archiver URL by the
+      // service. Never accept executable URLs or HTTP downgrades.
+      final allowedHost = uri != null && (['e-hentai.org', 'exhentai.org'].contains(uri.host) || uri.host.endsWith('.hath.network'));
+      if (uri != null && !uri.hasFragment && uri.userInfo.isEmpty &&
+          ((!uri.hasScheme && !uri.hasAuthority) || ((!uri.hasScheme || uri.scheme == 'https') && allowedHost))) {
+        return ArchiveUnlockResult.ready(link);
+      }
+      return ArchiveUnlockResult.error('archiveUnlockUnexpectedPage'.tr);
+    }
+    // Official waiting copy documented in EhSyringe's archiver translations:
+    // https://sleazyfork.org/en/scripts/407833-ehsyringe/code
+    // Unknown markup is NOT assumed to be a still-running unlock operation.
+    if (text.contains('locating archive server and preparing file for download')) {
+      return const ArchiveUnlockResult.pending();
+    }
+    return ArchiveUnlockResult.error('archiveUnlockUnexpectedPage'.tr);
   }
 
   static String downloadArchivePage2DownloadUrl(Headers headers, dynamic data) {

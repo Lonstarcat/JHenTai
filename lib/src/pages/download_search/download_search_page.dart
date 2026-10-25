@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:jhentai/src/utils/gallery_badge_util.dart';
+import 'package:jhentai/src/widget/eh_gallery_ads_badge.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/database/database.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
@@ -17,9 +19,9 @@ import '../../service/super_resolution_service.dart';
 import '../../utils/byte_util.dart';
 import '../../utils/date_util.dart';
 import '../../utils/route_util.dart';
-import '../../widget/eh_gallery_category_tag.dart';
 import '../details/details_page_logic.dart';
 import 'download_search_logic.dart';
+import 'widget/download_search_rules_hint.dart';
 
 class DownloadSearchPage extends StatelessWidget {
   DownloadSearchPage({Key? key}) : super(key: key);
@@ -114,18 +116,30 @@ class DownloadSearchPage extends StatelessWidget {
           controller: logic.scrollController,
           scrollBehavior: UIConfig.scrollBehaviourWithScrollBarWithMouse,
           slivers: [
-            SliverList.separated(
-              itemBuilder: (context, index) => _buildGallery(context, state.galleries[index]),
-              separatorBuilder: (context, index) => const SizedBox(height: 10),
-              itemCount: state.galleries.length,
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 10)),
-            SliverList.separated(
-              itemBuilder: (context, index) => _buildArchive(context, state.archives[index]),
-              separatorBuilder: (context, index) => const SizedBox(height: 10),
-              itemCount: state.archives.length,
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 10)),
+            if (logic.textEditingController.text.trim().isEmpty)
+              SliverToBoxAdapter(
+                child: FutureBuilder<void>(
+                  future: state.searchTypeCompleter.future,
+                  builder: (context, _) => DownloadSearchRulesHint(
+                    regexMode:
+                        state.searchType == DownloadSearchConfigTypeEnum.regex,
+                  ),
+                ),
+              )
+            else ...[
+              SliverList.separated(
+                itemBuilder: (context, index) => _buildGallery(context, state.galleries[index]),
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
+                itemCount: state.galleries.length,
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 10)),
+              SliverList.separated(
+                itemBuilder: (context, index) => _buildArchive(context, state.archives[index]),
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
+                itemCount: state.archives.length,
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 10)),
+            ],
           ],
         ),
       ),
@@ -167,7 +181,11 @@ class DownloadSearchPage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          EHGalleryCategoryTag(category: gallery.category),
+                          EHGalleryCategoryWithAds(
+                            category: gallery.category,
+                            hasAds: GalleryBadgeUtil.hasAdsInTags(gallery.tags),
+                            hasAi: GalleryBadgeUtil.hasAiInTags(gallery.tags),
+                          ),
                           const Expanded(child: SizedBox()),
                           _buildGalleryIsOriginal(context, gallery),
                           const SizedBox(width: 6),
@@ -407,7 +425,11 @@ class DownloadSearchPage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          EHGalleryCategoryTag(category: archive.category),
+                          EHGalleryCategoryWithAds(
+                            category: archive.category,
+                            hasAds: GalleryBadgeUtil.hasAdsInTags(archive.tags),
+                            hasAi: GalleryBadgeUtil.hasAiInTags(archive.tags),
+                          ),
                           const Expanded(child: SizedBox()),
                           _buildArchiveIsOriginal(context, archive),
                           const SizedBox(width: 6),

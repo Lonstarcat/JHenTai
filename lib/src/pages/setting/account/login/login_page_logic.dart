@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:desktop_webview_window/desktop_webview_window.dart';
@@ -23,6 +24,7 @@ import '../../../../exception/eh_site_exception.dart';
 import '../../../../setting/eh_setting.dart';
 import '../../../../utils/cookie_util.dart';
 import '../../../../service/log.dart';
+import '../../../../service/forum_profile_service.dart';
 import '../../../../utils/route_util.dart';
 import '../../../../utils/snack_util.dart';
 import 'login_page_state.dart';
@@ -34,6 +36,22 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
   static const loadingStateId = 'loadingStateId';
 
   final LoginPageState state = LoginPageState();
+
+  Future<void> _saveUserInfo({
+    required String userName,
+    required int ipbMemberId,
+    required String ipbPassHash,
+    String? avatarImgUrl,
+    String? nickName,
+    String? avatarStatus,
+  }) async {
+    await userSetting.saveUserInfo(userName: userName, ipbMemberId: ipbMemberId,
+        ipbPassHash: ipbPassHash, avatarImgUrl: avatarImgUrl, nickName: nickName);
+    unawaited(forumProfileService.ensureProfileForCurrentSession(profile: nickName == null ? null : {
+      'userName': userName, 'nickName': nickName, 'avatarImgUrl': avatarImgUrl,
+      'avatarStatus': avatarStatus,
+    }));
+  }
 
   late TabController tabController;
 
@@ -180,24 +198,11 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
     log.info('Login success by password.');
 
-    userSetting.saveUserInfo(
+    await _saveUserInfo(
       userName: state.userName!,
       ipbMemberId: userInfoOrErrorMsg['ipbMemberId'],
       ipbPassHash: userInfoOrErrorMsg['ipbPassHash'],
     );
-
-    ehRequest
-        .requestForum(
-      userInfoOrErrorMsg['ipbMemberId'],
-      EHSpiderParser.profilePage2UserInfo,
-    )
-        .then((userInfo) {
-      userSetting.saveUserNameAndAvatarAndNickName(
-        userName: userInfo!['userName']!,
-        avatarImgUrl: userInfo['avatarImgUrl'],
-        nickName: userInfo['nickName']!,
-      );
-    });
 
     state.loginState = LoadingState.success;
     update([loadingStateId]);
@@ -276,12 +281,13 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
     if (useEXSite) {
       ehSetting.site.value = 'EX';
     }
-    userSetting.saveUserInfo(
+    await _saveUserInfo(
       userName: userInfo['userName']!,
       ipbMemberId: int.parse(state.ipbMemberId!),
       ipbPassHash: state.ipbPassHash!,
       avatarImgUrl: userInfo['avatarImgUrl'],
       nickName: userInfo['nickName'],
+      avatarStatus: userInfo['avatarStatus'],
     );
 
     toast('loginSuccess'.tr, level: NotificationLevel.success);
@@ -413,7 +419,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       ]);
       ehSetting.site.value = 'EX';
     }
-    await userSetting.saveUserInfo(
+    await _saveUserInfo(
       userName: username,
       ipbMemberId: int.parse(state.ipbMemberId!),
       ipbPassHash: state.ipbPassHash!,
@@ -476,7 +482,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
     if (useExSite) {
       ehSetting.site.value = 'EX';
     }
-    await userSetting.saveUserInfo(
+    await _saveUserInfo(
       userName: username,
       ipbMemberId: int.parse(state.ipbMemberId!),
       ipbPassHash: state.ipbPassHash!,
@@ -498,14 +504,14 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
       return;
     }
 
-    ehRequest.storeEHCookies([
+    await ehRequest.storeEHCookies([
       Cookie('ipb_member_id', state.ipbMemberId!),
       Cookie('ipb_pass_hash', state.ipbPassHash!),
     ]);
 
     bool useEXSite = false;
     if (state.igneous != null && state.igneous != '' && state.igneous != 'null' && state.igneous != 'mystery' && state.igneous != 'deleted') {
-      ehRequest.storeEHCookies([
+      await ehRequest.storeEHCookies([
         Cookie('igneous', state.igneous!),
       ]);
       useEXSite = true;
@@ -522,7 +528,7 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
     if (useEXSite) {
       ehSetting.site.value = 'EX';
     }
-    userSetting.saveUserInfo(
+    await _saveUserInfo(
       userName: 'EHUser'.tr,
       ipbMemberId: int.parse(state.ipbMemberId!),
       ipbPassHash: state.ipbPassHash!,
@@ -580,27 +586,19 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
     try {
       List<Cookie> cookies = CookieUtil.parse2Cookies(cookieString);
-      ehRequest.storeEHCookies(CookieUtil.parse2Cookies(cookieString));
+      await ehRequest.storeEHCookies(CookieUtil.parse2Cookies(cookieString));
 
       int ipbMemberId = int.parse(cookies.firstWhere((cookie) => cookie.name == 'ipb_member_id').value);
       String ipbPassHash = cookies.firstWhere((cookie) => cookie.name == 'ipb_pass_hash').value;
 
       /// temporary name
-      userSetting.saveUserInfo(userName: 'EHUser'.tr, ipbMemberId: ipbMemberId, ipbPassHash: ipbPassHash);
+      await _saveUserInfo(userName: 'EHUser'.tr, ipbMemberId: ipbMemberId, ipbPassHash: ipbPassHash);
 
       webview.close();
       toast('loginSuccess'.tr, level: NotificationLevel.success);
       untilRoute(
         currentRoute: Routes.login,
         predicate: (route) => route.settings.name == Routes.settingAccount || route.settings.name == Routes.blank || route.settings.name == Routes.home,
-      );
-
-      /// get username and avatar
-      Map<String, String?>? userInfo = await ehRequest.requestForum(ipbMemberId, EHSpiderParser.profilePage2UserInfo);
-      userSetting.saveUserNameAndAvatarAndNickName(
-        userName: userInfo!['userName']!,
-        avatarImgUrl: userInfo['avatarImgUrl'],
-        nickName: userInfo['nickName']!,
       );
 
       state.cookieLoginLoadingState = LoadingState.success;
@@ -625,26 +623,18 @@ class LoginPageLogic extends GetxController with GetSingleTickerProviderStateMix
 
     try {
       List<Cookie> cookies = CookieUtil.parse2Cookies(cookieString);
-      ehRequest.storeEHCookies(CookieUtil.parse2Cookies(cookieString));
+      await ehRequest.storeEHCookies(CookieUtil.parse2Cookies(cookieString));
 
       int ipbMemberId = int.parse(cookies.firstWhere((cookie) => cookie.name == 'ipb_member_id').value);
       String ipbPassHash = cookies.firstWhere((cookie) => cookie.name == 'ipb_pass_hash').value;
 
       /// temporary name
-      userSetting.saveUserInfo(userName: 'EHUser'.tr, ipbMemberId: ipbMemberId, ipbPassHash: ipbPassHash);
+      await _saveUserInfo(userName: 'EHUser'.tr, ipbMemberId: ipbMemberId, ipbPassHash: ipbPassHash);
 
       toast('loginSuccess'.tr, level: NotificationLevel.success);
       untilRoute(
         currentRoute: Routes.webview,
         predicate: (route) => route.settings.name == Routes.settingAccount || route.settings.name == Routes.home,
-      );
-
-      /// get username and avatar
-      Map<String, String?>? userInfo = await ehRequest.requestForum(ipbMemberId, EHSpiderParser.profilePage2UserInfo);
-      userSetting.saveUserNameAndAvatarAndNickName(
-        userName: userInfo!['userName']!,
-        avatarImgUrl: userInfo['avatarImgUrl'],
-        nickName: userInfo['nickName']!,
       );
 
       state.cookieLoginLoadingState = LoadingState.success;

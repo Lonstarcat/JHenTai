@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data' show BytesBuilder;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_socks_proxy/socks_proxy.dart';
@@ -24,6 +25,7 @@ import 'package:jhentai/src/setting/preference_setting.dart';
 import 'package:jhentai/src/setting/user_setting.dart';
 import 'package:jhentai/src/service/log.dart';
 import 'package:jhentai/src/utils/eh_spider_parser.dart';
+import 'package:jhentai/src/utils/forum_profile_parser.dart';
 import 'package:jhentai/src/utils/proxy_util.dart';
 import 'package:jhentai/src/utils/string_uril.dart';
 import 'package:http_parser/http_parser.dart' show MediaType;
@@ -31,6 +33,7 @@ import 'package:path/path.dart';
 import 'package:webview_flutter/webview_flutter.dart' show WebViewCookieManager;
 import '../service/jh_service.dart';
 import '../service/local_config_service.dart';
+import '../service/forum_profile_service.dart';
 import '../setting/network_setting.dart';
 import 'eh_cache_manager.dart';
 import 'eh_cookie_manager.dart';
@@ -38,6 +41,11 @@ import 'eh_cookie_manager.dart';
 EHRequest ehRequest = EHRequest();
 
 class EHRequest with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
+  EHRequest();
+
+  @visibleForTesting
+  EHRequest.forTesting(Dio client) : _dio = client;
+
   late final Dio _dio;
   late final EHCookieManager _cookieManager;
   late final EHCacheManager _cacheManager;
@@ -295,6 +303,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
   }
 
   Future<void> requestLogout() async {
+    forumProfileService.invalidateSession();
     await removeAllCookies();
     await userSetting.clearBeanConfig();
     if (GetPlatform.isWindows || GetPlatform.isLinux) {
@@ -320,11 +329,34 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
   Future<T> requestForum<T>(int ipbMemberId, HtmlParser<T> parser) async {
     Response response = await _getWithErrorHandler(
       EHConsts.EForums,
+      options: Options(extra: CacheOptions.noCacheOptions.toExtra()),
       queryParameters: {
         'showuser': ipbMemberId,
       },
     );
     return _parseResponse(response, parser);
+  }
+
+  /// Bounded avatar transfer, using the existing proxy/cookie/network settings.
+  /// Redirects are disabled so account cookies cannot travel to another origin.
+  Future<Uint8List> requestForumAvatar(String url) async {
+    if (ForumProfileParser.avatarUrl(url) != url) {
+      throw const FormatException('Untrusted avatar URL');
+    }
+    final response = await _dio.get<ResponseBody>(url, options: Options(
+      responseType: ResponseType.stream,
+      followRedirects: false,
+      extra: CacheOptions.noCacheOptions.toExtra(),
+    ));
+    final body = response.data!;
+    final bytes = BytesBuilder(copy: false);
+    await for (final chunk in body.stream) {
+      if (bytes.length + chunk.length > 1024 * 1024) {
+        throw const FormatException('Avatar exceeds size limit');
+      }
+      bytes.add(chunk);
+    }
+    return bytes.takeBytes();
   }
 
   /// [url]: used for file search

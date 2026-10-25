@@ -12,6 +12,9 @@ import 'package:jhentai/src/service/download_task_navigation_service.dart';
 import 'package:simple_animations/animation_controller_extension/animation_controller_extension.dart';
 import 'package:simple_animations/animation_mixin/animation_mixin.dart';
 import '../../config/ui_config.dart';
+import '../../model/download_multi_select_toolbar.dart';
+import '../../utils/batch_update_util.dart';
+import '../../routes/routes.dart';
 import 'grid/archive/archive_grid_download_page.dart';
 import 'grid/gallery/gallery_grid_download_page.dart';
 import 'download_reorder_mode.dart';
@@ -34,12 +37,15 @@ class _DownloadPageState extends State<DownloadPage> {
       ? DownloadPageBodyType.list
       : DownloadPageBodyType.grid;
   Completer<void> bodyTypeCompleter = Completer<void>();
+  DownloadToolbarKind? _pendingBatchUpdate;
 
   @override
   void initState() {
     super.initState();
 
     downloadTaskNavigationTarget.addListener(_handleTaskNavigation);
+    downloadPageNavigationPending.addListener(_openPendingBatchUpdate);
+    _handleTaskNavigation();
 
     localConfigService
         .read(configKey: ConfigEnum.downloadPageBodyType)
@@ -50,13 +56,15 @@ class _DownloadPageState extends State<DownloadPage> {
       }
     }).whenComplete(() {
       bodyTypeCompleter.complete();
-      downloadTaskNavigationTarget.value = null;
+      _handleTaskNavigation();
+      _openPendingBatchUpdate();
     });
   }
 
   @override
   void dispose() {
     downloadTaskNavigationTarget.removeListener(_handleTaskNavigation);
+    downloadPageNavigationPending.removeListener(_openPendingBatchUpdate);
     exitAllDownloadReorderModes();
     super.dispose();
   }
@@ -64,8 +72,11 @@ class _DownloadPageState extends State<DownloadPage> {
   DownloadPageGalleryType? _galleryTypeForNavigation(
       DownloadTaskNavigationTarget? target) {
     return switch (target?.taskType) {
-      'archive' => DownloadPageGalleryType.archive,
-      'download' || 'favorite' => DownloadPageGalleryType.download,
+      'archive' || 'batchArchiveUpdate' => DownloadPageGalleryType.archive,
+      'download' ||
+      'favorite' ||
+      'batchGalleryUpdate' =>
+        DownloadPageGalleryType.download,
       _ => null,
     };
   }
@@ -82,7 +93,32 @@ class _DownloadPageState extends State<DownloadPage> {
       exitAllDownloadReorderModes();
       setState(() => galleryType = targetType);
     }
+    _pendingBatchUpdate = target?.batchUpdateKind;
     downloadTaskNavigationTarget.value = null;
+    _openPendingBatchUpdate();
+  }
+
+  void _openPendingBatchUpdate() {
+    final kind = _pendingBatchUpdate;
+    if (!mounted ||
+        kind == null ||
+        !bodyTypeCompleter.isCompleted ||
+        downloadPageNavigationPending.value ||
+        Get.currentRoute == Routes.lock) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          _pendingBatchUpdate != kind ||
+          downloadPageNavigationPending.value ||
+          Get.currentRoute == Routes.lock) {
+        return;
+      }
+      _pendingBatchUpdate = null;
+      // Viewing a notification is never authority to check, submit or pay.
+      unawaited(batchUpdateFlow.openExisting(kind));
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   @override

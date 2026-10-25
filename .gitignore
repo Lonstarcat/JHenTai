@@ -53,3 +53,20 @@ app.*.map.json
 
 # Local Android signing keys
 /key/
+
+# Private credentials and local runtime data (including temporary backups).
+.env
+.env.*
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.key
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+**/key.properties*
+!android/key.properties.sample
+__pycache__/

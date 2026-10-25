@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/pages/download/mixin/basic/multi_select/multi_select_download_page_mixin.dart';
 import 'package:jhentai/src/service/archive_download_service.dart';
+import 'package:jhentai/src/model/download_multi_select_toolbar.dart';
 
 import '../../../../mixin/scroll_to_top_logic_mixin.dart';
 import '../../../../mixin/scroll_to_top_page_mixin.dart';
@@ -66,37 +67,24 @@ mixin ArchiveDownloadPageMixin on StatelessWidget
       archiveDownloadPageState;
 
   @override
-  List<Widget> buildBottomAppBarButtons() {
-    return [
-      IconButton(
-          icon: const Icon(Icons.done_all),
-          onPressed: archiveDownloadPageLogic.selectAllItem),
-      IconButton(
-          icon: const Icon(Icons.play_arrow),
-          onPressed: archiveDownloadPageLogic.handleMultiResumeTasks),
-      IconButton(
-          icon: const Icon(Icons.pause),
-          onPressed: archiveDownloadPageLogic.handleMultiPauseTasks),
-      IconButton(
-        tooltip: 'batchFavorite'.tr,
-        icon: const Icon(Icons.favorite_outline),
-        onPressed: multiSelectDownloadPageState.selectedGids.isEmpty
-            ? null
-            : archiveDownloadPageLogic.handleMultiFavoriteItems,
-      ),
-      IconButton(
-          icon: const Icon(Icons.bookmark),
-          onPressed: archiveDownloadPageLogic.handleMultiChangeGroup),
-      IconButton(
-          icon: const Icon(Icons.delete),
-          onPressed: archiveDownloadPageLogic.handleMultiDelete),
-      IconButton(
-          icon: const Icon(Icons.smart_toy_outlined),
-          onPressed: archiveDownloadPageLogic.handleChangeParseSource),
-      const Expanded(child: SizedBox()),
-      IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: multiSelectDownloadPageLogic.exitSelectMode),
-    ];
-  }
+  DownloadToolbarKind get toolbarKind => DownloadToolbarKind.archive;
+
+  @override
+  Map<DownloadToolbarAction, VoidCallback> buildToolbarCallbacks() => {
+        DownloadToolbarAction.selectAll: archiveDownloadPageLogic.selectAllItem,
+        DownloadToolbarAction.resume:
+            archiveDownloadPageLogic.handleMultiResumeTasks,
+        DownloadToolbarAction.pause:
+            archiveDownloadPageLogic.handleMultiPauseTasks,
+        DownloadToolbarAction.batchUpdate:
+            archiveDownloadPageLogic.handleBatchUpdate,
+        DownloadToolbarAction.favorite:
+            archiveDownloadPageLogic.handleMultiFavoriteItems,
+        DownloadToolbarAction.changeGroup:
+            archiveDownloadPageLogic.handleMultiChangeGroup,
+        DownloadToolbarAction.delete:
+            archiveDownloadPageLogic.handleMultiDelete,
+        DownloadToolbarAction.changeParseSource:
+            archiveDownloadPageLogic.handleChangeParseSource,
+      };
 }

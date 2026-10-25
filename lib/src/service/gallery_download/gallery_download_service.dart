@@ -1,4 +1,6 @@
 import 'dart:async';
+import '../../model/download_batch_update.dart';
+import '../../utils/update_submission_util.dart';
 import '../../utils/download_order_persistence_util.dart';
 import 'dart:convert';
 import 'dart:core';
@@ -184,24 +186,29 @@ class GalleryDownloadService extends GetxController with GridBasePageServiceMixi
 
   bool containGallery(int gid) => galleryDownloadInfos.containsKey(gid);
 
+  final Set<int> _registeringGalleryGids = {};
+
   Future<void> downloadGallery(GalleryDownloadRequest request) async {
-    if (containGallery(request.gid)) {
+    if (containGallery(request.gid) || !_registeringGalleryGids.add(request.gid)) {
       return;
     }
+    try {
+      _ensureDownloadDirExists();
 
-    _ensureDownloadDirExists();
+      GalleryDownloadedData gallery = _toGalleryDownloadedData(request, DownloadStatus.downloading);
 
-    GalleryDownloadedData gallery = _toGalleryDownloadedData(request, DownloadStatus.downloading);
+      if (!await _initGalleryInfo(gallery)) {
+        return;
+      }
 
-    if (!await _initGalleryInfo(gallery)) {
-      return;
+      _generateComicInfoInDisk(galleryDownloadInfos[gallery.gid]!);
+
+      await _startDownloadTask(galleryDownloadInfos[gallery.gid]!);
+
+      log.info('Begin to download gallery: ${gallery.title}, original: ${gallery.downloadOriginalImage}');
+    } finally {
+      _registeringGalleryGids.remove(request.gid);
     }
-
-    _generateComicInfoInDisk(galleryDownloadInfos[gallery.gid]!);
-
-    await _startDownloadTask(galleryDownloadInfos[gallery.gid]!);
-
-    log.info('Begin to download gallery: ${gallery.title}, original: ${gallery.downloadOriginalImage}');
   }
 
   Future<void> _startDownloadTask(GalleryDownloadInfo info) async {
@@ -543,7 +550,35 @@ class GalleryDownloadService extends GetxController with GridBasePageServiceMixi
       return;
     }
 
-    GalleryDownloadRequest newGalleryRequest = GalleryDownloadRequest(
+    downloadGallery(_buildGalleryUpdateRequest(oldGallery, newGalleryDetail));
+  }
+
+  /// Batch-safe registration result. Existing detail-page update behavior above
+  /// stays compatible; this path never pauses unrelated downloads on failure.
+  Future<UpdateSubmissionResult> submitGalleryUpdate(
+    GalleryDownloadInfo oldGallery,
+    GalleryDetail target, {
+    required bool Function() shouldProceed,
+  }) async {
+    if (!shouldProceed() || !identical(galleryDownloadInfos[oldGallery.gid], oldGallery) ||
+        oldGallery.downloadProgress.downloadStatus != DownloadStatus.downloaded || isUpdatingDependent(oldGallery.gid)) {
+      return const UpdateSubmissionResult(UpdateSubmissionStatus.failed, 'batchUpdateIneligible');
+    }
+    if (target.galleryUrl.gid == oldGallery.gid) {
+      return const UpdateSubmissionResult(UpdateSubmissionStatus.failed, 'batchUpdateInvalidVersion');
+    }
+    return verifyUpdateRegistration(
+      exists: () => containGallery(target.galleryUrl.gid),
+      register: () async {
+        if (!shouldProceed()) {
+          throw StateError('batchUpdateCancelled');
+        }
+        await downloadGallery(_buildGalleryUpdateRequest(oldGallery, target));
+      },
+    );
+  }
+
+  GalleryDownloadRequest _buildGalleryUpdateRequest(GalleryDownloadInfo oldGallery, GalleryDetail newGalleryDetail) => GalleryDownloadRequest(
       gid: newGalleryDetail.galleryUrl.gid,
       token: newGalleryDetail.galleryUrl.token,
       title: newGalleryDetail.japaneseTitle ?? newGalleryDetail.rawTitle,
@@ -558,9 +593,6 @@ class GalleryDownloadService extends GetxController with GridBasePageServiceMixi
       tagRefreshTime: DateTime.now().toString(),
       oldVersionGalleryUrl: oldGallery.galleryUrl,
     );
-
-    downloadGallery(newGalleryRequest);
-  }
 
   Future<void> reDownloadGalleryByGid(int gid) async {
     GalleryDownloadInfo? gallery = _findGalleryByGid(gid);

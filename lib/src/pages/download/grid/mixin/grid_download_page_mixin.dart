@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jhentai/src/widget/eh_gallery_ads_badge.dart';
 import 'package:flutter_draggable_gridview/flutter_draggable_gridview.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
@@ -262,6 +263,8 @@ class GridGallery extends StatelessWidget {
   final Widget widget;
   final bool parseFromBot;
   final bool isOriginal;
+  final bool hasAds;
+  final bool hasAi;
   final int? gid;
   final SuperResolutionType? superResolutionType;
   final VoidCallback? onTapWidget;
@@ -276,6 +279,8 @@ class GridGallery extends StatelessWidget {
     required this.widget,
     required this.parseFromBot,
     required this.isOriginal,
+    this.hasAds = false,
+    this.hasAi = false,
     this.gid,
     this.superResolutionType,
     this.onTapWidget,
@@ -302,7 +307,10 @@ class GridGallery extends StatelessWidget {
         children: [
           Expanded(
             child: Stack(
-              children: [widget, buildChips(context)],
+              children: [
+                widget,
+                buildChips(context),
+              ],
             ),
           ),
           GestureDetector(
@@ -319,78 +327,95 @@ class GridGallery extends StatelessWidget {
   Positioned buildChips(BuildContext context) {
     return Positioned(
       bottom: 4,
+      left: 4,
       right: 4,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (parseFromBot)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              margin: const EdgeInsets.only(right: 4),
-              decoration: BoxDecoration(
-                color: UIConfig.backGroundColor(context),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: UIConfig.onBackGroundColor(context)),
-              ),
-              child: const Icon(Icons.smart_toy_outlined,
-                  size: UIConfig.downloadPageBotIconSize),
-            ),
-          if (gid != null && superResolutionType != null)
-            GetBuilder<SuperResolutionService>(
-              id: '${SuperResolutionService.superResolutionId}::$gid',
-              builder: (_) {
-                SuperResolutionInfo? superResolutionInfo =
-                    superResolutionService.get(gid!, superResolutionType!);
-                return superResolutionInfo == null
-                    ? const SizedBox()
-                    : Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        margin: const EdgeInsets.only(right: 4),
-                        decoration: BoxDecoration(
-                          color: UIConfig.backGroundColor(context),
-                          borderRadius: superResolutionInfo.status ==
-                                  SuperResolutionStatus.success
-                              ? null
-                              : BorderRadius.circular(4),
-                          border: Border.all(
-                              color: UIConfig.onBackGroundColor(context)),
-                          shape: superResolutionInfo.status ==
-                                  SuperResolutionStatus.success
-                              ? BoxShape.circle
-                              : BoxShape.rectangle,
-                        ),
-                        child: Text(
-                          superResolutionInfo.status ==
-                                  SuperResolutionStatus.paused
-                              ? 'AI'
-                              : superResolutionInfo.status ==
-                                      SuperResolutionStatus.success
-                                  ? 'AI'
-                                  : 'AI(${superResolutionInfo.imageStatuses.fold<int>(0, (previousValue, element) => previousValue + (element == SuperResolutionStatus.success ? 1 : 0))}/${superResolutionInfo.imageStatuses.length})',
-                          style: TextStyle(
+          EHGalleryCoverBadges(hasAds: hasAds, hasAi: hasAi, trailingSpacing: 4),
+          // Reserve the left badges' width; long super-resolution status wraps.
+          Expanded(
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              runSpacing: 2,
+              children: [
+                if (parseFromBot)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                      color: UIConfig.backGroundColor(context),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                          color: UIConfig.onBackGroundColor(context)),
+                    ),
+                    child: const Icon(Icons.smart_toy_outlined,
+                        size: UIConfig.downloadPageBotIconSize),
+                  ),
+                if (gid != null && superResolutionType != null)
+                  GetBuilder<SuperResolutionService>(
+                    id: '${SuperResolutionService.superResolutionId}::$gid',
+                    builder: (_) {
+                      SuperResolutionInfo? superResolutionInfo =
+                          superResolutionService.get(
+                              gid!, superResolutionType!);
+                      return superResolutionInfo == null
+                          ? const SizedBox()
+                          : Container(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 2),
+                              margin: const EdgeInsets.only(right: 4),
+                              decoration: BoxDecoration(
+                                color: UIConfig.backGroundColor(context),
+                                borderRadius: superResolutionInfo.status ==
+                                        SuperResolutionStatus.success
+                                    ? null
+                                    : BorderRadius.circular(4),
+                                border: Border.all(
+                                    color: UIConfig.onBackGroundColor(context)),
+                                shape: superResolutionInfo.status ==
+                                        SuperResolutionStatus.success
+                                    ? BoxShape.circle
+                                    : BoxShape.rectangle,
+                              ),
+                              child: Text(
+                                superResolutionInfo.status ==
+                                        SuperResolutionStatus.paused
+                                    ? 'AI'
+                                    : superResolutionInfo.status ==
+                                            SuperResolutionStatus.success
+                                        ? 'AI'
+                                        : 'AI(${superResolutionInfo.imageStatuses.fold<int>(0, (previousValue, element) => previousValue + (element == SuperResolutionStatus.success ? 1 : 0))}/${superResolutionInfo.imageStatuses.length})',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: UIConfig.onBackGroundColor(context),
+                                  decoration: superResolutionInfo.status ==
+                                          SuperResolutionStatus.paused
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                              ),
+                            );
+                    },
+                  ),
+                if (isOriginal)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      color: UIConfig.backGroundColor(context),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                          color: UIConfig.onBackGroundColor(context)),
+                    ),
+                    child: Text('original'.tr,
+                        style: TextStyle(
                             fontSize: 9,
-                            color: UIConfig.onBackGroundColor(context),
-                            decoration: superResolutionInfo.status ==
-                                    SuperResolutionStatus.paused
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
-                        ),
-                      );
-              },
+                            color: UIConfig.onBackGroundColor(context))),
+                  ),
+              ],
             ),
-          if (isOriginal)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                color: UIConfig.backGroundColor(context),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: UIConfig.onBackGroundColor(context)),
-              ),
-              child: Text('original'.tr,
-                  style: TextStyle(
-                      fontSize: 9, color: UIConfig.onBackGroundColor(context))),
-            ),
+          ),
         ],
       ),
     );

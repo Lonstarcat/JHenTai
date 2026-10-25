@@ -39,6 +39,8 @@ import 'package:jhentai/src/pages/setting/read/setting_read_page.dart';
 import 'package:jhentai/src/pages/setting/security/setting_security_page.dart';
 import 'package:jhentai/src/pages/setting/setting_page.dart';
 import 'package:jhentai/src/pages/setting/style/setting_style_page.dart';
+import 'package:jhentai/src/pages/setting/style/download_multi_select_toolbar_setting_page.dart';
+import 'package:jhentai/src/pages/setting/style/download_page_actions_setting_page.dart';
 import 'package:jhentai/src/pages/watched/watched_page.dart';
 import 'package:jhentai/src/pages/webview/webview_page.dart';
 import 'package:jhentai/src/setting/preference_setting.dart';
@@ -114,6 +116,8 @@ class Routes {
 
   static const String themeColor = "/setting_style/themeColor";
   static const String pageListStyle = "/setting_style/pageListStyle";
+  static const String downloadMultiSelectToolbar = "/setting_style/downloadMultiSelectToolbar";
+  static const String downloadPageActions = "/setting_style/downloadPageActions";
 
   static const String tagSets = "/setting_EH/tagSets";
 
@@ -381,6 +385,18 @@ class Routes {
     EHPage(
       name: pageListStyle,
       page: () => SettingPageListStylePage().withEscOrFifthButton2BackRightRoute(),
+      transition: defaultTransition,
+      offAllBefore: false,
+    ),
+    EHPage(
+      name: downloadPageActions,
+      page: () => const DownloadPageActionsSettingPage().withEscOrFifthButton2BackRightRoute(),
+      transition: defaultTransition,
+      offAllBefore: false,
+    ),
+    EHPage(
+      name: downloadMultiSelectToolbar,
+      page: () => const DownloadMultiSelectToolbarSettingPage().withEscOrFifthButton2BackRightRoute(),
       transition: defaultTransition,
       offAllBefore: false,
     ),

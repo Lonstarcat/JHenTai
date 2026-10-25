@@ -2,6 +2,9 @@ import 'dart:math';
 
 import 'package:blur/blur.dart';
 import 'package:flutter/material.dart';
+import 'package:jhentai/src/utils/gallery_badge_util.dart';
+import 'package:jhentai/src/model/download_multi_select_toolbar.dart';
+import 'package:jhentai/src/utils/batch_update_util.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/mixin/scroll_to_top_page_mixin.dart';
 import 'package:jhentai/src/pages/download/grid/gallery/gallery_grid_download_page_state.dart';
@@ -65,12 +68,14 @@ class GalleryGridDownloadPage extends StatelessWidget
         global: false,
         init: logic,
         id: logic.editButtonId,
-        builder: (_) => DownloadReorderModeButton(
+        builder: (_) => DownloadPageMoreMenu(
           inReorderMode: state.inEditMode,
-          onPressed: logic.toggleEditMode,
-        ),
-      ),
-      DownloadPageMoreMenu(
+          onToggleReorder: logic.toggleEditMode,
+        hasBatchUpdateTask: () =>
+            batchUpdateFlow.hasSessionFor(DownloadToolbarKind.gallery),
+        batchUpdateTaskChanges: batchUpdateFlow.service,
+        onBatchUpdateTask: () =>
+            batchUpdateFlow.openExisting(DownloadToolbarKind.gallery),
         switchViewIcon: Icons.view_list,
         switchViewLabel: 'switch2ListMode'.tr,
         onSwitchView: () => DownloadPageBodyTypeChangeNotification(
@@ -86,6 +91,7 @@ class GalleryGridDownloadPage extends StatelessWidget
           logic.exitEditMode();
           toRoute(Routes.downloadSearch);
         },
+        ),
       ),
     ];
   }
@@ -206,6 +212,8 @@ class GalleryGridDownloadPage extends StatelessWidget
       ),
       parseFromBot: false,
       isOriginal: gallery.downloadOriginalImage,
+      hasAds: GalleryBadgeUtil.hasAdsInString(gallery.tags),
+      hasAi: GalleryBadgeUtil.hasAiInString(gallery.tags),
       gid: gallery.gid,
       superResolutionType: SuperResolutionType.gallery,
       onTapWidget: inEditMode ? null : () => logic.handleTapItem(gallery),

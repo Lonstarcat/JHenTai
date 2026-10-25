@@ -1,4 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import '../../../../utils/batch_update_util.dart';
+import '../../../../model/download_batch_update.dart';
+import '../../../../model/download_multi_select_toolbar.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
@@ -368,6 +371,14 @@ mixin ArchiveDownloadPageLogicMixin on GetxController
     if (await chooseAndStartBatchFavorite(items)) {
       exitSelectMode();
     }
+  }
+
+  Future<void> handleBatchUpdate() async {
+    final selected = Set<int>.of(multiSelectDownloadPageState.selectedGids);
+    final items = archiveDownloadService.archives.where((item) => selected.contains(item.gid)).map((item) => BatchUpdateSource(
+      kind: DownloadToolbarKind.archive, gid: item.gid, title: item.title, galleryUrl: item.galleryUrl,
+      group: item.groupName, original: item.isOriginal, parseSource: item.parseSource)).toList();
+    await batchUpdateFlow.open(items, DownloadToolbarKind.archive);
   }
 
   Future<void> handleMultiChangeGroup() async {

@@ -2,6 +2,7 @@ enum BackgroundTaskType {
   download,
   archiveDownload,
   favorite,
+  batchUpdate,
 }
 
 enum BackgroundTaskStatus {

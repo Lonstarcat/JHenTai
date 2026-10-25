@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:jhentai/src/utils/gallery_badge_util.dart';
+import 'package:jhentai/src/widget/eh_gallery_ads_badge.dart';
+import 'package:jhentai/src/model/download_multi_select_toolbar.dart';
+import 'package:jhentai/src/utils/batch_update_util.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
@@ -20,7 +24,6 @@ import '../../../../setting/style_setting.dart';
 import '../../../../utils/byte_util.dart';
 import '../../../../utils/date_util.dart';
 import '../../../../utils/route_util.dart';
-import '../../../../widget/eh_gallery_category_tag.dart';
 import '../../../../widget/eh_image.dart';
 import '../../../details/details_page_logic.dart';
 import '../../../layout/mobile_v2/notification/tap_menu_button_notification.dart';
@@ -85,12 +88,14 @@ class ArchiveListDownloadPage extends StatelessWidget
       actions: [
         GetBuilder<ArchiveListDownloadPageLogic>(
           id: logic.bodyId,
-          builder: (_) => DownloadReorderModeButton(
+          builder: (_) => DownloadPageMoreMenu(
             inReorderMode: state.inEditMode,
-            onPressed: logic.toggleEditMode,
-          ),
-        ),
-        DownloadPageMoreMenu(
+            onToggleReorder: logic.toggleEditMode,
+          hasBatchUpdateTask: () =>
+              batchUpdateFlow.hasSessionFor(DownloadToolbarKind.archive),
+          batchUpdateTaskChanges: batchUpdateFlow.service,
+          onBatchUpdateTask: () =>
+              batchUpdateFlow.openExisting(DownloadToolbarKind.archive),
           switchViewIcon: Icons.grid_view,
           switchViewLabel: 'switch2GridMode'.tr,
           onSwitchView: () => DownloadPageBodyTypeChangeNotification(
@@ -106,6 +111,7 @@ class ArchiveListDownloadPage extends StatelessWidget
             logic.exitEditMode();
             toRoute(Routes.downloadSearch);
           },
+          ),
         ),
       ],
     );
@@ -351,8 +357,11 @@ class ArchiveListDownloadPage extends StatelessWidget
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        EHGalleryCategoryTag(category: archive.category),
-        const Expanded(child: SizedBox()),
+        Expanded(child: EHDownloadCategoryWithBadges(
+          category: archive.category,
+          hasAds: GalleryBadgeUtil.hasAdsInString(archive.tags),
+          hasAi: GalleryBadgeUtil.hasAiInString(archive.tags),
+        )),
         _buildReUnlockButton(context, archive),
         _buildParseFromBot(context, archive),
         _buildIsOriginal(context, archive),

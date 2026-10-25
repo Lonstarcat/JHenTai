@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:jhentai/src/utils/gallery_badge_util.dart';
+import 'package:jhentai/src/widget/eh_gallery_ads_badge.dart';
+import 'package:jhentai/src/model/download_multi_select_toolbar.dart';
+import 'package:jhentai/src/utils/batch_update_util.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
@@ -16,7 +20,6 @@ import '../../../../service/super_resolution_service.dart';
 import '../../../../setting/performance_setting.dart';
 import '../../../../utils/date_util.dart';
 import '../../../../utils/route_util.dart';
-import '../../../../widget/eh_gallery_category_tag.dart';
 import '../../../../widget/eh_image.dart';
 import '../../../details/details_page_logic.dart';
 import '../../../layout/mobile_v2/notification/tap_menu_button_notification.dart';
@@ -90,12 +93,14 @@ class GalleryListDownloadPage extends StatelessWidget
       actions: [
         GetBuilder<GalleryListDownloadPageLogic>(
           id: logic.bodyId,
-          builder: (_) => DownloadReorderModeButton(
+          builder: (_) => DownloadPageMoreMenu(
             inReorderMode: state.inEditMode,
-            onPressed: logic.toggleEditMode,
-          ),
-        ),
-        DownloadPageMoreMenu(
+            onToggleReorder: logic.toggleEditMode,
+          hasBatchUpdateTask: () =>
+              batchUpdateFlow.hasSessionFor(DownloadToolbarKind.gallery),
+          batchUpdateTaskChanges: batchUpdateFlow.service,
+          onBatchUpdateTask: () =>
+              batchUpdateFlow.openExisting(DownloadToolbarKind.gallery),
           switchViewIcon: Icons.grid_view,
           switchViewLabel: 'switch2GridMode'.tr,
           onSwitchView: () => DownloadPageBodyTypeChangeNotification(
@@ -111,6 +116,7 @@ class GalleryListDownloadPage extends StatelessWidget
             logic.exitEditMode();
             toRoute(Routes.downloadSearch);
           },
+          ),
         ),
       ],
     );
@@ -378,8 +384,12 @@ class GalleryListDownloadPage extends StatelessWidget
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        EHGalleryCategoryTag(category: gallery.category),
-        const Expanded(child: SizedBox()),
+        Expanded(child: EHDownloadCategoryWithBadges(
+          category: gallery.category,
+          hasAds: GalleryBadgeUtil.hasAdsInString(gallery.tags),
+          hasAi: GalleryBadgeUtil.hasAiInString(gallery.tags),
+          trailingInset: gallery.downloadOriginalImage ? 6 : 0,
+        )),
         _buildIsOriginal(context, gallery),
         _buildSuperResolutionLabel(context, gallery),
         _buildPriority(context, gallery),

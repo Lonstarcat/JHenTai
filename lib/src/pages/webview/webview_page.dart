@@ -41,15 +41,15 @@ class _WebviewPageState extends State<WebviewPage> {
     }
     
 
-    CookieUtil.parse2Cookies(Get.arguments['cookies']).forEach((cookie) {
-      WebViewCookieManager().setCookie(
+    final cookiesReady = Future.wait(CookieUtil.parse2Cookies(Get.arguments['cookies']).map((cookie) {
+      return WebViewCookieManager().setCookie(
         WebViewCookie(
           name: cookie.name,
           value: cookie.value,
           domain: Uri.parse(Get.arguments['url']).host,
         ),
       );
-    });
+    }));
 
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -64,8 +64,15 @@ class _WebviewPageState extends State<WebviewPage> {
           },
           onWebResourceError: (_) => setStateSafely(() => loadingState = LoadingState.success),
         ),
-      )
-      ..loadRequest(Uri.parse(Get.arguments['url']));
+      );
+    final url = Uri.parse(Get.arguments['url']);
+    cookiesReady.then((_) {
+      if (mounted) {
+        return controller.loadRequest(url);
+      }
+    }).catchError((Object _) {
+      setStateSafely(() => loadingState = LoadingState.error);
+    });
   }
 
   @override

@@ -327,9 +327,10 @@ class ArchiveListDownloadPageLogic extends GetxController
 
     multiSelectDownloadPageState.selectedGids
         .addAll(archives.map((archive) => archive.gid));
-    updateSafely(multiSelectDownloadPageState.selectedGids
-        .map((gid) => '$itemCardId::$gid')
-        .toList());
+    updateSafely([
+      bottomAppbarId,
+      ...multiSelectDownloadPageState.selectedGids.map((gid) => '$itemCardId::$gid'),
+    ]);
   }
 
   @override

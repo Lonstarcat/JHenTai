@@ -92,6 +92,8 @@ class DownloadSearchLogic extends GetxController
       return;
     }
 
+    // Hide the empty-input help immediately, before the debounced search runs.
+    updateSafely([bodyId]);
     _searchScheduler.schedule((requestId) => _search(value, requestId));
   }
 

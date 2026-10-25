@@ -17,7 +17,7 @@ class _SettingAboutPageState extends State<SettingAboutPage> {
   String packageName = '';
   String version = '';
   String buildNumber = '';
-  String author = '酱天小禽兽(JTMonster)';
+  String author = '酱天小禽兽(JTMonster)\nLonstarcat';
   String telegram = 'https://t.me/+PindoE9yvIpmOWI9';
   String gitRepo = AppIdentity.repository;
   String helpPage = 'https://github.com/jiangtian616/JHenTai/wiki';
@@ -42,8 +42,13 @@ class _SettingAboutPageState extends State<SettingAboutPage> {
       body: ListView(
         padding: const EdgeInsets.only(top: 16),
         children: [
-          ListTile(title: Text('version'.tr), subtitle: Text(version.isEmpty ? '1.0.0' : version + (buildNumber.isEmpty ? '' : '+$buildNumber'))),
+          ListTile(title: Text('version'.tr), subtitle: const Text(AppIdentity.releaseVersion)),
           ListTile(title: Text('author'.tr), subtitle: SelectableText(author)),
+          ListTile(
+            title: Text('upstreamRepository'.tr),
+            subtitle: const SelectableText(AppIdentity.upstreamRepository),
+            onTap: () => launchUrlString(AppIdentity.upstreamRepository, mode: LaunchMode.externalApplication),
+          ),
           ListTile(
             title: const Text('Github'),
             subtitle: SelectableText(gitRepo),
