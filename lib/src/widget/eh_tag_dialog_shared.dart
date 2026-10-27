@@ -425,7 +425,10 @@ mixin EHTagVoteLogicMixin<T extends StatefulWidget> on State<T> implements Login
       }
     });
 
-    toast(watch ? 'addNewWatchedTagSetSuccess'.tr : 'addNewHiddenTagSetSuccess'.tr);
+    toast(
+      watch ? 'addNewWatchedTagSetSuccess'.tr : 'addNewHiddenTagSetSuccess'.tr,
+      level: NotificationLevel.success,
+    );
   }
 
   void gotoTagSets() {

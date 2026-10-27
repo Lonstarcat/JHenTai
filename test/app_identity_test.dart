@@ -97,14 +97,19 @@ void main() {
     expect(feed['apps'][0]['bundleIdentifier'], AppIdentity.packageName);
     expect(feed['apps'][0]['versions'], isEmpty);
   });
-  test('push workflow contains only Windows and does not publish tags', () {
+  test('push workflow builds all platforms and does not publish tags', () {
     final workflow = source('.github/workflows/build_android_macos_test.yml');
     expect(
         RegExp(r'^  ([a-zA-Z0-9_-]+):$', multiLine: true)
             .allMatches(workflow.substring(workflow.indexOf('jobs:')))
             .map((m) => m.group(1))
             .toList(),
-        ['windows']);
+        ['android', 'apple', 'linux', 'windows']);
+    expect(workflow, contains('target: [macOS, iOS]'));
+    expect(workflow,
+        contains('--target-platform android-arm,android-arm64,android-x64'));
+    expect(workflow, contains('arch: x64'));
+    expect(workflow, contains('arch: arm64'));
     expect(workflow, contains('feature/enhanced'));
     expect(workflow, isNot(contains('tags:')));
   });

@@ -122,8 +122,8 @@ class EHGalleryCategoryWithAds extends StatelessWidget {
       });
 }
 
-/// Download lists keep the category and right-hand controls at their existing
-/// anchors. Only the optional badge group uses the flexible space between them.
+/// Download list badges sit immediately after the category; unused flexible
+/// space stays on their right so the original/status controls keep their anchors.
 class EHDownloadCategoryWithBadges extends StatelessWidget {
   final String category;
   final bool hasAds;
@@ -151,11 +151,13 @@ class EHDownloadCategoryWithBadges extends StatelessWidget {
               return const SizedBox.shrink();
             }
             return Padding(
-              // Account for the original badge's existing leading margin;
-              // no category/original margin or trailing control is changed.
-              padding: EdgeInsets.only(left: trailingInset),
-              child: Center(
+              // Keep a fixed category gap and reserve the caller's trailing
+              // clearance only for fitting, without moving right-hand controls.
+              padding: EdgeInsets.only(left: 4, right: trailingInset),
+              child: Align(
+                alignment: Alignment.centerLeft,
                 child: FittedBox(
+                  alignment: Alignment.centerLeft,
                   fit: BoxFit.scaleDown,
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     if (ads) const EHGalleryAdsBadge.inline(),
