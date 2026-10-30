@@ -88,6 +88,8 @@ dependencies:
   grouped_list: 5.1.2
   flutter_resizable_container: 2.0.0
   loading_animation_widget: 1.2.0+4
+  # AndroidX Material shape primitives; no additional UI framework or plugin.
+  material_new_shapes: 1.0.0
   simple_animations: 5.0.2
   animated_flip_counter: 0.2.6
   saver_gallery: 5.1.0

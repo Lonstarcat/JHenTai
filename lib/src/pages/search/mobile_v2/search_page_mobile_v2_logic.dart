@@ -15,6 +15,10 @@ class SearchPageMobileV2Logic extends BasePageLogic with SearchPageLogicMixin {
   @override
   final SearchPageMobileV2State state = SearchPageMobileV2State();
 
+  // Capture entry intent once; Get.arguments can change on later navigation.
+  @override
+  final bool autofocusSearchField = Get.arguments is! NewSearchArgument;
+
   /// there may be more than one DetailsPages in route stack at same time, eg: tag a link in a comment.
   /// use this param as a 'tag' to get target [DetailsPageLogic] and [DetailsPageState].
   static final List<SearchPageMobileV2Logic> stack = <SearchPageMobileV2Logic>[];

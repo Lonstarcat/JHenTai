@@ -32,17 +32,14 @@ class ArchiveGridDownloadPage extends StatelessWidget
         MultiSelectDownloadPageMixin,
         ArchiveDownloadPageMixin,
         GridBasePage {
-  ArchiveGridDownloadPage({Key? key}) : super(key: key);
+  ArchiveGridDownloadPage({Key? key, required this.logic}) : super(key: key);
 
   @override
   final DownloadPageGalleryType galleryType = DownloadPageGalleryType.archive;
   @override
-  final ArchiveGridDownloadPageLogic logic =
-      Get.put<ArchiveGridDownloadPageLogic>(ArchiveGridDownloadPageLogic(),
-          permanent: true);
+  final ArchiveGridDownloadPageLogic logic;
   @override
-  final ArchiveGridDownloadPageState state =
-      Get.find<ArchiveGridDownloadPageLogic>().state;
+  ArchiveGridDownloadPageState get state => logic.state;
 
   @override
   Widget buildPageFloatingActionButton(BuildContext context) =>
@@ -60,30 +57,31 @@ class ArchiveGridDownloadPage extends StatelessWidget
       GetBuilder<ArchiveGridDownloadPageLogic>(
         global: false,
         init: logic,
+        autoRemove: false,
         id: logic.editButtonId,
         builder: (_) => DownloadPageMoreMenu(
           inReorderMode: state.inEditMode,
           onToggleReorder: logic.toggleEditMode,
-        hasBatchUpdateTask: () =>
-            batchUpdateFlow.hasSessionFor(DownloadToolbarKind.archive),
-        batchUpdateTaskChanges: batchUpdateFlow.service,
-        onBatchUpdateTask: () =>
-            batchUpdateFlow.openExisting(DownloadToolbarKind.archive),
-        switchViewIcon: Icons.view_list,
-        switchViewLabel: 'switch2ListMode'.tr,
-        onSwitchView: () => DownloadPageBodyTypeChangeNotification(
-          bodyType: DownloadPageBodyType.list,
-        ).dispatch(context),
-        onMultiSelect: () {
-          logic.exitEditMode();
-          logic.enterSelectMode();
-        },
-        onResumeAll: logic.handleResumeAllTasks,
-        onPauseAll: logic.handlePauseAllTasks,
-        onSearch: () {
-          logic.exitEditMode();
-          toRoute(Routes.downloadSearch);
-        },
+          hasBatchUpdateTask: () =>
+              batchUpdateFlow.hasSessionFor(DownloadToolbarKind.archive),
+          batchUpdateTaskChanges: batchUpdateFlow.service,
+          onBatchUpdateTask: () =>
+              batchUpdateFlow.openExisting(DownloadToolbarKind.archive),
+          switchViewIcon: Icons.view_list,
+          switchViewLabel: 'switch2ListMode'.tr,
+          onSwitchView: () => DownloadPageBodyTypeChangeNotification(
+            bodyType: DownloadPageBodyType.list,
+          ).dispatch(context),
+          onMultiSelect: () {
+            logic.exitEditMode();
+            logic.enterSelectMode();
+          },
+          onResumeAll: logic.handleResumeAllTasks,
+          onPauseAll: logic.handlePauseAllTasks,
+          onSearch: () {
+            logic.exitEditMode();
+            toRoute(Routes.downloadSearch);
+          },
         ),
       ),
     ];
@@ -148,6 +146,9 @@ class ArchiveGridDownloadPage extends StatelessWidget
       key: state.navigationItemKeys[archive.gid],
       title: archive.title,
       widget: GetBuilder<ArchiveGridDownloadPageLogic>(
+        global: false,
+        init: logic,
+        autoRemove: false,
         id: '${logic.itemCardId}::${archive.gid}',
         builder: (_) {
           ArchiveDownloadInfo archiveDownloadInfo =

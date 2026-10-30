@@ -1,7 +1,10 @@
 # Enhanced release builds
 
-Pushing `feature/enhanced` or manually running **Build All Platforms Release**
-builds release artifacts from the same commit and Flutter 3.44.8 stable SDK:
+Pushing `feature/enhanced` builds **Windows x64 and Linux x64/arm64 only**.
+Android, macOS and iOS packages are built locally from the same source revision.
+Manual **Build All Platforms Release** runs default to `targets: windows-linux`;
+choose `targets: all` explicitly to build every platform in Actions.
+All builds use Flutter 3.44.8 stable and the following release formats:
 
 | Target | Artifact |
 | --- | --- |

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
+import 'expressive_loading_indicator.dart';
 
 class EHTagDialogDesktopActions extends StatelessWidget {
   final bool? currentVote;
@@ -120,7 +121,7 @@ class _ActionButton extends StatelessWidget {
 
     Widget icon;
     if (state == LoadingState.loading) {
-      icon = const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
+      icon = const ExpressiveLoadingIndicator(size: 20);
     } else {
       icon = _PulseIcon(
         trigger: state == LoadingState.success,

@@ -5,6 +5,7 @@ import base64
 import os
 from pathlib import Path
 import plistlib
+import re
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -62,6 +63,24 @@ class ReleaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, patch.object(release, "ROOT", Path(temp)):
             with self.assertRaises(ValueError):
                 release.package_android()
+
+    def test_push_builds_only_remaining_platforms(self) -> None:
+        workflow = (release.ROOT / ".github/workflows/build_android_macos_test.yml").read_text(encoding="utf-8")
+        self.assertIn("default: windows-linux", workflow)
+        self.assertIn("branches:\n      - feature/enhanced", workflow)
+        guard = "    if: github.event_name == 'workflow_dispatch' && inputs.targets == 'all'"
+        for job in ("android", "apple"):
+            section = re.search(rf"^  {job}:\n(.*?)(?=^  \w+:|\Z)", workflow, re.M | re.S)[1]
+            self.assertIn(guard + "\n", section)
+        for job in ("windows", "linux"):
+            section = re.search(rf"^  {job}:\n(.*?)(?=^  \w+:|\Z)", workflow, re.M | re.S)[1]
+            self.assertIsNone(re.search(r"^    if:", section, re.M))
+        # Exact guarded expression above: a push or remaining-only dispatch must
+        # never schedule Apple/Android; explicit all-platform dispatch must.
+        for event, targets, expected in (("push", "", False),
+                                         ("workflow_dispatch", "windows-linux", False),
+                                         ("workflow_dispatch", "all", True)):
+            self.assertEqual(event == "workflow_dispatch" and targets == "all", expected)
 
     def test_signing_writes_private_files_and_refuses_overwrite(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

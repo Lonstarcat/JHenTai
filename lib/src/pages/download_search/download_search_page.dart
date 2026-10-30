@@ -47,6 +47,7 @@ class DownloadSearchPage extends StatelessWidget {
     return GetBuilder<DownloadSearchLogic>(
       id: logic.searchFieldId,
       builder: (_) => TextField(
+        autofocus: true,
         controller: logic.textEditingController,
         textInputAction: TextInputAction.search,
         textAlignVertical: TextAlignVertical.center,

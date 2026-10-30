@@ -20,7 +20,10 @@ class DesktopHomePage extends StatelessWidget {
             .where((icon) => icon.shouldRender)
             .mapIndexed((index, icon) => Offstage(
                   offstage: state.selectedTabOrder != index,
-                  child: icon.page.call(),
+                  child: TickerMode(
+                    enabled: state.selectedTabOrder == index,
+                    child: icon.page.call(),
+                  ),
                 ))
             .toList(),
       ),

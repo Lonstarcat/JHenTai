@@ -16,10 +16,15 @@ import '../../model/download_multi_select_toolbar.dart';
 import '../../utils/batch_update_util.dart';
 import '../../routes/routes.dart';
 import 'grid/archive/archive_grid_download_page.dart';
+import 'grid/archive/archive_grid_download_page_logic.dart';
 import 'grid/gallery/gallery_grid_download_page.dart';
+import 'grid/gallery/gallery_grid_download_page_logic.dart';
+import 'download_page_controller_scope.dart';
 import 'download_reorder_mode.dart';
 import 'list/archive/archive_list_download_page.dart';
+import 'list/archive/archive_list_download_page_logic.dart';
 import 'list/gallery/gallery_list_download_page.dart';
+import 'list/gallery/gallery_list_download_page_logic.dart';
 import 'list/local/local_gallery_list_page.dart';
 
 class DownloadPage extends StatefulWidget {
@@ -30,6 +35,8 @@ class DownloadPage extends StatefulWidget {
 }
 
 class _DownloadPageState extends State<DownloadPage> {
+  final DownloadPageControllerScope _controllers =
+      DownloadPageControllerScope();
   late DownloadPageGalleryType galleryType =
       _galleryTypeForNavigation(downloadTaskNavigationTarget.value) ??
           preferenceSetting.defaultDownloadTab.value;
@@ -66,6 +73,7 @@ class _DownloadPageState extends State<DownloadPage> {
     downloadTaskNavigationTarget.removeListener(_handleTaskNavigation);
     downloadPageNavigationPending.removeListener(_openPendingBatchUpdate);
     exitAllDownloadReorderModes();
+    _controllers.dispose();
     super.dispose();
   }
 
@@ -143,15 +151,37 @@ class _DownloadPageState extends State<DownloadPage> {
               : galleryType == DownloadPageGalleryType.download
                   ? bodyType == DownloadPageBodyType.list
                       ? GalleryListDownloadPage(
+                          logic: _controllers
+                              .obtain(GalleryListDownloadPageLogic.new),
                           key: const PageStorageKey('GalleryListDownloadBody'))
                       : GalleryGridDownloadPage(
+                          logic: _controllers
+                              .obtain(GalleryGridDownloadPageLogic.new,
+                                  disposeResources: (logic) {
+                            // Scroll2TopLogicMixin already disposes the active
+                            // controller; release only the other grid level.
+                            (logic.state.isAtRoot
+                                    ? logic.state.galleryScrollController
+                                    : logic.state.rootScrollController)
+                                .dispose();
+                          }),
                           key: const PageStorageKey('GalleryGridDownloadBody'))
                   : galleryType == DownloadPageGalleryType.archive
                       ? bodyType == DownloadPageBodyType.list
                           ? ArchiveListDownloadPage(
+                              logic: _controllers
+                                  .obtain(ArchiveListDownloadPageLogic.new),
                               key: const PageStorageKey(
                                   'ArchiveListDownloadBody'))
                           : ArchiveGridDownloadPage(
+                              logic: _controllers
+                                  .obtain(ArchiveGridDownloadPageLogic.new,
+                                      disposeResources: (logic) {
+                                (logic.state.isAtRoot
+                                        ? logic.state.galleryScrollController
+                                        : logic.state.rootScrollController)
+                                    .dispose();
+                              }),
                               key: const PageStorageKey(
                                   'ArchiveGridDownloadBody'))
                       : bodyType == DownloadPageBodyType.list

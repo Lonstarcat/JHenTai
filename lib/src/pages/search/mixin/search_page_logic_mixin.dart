@@ -52,6 +52,9 @@ mixin SearchPageLogicMixin on BasePageLogic {
   final String galleryBodyId = 'galleryBodyId';
   final String searchFieldId = 'searchFieldId';
 
+  /// Direct result searches must not open the keyboard over the galleries.
+  bool get autofocusSearchField => true;
+
   final Debouncing suggestDebouncing = Debouncing(duration: const Duration(milliseconds: 300));
   final Debouncing recordDebouncing = Debouncing(duration: const Duration(milliseconds: 1000));
 
@@ -349,7 +352,7 @@ mixin SearchPageLogicMixin on BasePageLogic {
 
   Future<void> toggleEnableSearchHistoryTranslation() async {
     await state.enableSearchHistoryTranslationCompleter.future;
-    
+
     state.enableSearchHistoryTranslation = !state.enableSearchHistoryTranslation;
     await localConfigService.write(configKey: ConfigEnum.enableSearchHistoryTranslation, value: state.enableSearchHistoryTranslation.toString());
     update([suggestionBodyId]);

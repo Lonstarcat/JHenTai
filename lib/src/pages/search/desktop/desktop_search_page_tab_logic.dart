@@ -15,6 +15,9 @@ class DesktopSearchPageTabLogic extends BasePageLogic with SearchPageLogicMixin 
   final bool loadImmediately;
 
   @override
+  bool get autofocusSearchField => !loadImmediately;
+
+  @override
   final DesktopSearchPageTabState state = DesktopSearchPageTabState();
 
   DesktopSearchPageTabLogic(this.newSearchArgument, this.loadImmediately);

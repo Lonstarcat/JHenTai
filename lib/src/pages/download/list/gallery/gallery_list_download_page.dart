@@ -39,13 +39,10 @@ class GalleryListDownloadPage extends StatelessWidget
         Scroll2TopPageMixin,
         MultiSelectDownloadPageMixin,
         GalleryDownloadPageMixin {
-  GalleryListDownloadPage({Key? key}) : super(key: key);
+  GalleryListDownloadPage({Key? key, required this.logic}) : super(key: key);
 
-  final GalleryListDownloadPageLogic logic =
-      Get.put<GalleryListDownloadPageLogic>(GalleryListDownloadPageLogic(),
-          permanent: true);
-  final GalleryListDownloadPageState state =
-      Get.find<GalleryListDownloadPageLogic>().state;
+  final GalleryListDownloadPageLogic logic;
+  GalleryListDownloadPageState get state => logic.state;
 
   @override
   MultiSelectDownloadPageLogicMixin get multiSelectDownloadPageLogic => logic;
@@ -92,30 +89,33 @@ class GalleryListDownloadPage extends StatelessWidget
           galleryType: DownloadPageGalleryType.download),
       actions: [
         GetBuilder<GalleryListDownloadPageLogic>(
+          global: false,
+          init: logic,
+          autoRemove: false,
           id: logic.bodyId,
           builder: (_) => DownloadPageMoreMenu(
             inReorderMode: state.inEditMode,
             onToggleReorder: logic.toggleEditMode,
-          hasBatchUpdateTask: () =>
-              batchUpdateFlow.hasSessionFor(DownloadToolbarKind.gallery),
-          batchUpdateTaskChanges: batchUpdateFlow.service,
-          onBatchUpdateTask: () =>
-              batchUpdateFlow.openExisting(DownloadToolbarKind.gallery),
-          switchViewIcon: Icons.grid_view,
-          switchViewLabel: 'switch2GridMode'.tr,
-          onSwitchView: () => DownloadPageBodyTypeChangeNotification(
-            bodyType: DownloadPageBodyType.grid,
-          ).dispatch(context),
-          onMultiSelect: () {
-            logic.exitEditMode();
-            logic.enterSelectMode();
-          },
-          onResumeAll: logic.downloadService.resumeAllDownloadGallery,
-          onPauseAll: logic.downloadService.pauseAllDownloadGallery,
-          onSearch: () {
-            logic.exitEditMode();
-            toRoute(Routes.downloadSearch);
-          },
+            hasBatchUpdateTask: () =>
+                batchUpdateFlow.hasSessionFor(DownloadToolbarKind.gallery),
+            batchUpdateTaskChanges: batchUpdateFlow.service,
+            onBatchUpdateTask: () =>
+                batchUpdateFlow.openExisting(DownloadToolbarKind.gallery),
+            switchViewIcon: Icons.grid_view,
+            switchViewLabel: 'switch2GridMode'.tr,
+            onSwitchView: () => DownloadPageBodyTypeChangeNotification(
+              bodyType: DownloadPageBodyType.grid,
+            ).dispatch(context),
+            onMultiSelect: () {
+              logic.exitEditMode();
+              logic.enterSelectMode();
+            },
+            onResumeAll: logic.downloadService.resumeAllDownloadGallery,
+            onPauseAll: logic.downloadService.pauseAllDownloadGallery,
+            onSearch: () {
+              logic.exitEditMode();
+              toRoute(Routes.downloadSearch);
+            },
           ),
         ),
       ],
@@ -126,6 +126,9 @@ class GalleryListDownloadPage extends StatelessWidget
     return GetBuilder<GalleryDownloadService>(
       id: logic.downloadService.galleryCountChangedId,
       builder: (_) => GetBuilder<GalleryListDownloadPageLogic>(
+        global: false,
+        init: logic,
+        autoRemove: false,
         id: logic.bodyId,
         builder: (_) {
           if (state.inEditMode) {
@@ -258,6 +261,9 @@ class GalleryListDownloadPage extends StatelessWidget
 
   Widget _buildCard(BuildContext context, GalleryDownloadInfo gallery) {
     return GetBuilder<GalleryListDownloadPageLogic>(
+      global: false,
+      init: logic,
+      autoRemove: false,
       id: '${logic.itemCardId}::${gallery.gid}',
       builder: (_) => Container(
         height: UIConfig.downloadPageCardHeight,
@@ -384,7 +390,8 @@ class GalleryListDownloadPage extends StatelessWidget
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(child: EHDownloadCategoryWithBadges(
+        Expanded(
+            child: EHDownloadCategoryWithBadges(
           category: gallery.category,
           hasAds: GalleryBadgeUtil.hasAdsInString(gallery.tags),
           hasAi: GalleryBadgeUtil.hasAiInString(gallery.tags),

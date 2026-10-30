@@ -17,7 +17,7 @@ import 'package:jhentai/src/pages/download/mixin/gallery/gallery_download_page_s
 import 'package:jhentai/src/routes/routes.dart';
 import 'package:jhentai/src/service/super_resolution_service.dart';
 import 'package:jhentai/src/utils/route_util.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
+import '../../../../widget/expressive_loading_indicator.dart';
 
 import '../../../../config/ui_config.dart';
 import '../../../../model/gallery_image.dart';
@@ -33,17 +33,14 @@ class GalleryGridDownloadPage extends StatelessWidget
         MultiSelectDownloadPageMixin,
         GalleryDownloadPageMixin,
         GridBasePage {
-  GalleryGridDownloadPage({Key? key}) : super(key: key);
+  GalleryGridDownloadPage({Key? key, required this.logic}) : super(key: key);
 
   @override
   final DownloadPageGalleryType galleryType = DownloadPageGalleryType.download;
   @override
-  final GalleryGridDownloadPageLogic logic =
-      Get.put<GalleryGridDownloadPageLogic>(GalleryGridDownloadPageLogic(),
-          permanent: true);
+  final GalleryGridDownloadPageLogic logic;
   @override
-  final GalleryGridDownloadPageState state =
-      Get.find<GalleryGridDownloadPageLogic>().state;
+  GalleryGridDownloadPageState get state => logic.state;
 
   @override
   Widget buildPageFloatingActionButton(BuildContext context) =>
@@ -67,30 +64,31 @@ class GalleryGridDownloadPage extends StatelessWidget
       GetBuilder<GalleryGridDownloadPageLogic>(
         global: false,
         init: logic,
+        autoRemove: false,
         id: logic.editButtonId,
         builder: (_) => DownloadPageMoreMenu(
           inReorderMode: state.inEditMode,
           onToggleReorder: logic.toggleEditMode,
-        hasBatchUpdateTask: () =>
-            batchUpdateFlow.hasSessionFor(DownloadToolbarKind.gallery),
-        batchUpdateTaskChanges: batchUpdateFlow.service,
-        onBatchUpdateTask: () =>
-            batchUpdateFlow.openExisting(DownloadToolbarKind.gallery),
-        switchViewIcon: Icons.view_list,
-        switchViewLabel: 'switch2ListMode'.tr,
-        onSwitchView: () => DownloadPageBodyTypeChangeNotification(
-          bodyType: DownloadPageBodyType.list,
-        ).dispatch(context),
-        onMultiSelect: () {
-          logic.exitEditMode();
-          logic.enterSelectMode();
-        },
-        onResumeAll: logic.handleResumeAllTasks,
-        onPauseAll: logic.handlePauseAllTasks,
-        onSearch: () {
-          logic.exitEditMode();
-          toRoute(Routes.downloadSearch);
-        },
+          hasBatchUpdateTask: () =>
+              batchUpdateFlow.hasSessionFor(DownloadToolbarKind.gallery),
+          batchUpdateTaskChanges: batchUpdateFlow.service,
+          onBatchUpdateTask: () =>
+              batchUpdateFlow.openExisting(DownloadToolbarKind.gallery),
+          switchViewIcon: Icons.view_list,
+          switchViewLabel: 'switch2ListMode'.tr,
+          onSwitchView: () => DownloadPageBodyTypeChangeNotification(
+            bodyType: DownloadPageBodyType.list,
+          ).dispatch(context),
+          onMultiSelect: () {
+            logic.exitEditMode();
+            logic.enterSelectMode();
+          },
+          onResumeAll: logic.handleResumeAllTasks,
+          onPauseAll: logic.handlePauseAllTasks,
+          onSearch: () {
+            logic.exitEditMode();
+            toRoute(Routes.downloadSearch);
+          },
         ),
       ),
     ];
@@ -121,11 +119,8 @@ class GalleryGridDownloadPage extends StatelessWidget
                       .galleryDownloadInfos[gallery.gid]?.coverImage;
 
                   if (image == null) {
-                    return Center(
-                      child: LoadingAnimationWidget.horizontalRotatingDots(
-                          color: UIConfig.downloadPageLoadingIndicatorColor(
-                              context),
-                          size: 16),
+                    return const Center(
+                      child: ExpressiveLoadingIndicator(size: 16),
                     );
                   }
 
@@ -168,6 +163,9 @@ class GalleryGridDownloadPage extends StatelessWidget
       key: state.navigationItemKeys[gallery.gid],
       title: gallery.title,
       widget: GetBuilder<GalleryGridDownloadPageLogic>(
+        global: false,
+        init: logic,
+        autoRemove: false,
         id: '${logic.itemCardId}::${gallery.gid}',
         builder: (_) => GetBuilder<GalleryDownloadService>(
           id: '${logic.downloadService.galleryDownloadSuccessId}::${gallery.gid}',

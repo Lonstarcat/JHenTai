@@ -39,7 +39,7 @@ class GalleryListDownloadPageLogic extends GetxController
   @override
   Scroll2TopStateMixin get scroll2TopState => state;
 
-  late Worker maxGalleryNum4AnimationListener;
+  Worker? maxGalleryNum4AnimationListener;
 
   @override
   Future<void> onInit() async {
@@ -47,6 +47,9 @@ class GalleryListDownloadPageLogic extends GetxController
 
     String? displayGroupsString = await localConfigService.read(
         configKey: ConfigEnum.displayGalleryGroups);
+    if (isClosed) {
+      return;
+    }
     if (displayGroupsString == null) {
       state.displayGroups = {'default'.tr};
     } else {
@@ -64,7 +67,7 @@ class GalleryListDownloadPageLogic extends GetxController
     unregisterDownloadReorderMode(this);
     super.onClose();
 
-    maxGalleryNum4AnimationListener.dispose();
+    maxGalleryNum4AnimationListener?.dispose();
   }
 
   List<GalleryDownloadInfo> get sortedGalleries {
@@ -222,7 +225,8 @@ class GalleryListDownloadPageLogic extends GetxController
 
     final List<GalleryDownloadInfo> reordered =
         reorderDownloadList(galleries, oldIndex, newIndex);
-    final changed = changedDownloadOrders(reordered, (item) => item.gid, (item) => item.sortOrder);
+    final changed = changedDownloadOrders(
+        reordered, (item) => item.gid, (item) => item.sortOrder);
     for (final gallery in reordered) {
       if (changed.containsKey(gallery.gid)) {
         gallery.sortOrder = changed[gallery.gid]!;
@@ -231,7 +235,8 @@ class GalleryListDownloadPageLogic extends GetxController
     state.sortBy = SortBy.manual;
     updateSafely([bodyId]);
     try {
-      await downloadService.updateGalleryOrder(reordered.where((item) => changed.containsKey(item.gid)).toList());
+      await downloadService.updateGalleryOrder(
+          reordered.where((item) => changed.containsKey(item.gid)).toList());
     } catch (error, stack) {
       log.error('Save gallery list order failed', error, stack);
       toast('saveFailed'.tr, level: NotificationLevel.error);
@@ -311,7 +316,8 @@ class GalleryListDownloadPageLogic extends GetxController
         .addAll(galleries.map((gallery) => gallery.gid));
     updateSafely([
       bottomAppbarId,
-      ...multiSelectDownloadPageState.selectedGids.map((gid) => '$itemCardId::$gid'),
+      ...multiSelectDownloadPageState.selectedGids
+          .map((gid) => '$itemCardId::$gid'),
     ]);
   }
 }

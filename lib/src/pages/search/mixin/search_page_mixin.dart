@@ -92,6 +92,7 @@ mixin SearchPageMixin<L extends SearchPageLogicMixin, S extends SearchPageStateM
         child: FutureBuilder(
           future: state.searchConfigInitCompleter.future,
           builder: (_, __) => TextField(
+            autofocus: logic.autofocusSearchField,
             focusNode: state.searchFieldFocusNode,
             textInputAction: TextInputAction.search,
             controller: TextEditingController.fromValue(

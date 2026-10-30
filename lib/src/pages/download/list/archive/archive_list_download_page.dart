@@ -40,13 +40,10 @@ class ArchiveListDownloadPage extends StatelessWidget
         Scroll2TopPageMixin,
         MultiSelectDownloadPageMixin,
         ArchiveDownloadPageMixin {
-  ArchiveListDownloadPage({Key? key}) : super(key: key);
+  ArchiveListDownloadPage({Key? key, required this.logic}) : super(key: key);
 
-  final ArchiveListDownloadPageLogic logic =
-      Get.put<ArchiveListDownloadPageLogic>(ArchiveListDownloadPageLogic(),
-          permanent: true);
-  final ArchiveListDownloadPageState state =
-      Get.find<ArchiveListDownloadPageLogic>().state;
+  final ArchiveListDownloadPageLogic logic;
+  ArchiveListDownloadPageState get state => logic.state;
 
   @override
   ArchiveDownloadPageLogicMixin get archiveDownloadPageLogic => logic;
@@ -87,30 +84,33 @@ class ArchiveListDownloadPage extends StatelessWidget
           galleryType: DownloadPageGalleryType.archive),
       actions: [
         GetBuilder<ArchiveListDownloadPageLogic>(
+          global: false,
+          init: logic,
+          autoRemove: false,
           id: logic.bodyId,
           builder: (_) => DownloadPageMoreMenu(
             inReorderMode: state.inEditMode,
             onToggleReorder: logic.toggleEditMode,
-          hasBatchUpdateTask: () =>
-              batchUpdateFlow.hasSessionFor(DownloadToolbarKind.archive),
-          batchUpdateTaskChanges: batchUpdateFlow.service,
-          onBatchUpdateTask: () =>
-              batchUpdateFlow.openExisting(DownloadToolbarKind.archive),
-          switchViewIcon: Icons.grid_view,
-          switchViewLabel: 'switch2GridMode'.tr,
-          onSwitchView: () => DownloadPageBodyTypeChangeNotification(
-            bodyType: DownloadPageBodyType.grid,
-          ).dispatch(context),
-          onMultiSelect: () {
-            logic.exitEditMode();
-            logic.enterSelectMode();
-          },
-          onResumeAll: archiveDownloadService.resumeAllDownloadArchive,
-          onPauseAll: archiveDownloadService.pauseAllDownloadArchive,
-          onSearch: () {
-            logic.exitEditMode();
-            toRoute(Routes.downloadSearch);
-          },
+            hasBatchUpdateTask: () =>
+                batchUpdateFlow.hasSessionFor(DownloadToolbarKind.archive),
+            batchUpdateTaskChanges: batchUpdateFlow.service,
+            onBatchUpdateTask: () =>
+                batchUpdateFlow.openExisting(DownloadToolbarKind.archive),
+            switchViewIcon: Icons.grid_view,
+            switchViewLabel: 'switch2GridMode'.tr,
+            onSwitchView: () => DownloadPageBodyTypeChangeNotification(
+              bodyType: DownloadPageBodyType.grid,
+            ).dispatch(context),
+            onMultiSelect: () {
+              logic.exitEditMode();
+              logic.enterSelectMode();
+            },
+            onResumeAll: archiveDownloadService.resumeAllDownloadArchive,
+            onPauseAll: archiveDownloadService.pauseAllDownloadArchive,
+            onSearch: () {
+              logic.exitEditMode();
+              toRoute(Routes.downloadSearch);
+            },
           ),
         ),
       ],
@@ -121,6 +121,9 @@ class ArchiveListDownloadPage extends StatelessWidget
     return GetBuilder<ArchiveDownloadService>(
       id: archiveDownloadService.galleryCountChangedId,
       builder: (_) => GetBuilder<ArchiveListDownloadPageLogic>(
+        global: false,
+        init: logic,
+        autoRemove: false,
         id: logic.bodyId,
         builder: (_) => NotificationListener<UserScrollNotification>(
           onNotification: logic.onUserScroll,
@@ -247,6 +250,9 @@ class ArchiveListDownloadPage extends StatelessWidget
 
   Widget _buildCard(BuildContext context, ArchiveDownloadedData archive) {
     return GetBuilder<ArchiveListDownloadPageLogic>(
+      global: false,
+      init: logic,
+      autoRemove: false,
       id: '${logic.itemCardId}::${archive.gid}',
       builder: (_) => Container(
         decoration: state.selectedGids.contains(archive.gid)
@@ -357,7 +363,8 @@ class ArchiveListDownloadPage extends StatelessWidget
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(child: EHDownloadCategoryWithBadges(
+        Expanded(
+            child: EHDownloadCategoryWithBadges(
           category: archive.category,
           hasAds: GalleryBadgeUtil.hasAdsInString(archive.tags),
           hasAi: GalleryBadgeUtil.hasAiInString(archive.tags),
@@ -399,6 +406,7 @@ class ArchiveListDownloadPage extends StatelessWidget
     return GetBuilder<ArchiveListDownloadPageLogic>(
       global: false,
       init: logic,
+      autoRemove: false,
       id: '${logic.galleryId}::${archive.gid}',
       builder: (_) {
         if (archiveDownloadInfo.parseSource != ArchiveParseSource.bot.code) {

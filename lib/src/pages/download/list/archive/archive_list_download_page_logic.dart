@@ -42,7 +42,7 @@ class ArchiveListDownloadPageLogic extends GetxController
   @override
   ArchiveDownloadPageStateMixin get archiveDownloadPageState => state;
 
-  late Worker maxGalleryNum4AnimationListener;
+  Worker? maxGalleryNum4AnimationListener;
 
   @override
   Future<void> onInit() async {
@@ -50,6 +50,9 @@ class ArchiveListDownloadPageLogic extends GetxController
 
     String? displayGroupsString = await localConfigService.read(
         configKey: ConfigEnum.displayArchiveGroups);
+    if (isClosed) {
+      return;
+    }
     if (displayGroupsString == null) {
       state.displayGroups = {'default'.tr};
     } else {
@@ -67,7 +70,7 @@ class ArchiveListDownloadPageLogic extends GetxController
     unregisterDownloadReorderMode(this);
     super.onClose();
 
-    maxGalleryNum4AnimationListener.dispose();
+    maxGalleryNum4AnimationListener?.dispose();
   }
 
   List<ArchiveDownloadedData> get sortedArchives {
@@ -256,10 +259,14 @@ class ArchiveListDownloadPageLogic extends GetxController
 
     final List<ArchiveDownloadedData> reordered =
         reorderDownloadList(archives, oldIndex, newIndex);
-    final changed = changedDownloadOrders(reordered, (item) => item.gid,
-      (item) => archiveDownloadService.archiveDownloadInfos[item.gid]!.sortOrder);
+    final changed = changedDownloadOrders(
+        reordered,
+        (item) => item.gid,
+        (item) =>
+            archiveDownloadService.archiveDownloadInfos[item.gid]!.sortOrder);
     for (final entry in changed.entries) {
-      archiveDownloadService.archiveDownloadInfos[entry.key]!.sortOrder = entry.value;
+      archiveDownloadService.archiveDownloadInfos[entry.key]!.sortOrder =
+          entry.value;
     }
     state.sortBy = SortBy.manual;
     updateSafely([bodyId]);
@@ -329,7 +336,8 @@ class ArchiveListDownloadPageLogic extends GetxController
         .addAll(archives.map((archive) => archive.gid));
     updateSafely([
       bottomAppbarId,
-      ...multiSelectDownloadPageState.selectedGids.map((gid) => '$itemCardId::$gid'),
+      ...multiSelectDownloadPageState.selectedGids
+          .map((gid) => '$itemCardId::$gid'),
     ]);
   }
 

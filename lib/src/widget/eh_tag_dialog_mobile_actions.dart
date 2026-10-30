@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
+import 'expressive_loading_indicator.dart';
 
 /// Scrollable action list for the mobile tag bottom sheet.
 /// Common actions (vote / follow / hide) are visible by default; management
@@ -141,7 +142,7 @@ class _ActionTile extends StatelessWidget {
 
     Widget? trailing;
     if (state == LoadingState.loading) {
-      trailing = const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2));
+      trailing = const ExpressiveLoadingIndicator(size: 18);
     } else if (active) {
       trailing = Icon(Icons.check, size: 18, color: UIConfig.tagDialogLikedButtonColor(context));
     }
