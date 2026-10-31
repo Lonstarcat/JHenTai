@@ -1,12 +1,10 @@
 name: Build & Release
 
-# Trigger on push to master branch or with a tag
+# Legacy builds run on master pushes only; tag builds are intentionally paused.
 on:
   push:
     branches:
       - 'master'
-    tags:
-      - v*
 
 # If previous workflow is still running, we push again, we will cancel the previous workflow
 concurrency:
